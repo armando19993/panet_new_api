@@ -12,13 +12,25 @@ export class RateService {
     return 'This action adds a new rate';
   }
 
-  async findAll() {
-    const data = await this.prisma.rate.findMany({
-      include: { origin: true, destination: true }
-    })
+  async findAll(query) {
+    const { originId, destinationId } = query;
 
-    return { data, message: 'Tasas Obtenidas con exito' }
+    const filters: any = {};
+    if (originId) {
+      filters.originId = originId;
+    }
+    if (destinationId) {
+      filters.destinationId = destinationId;
+    }
+
+    const data = await this.prisma.rate.findMany({
+      where: filters,
+      include: { origin: true, destination: true },
+    });
+
+    return { data, message: 'Tasas obtenidas con éxito' };
   }
+
 
   findOne(id: number) {
     return `This action returns a #${id} rate`;

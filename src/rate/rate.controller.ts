@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { RateService } from './rate.service';
 import { CreateRateDto } from './dto/create-rate.dto';
 import { UpdateRateDto } from './dto/update-rate.dto';
@@ -13,8 +13,8 @@ export class RateController {
   }
 
   @Get()
-  findAll() {
-    return this.rateService.findAll();
+  findAll(@Query() query) {
+    return this.rateService.findAll(query);
   }
 
   @Get(':id')
