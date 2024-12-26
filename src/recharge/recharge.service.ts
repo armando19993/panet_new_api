@@ -4,7 +4,7 @@ import axios from "axios";
 
 @Injectable()
 export class RechargeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createRechargeDto, user, file) {
     let data = null;
@@ -14,10 +14,10 @@ export class RechargeService {
 
       try {
         const payload: { amount: string; sandbox: boolean; currency?: string } =
-          {
-            amount: createRechargeDto.amount.toString(),
-            sandbox: true,
-          };
+        {
+          amount: createRechargeDto.amount.toString(),
+          sandbox: true,
+        };
 
         // Agregar currency solo si el país es PE
         if (createRechargeDto.country === "PE") {
@@ -270,6 +270,31 @@ export class RechargeService {
 
       throw new Error("Error al consultar el estado de la transacción.");
     }
+  }
+
+  async update(id, updateRecharge) {
+    const data = await this.prisma.recharge.update({
+      where: { id }, data: {
+        status: updateRecharge.status,
+        comentario: updateRecharge.comentario
+      },
+      include: { wallet: true }
+    })
+
+    if (updateRecharge.status === 'COMPLETADA') {
+      let newAmount =
+        parseFloat(data.wallet.balance.toString()) +
+        parseFloat(data.amount.toString());
+
+      await this.prisma.wallet.update({
+        where: { id: data.wallet.id },
+        data: {
+          balance: newAmount,
+        },
+      });
+    }
+
+    return { data, message: 'Recarga Actuializada con exito' }
   }
 
   remove(id: number) {

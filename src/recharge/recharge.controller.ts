@@ -20,7 +20,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 
 @Controller("recharge")
 export class RechargeController {
-  constructor(private readonly rechargeService: RechargeService) {}
+  constructor(private readonly rechargeService: RechargeService) { }
 
   @Post()
   @UseGuards(AuthGuard)
@@ -45,6 +45,12 @@ export class RechargeController {
   @UseGuards(AuthGuard)
   findOne(@Param("id") id: string) {
     return this.rechargeService.findOne(id);
+  }
+
+  @Patch(":id")
+  @UseGuards(AuthGuard)
+  update(@Param("id") id: string, @Body() updateRechargeDto) {
+    return this.rechargeService.update(id, updateRechargeDto);
   }
 
   @Patch("update-manual/:id")
