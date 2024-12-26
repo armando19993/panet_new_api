@@ -1,0 +1,23 @@
+meta {
+  name: Crear Banco
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{SERVER}}/bank
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+
+body:json {
+  {
+    "name": "BCP",
+    "code": "",
+    "countryId": "862dbaf7-78aa-42d0-9339-175983bb530c"
+  }
+}

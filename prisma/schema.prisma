@@ -1,0 +1,337 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          String        @id @default(uuid())
+  publicId    Int           @unique @default(autoincrement())
+  name        String        @unique
+  permissions Permissions[]
+  users       UserRole[] // Relación con la tabla intermedia
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Module {
+  id          String        @id @default(uuid())
+  publicId    Int           @unique @default(autoincrement())
+  name        String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Permissions Permissions[]
+}
+
+model Permissions {
+  id        String   @id @default(uuid())
+  publicId  Int      @unique @default(autoincrement())
+  name      String
+  slug      String
+  module    Module   @relation(fields: [moduleId], references: [id])
+  moduleId  String
+  roles     Role[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id                String              @id @default(uuid())
+  publicId          Int                 @unique @default(autoincrement())
+  name              String
+  user              String              @unique
+  password          String
+  phone             String?
+  roles             UserRole[] // Relación con la tabla intermedia
+  referredBy        String?
+  referrer          User?               @relation("UserReferrals", fields: [referredBy], references: [id])
+  referrals         User[]              @relation("UserReferrals")
+  profitPercent     Decimal             @default(0.00) @db.Decimal(10, 2)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  wallets           Wallet[]            @relation("UserWallets")
+  clientes          Client[]
+  Recharge          Recharge[]
+  WalletRequest     WalletRequest[]
+  ColaEspera        ColaEspera[]
+  InstrumentsClient InstrumentsClient[]
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@unique([userId, roleId]) // Evita duplicados para la misma relación
+}
+
+model Country {
+  id                String              @id @default(uuid())
+  publicId          Int                 @unique @default(autoincrement())
+  name              String
+  abbreviation      String
+  currency          String
+  profit            Decimal             @default(0.00) @db.Decimal(10, 2)
+  ven_profit        Decimal             @default(0.00) @db.Decimal(10, 2)
+  especial_profit   Decimal             @default(0.00) @db.Decimal(10, 2)
+  rate_purchase     Decimal             @default(0.00) @db.Decimal(10, 2)
+  rate_sales        Decimal             @default(0.00) @db.Decimal(10, 2)
+  rate_wholesale    Decimal             @default(0.00) @db.Decimal(10, 2)
+  status            Int                 @default(1)
+  code              String
+  amount            Int                 @default(0)
+  wallets           Wallet[]            @relation("CountryWallets")
+  banks             Bank[]
+  accountTypes      AccountType[]
+  typesDocuments    TypesDocuments[]    @relation("CountryTypesDocuments")
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  InstrumentsClient InstrumentsClient[]
+  WalletRequest     WalletRequest[]
+}
+
+model Bank {
+  id                String              @id @default(uuid())
+  publicId          Int                 @unique @default(autoincrement())
+  name              String // Nombre del banco
+  code              String? // Código del banco
+  countryId         String
+  country           Country             @relation(fields: [countryId], references: [id]) // Relación con país
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  InstrumentsClient InstrumentsClient[]
+}
+
+model AccountType {
+  id                String              @id @default(uuid())
+  publicId          Int                 @unique @default(autoincrement())
+  name              String
+  countryId         String
+  country           Country             @relation(fields: [countryId], references: [id]) // Relación con país
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  InstrumentsClient InstrumentsClient[]
+}
+
+model TypesDocuments {
+  id        String   @id @default(uuid())
+  publicId  Int      @unique @default(autoincrement())
+  name      String
+  country   Country  @relation("CountryTypesDocuments", fields: [countryId], references: [id])
+  countryId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WalletRequest {
+  id               String   @id @default(uuid())
+  publicId         Int      @unique @default(autoincrement())
+  consumer_id_type String
+  consumer_id      String
+  image_document   String
+  document_state   String
+  user             User     @relation(fields: [userId], references: [id])
+  userId           String
+  country          Country  @relation(fields: [countryId], references: [id])
+  countryId        String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Wallet {
+  id               String               @id @default(uuid())
+  publicId         Int                  @unique @default(autoincrement())
+  consumer_id_type String
+  consumer_id      String
+  type             WalletType
+  balance          Decimal              @default(0.00) @db.Decimal(10, 2)
+  user             User                 @relation("UserWallets", fields: [userId], references: [id])
+  userId           String
+  country          Country              @relation("CountryWallets", fields: [countryId], references: [id])
+  countryId        String
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  transactions     WalletTransactions[] @relation("TransactionWallets")
+  gastos           Gastos[]             @relation("GastosWallet")
+  Recharge         Recharge[]
+
+  @@unique([userId, countryId, type])
+}
+
+model WalletTransactions {
+  id          String          @id @default(uuid())
+  publicId    Int             @unique @default(autoincrement())
+  amount      Decimal         @default(0.00) @db.Decimal(10, 2)
+  amount_old  Decimal         @default(0.00) @db.Decimal(10, 2)
+  amount_new  Decimal         @default(0.00) @db.Decimal(10, 2)
+  description String?
+  type        TypeTransaction
+  wallet      Wallet          @relation("TransactionWallets", fields: [walletId], references: [id])
+  walletId    String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Gastos {
+  id               String        @id @default(uuid())
+  publicId         Int           @unique @default(autoincrement())
+  amount           Decimal       @default(0.00) @db.Decimal(10, 2)
+  description      String
+  comprobante      String
+  wallet           Wallet        @relation("GastosWallet", fields: [walletId], references: [id])
+  walletId         String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  registrosDiarios LibroDiario[]
+}
+
+model LibroDiario {
+  id          String   @id @default(uuid())
+  publicId    Int      @unique @default(autoincrement())
+  description String
+  debe        Decimal  @default(0.00) @db.Decimal(10, 2)
+  haber       Decimal  @default(0.00) @db.Decimal(10, 2)
+  saldo       Decimal  @default(0.00) @db.Decimal(10, 2)
+  gasto       Gastos   @relation(fields: [gastoId], references: [id])
+  gastoId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Client {
+  id             String              @id @default(uuid())
+  publicId       Int                 @unique @default(autoincrement())
+  name           String
+  document       String
+  phone          String
+  email          String?
+  intermediaryId String?
+  intermediary   User?               @relation(fields: [intermediaryId], references: [id])
+  instruments    InstrumentsClient[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model InstrumentsClient {
+  id       String @id @default(uuid())
+  publicId Int    @unique @default(autoincrement())
+
+  document String? // Documento opcional
+
+  holder        String // Titular obligatorio
+  accountNumber String // Número de cuenta, puede ser un string
+
+  accountTypeId String?
+  accountType   AccountType? @relation(fields: [accountTypeId], references: [id])
+  countryId     String
+  country       Country     @relation(fields: [countryId], references: [id])
+  bankId        String?
+  bank          Bank?       @relation(fields: [bankId], references: [id])
+
+  typeInstrument TypesInstrumens
+  useInstruments USE_INSTRUMENTS @default(CLIENT)
+  Client         Client?         @relation(fields: [clientId], references: [id])
+  clientId       String?
+  user           User?           @relation(fields: [userId], references: [id])
+  userId         String?
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  Recharge  Recharge[]
+}
+
+model Recharge {
+  id                String             @id @default(uuid())
+  publicId          Int                @unique @default(autoincrement())
+  amount            Decimal            @default(0.00) @db.Decimal(10, 2)
+  wallet            Wallet             @relation(fields: [walletId], references: [id])
+  walletId          String
+  user              User               @relation(fields: [userId], references: [id])
+  userId            String
+  type              TypeRecharge
+  status            StatusRecharge
+  comprobante       String?
+  comentario        String?
+  nro_referencia    String?            @unique()
+  fecha_comprobante DateTime?          @db.Date
+  instrumentId      String?
+  instrument        InstrumentsClient? @relation(fields: [instrumentId], references: [id])
+  pasarela_response Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  ColaEspera        ColaEspera[]
+}
+
+model Rate {
+  id            String   @id @default(uuid())
+  publicId      Int      @unique @default(autoincrement())
+  originId      String
+  destinationId String
+  amount        Decimal  @default(0.00) @db.Decimal(10, 4)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ColaEspera {
+  id            String    @id @default(uuid())
+  publicId      Int       @unique @default(autoincrement())
+  rechargeId    String?
+  recharge      Recharge? @relation(fields: [rechargeId], references: [id])
+  transactionIs String?
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  type          TypeCola
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum WalletType {
+  RECEPCION
+  RECARGA
+  GANANCIAS
+}
+
+enum TypeRecharge {
+  AUTOMATIZADO
+  MANUAL
+}
+
+enum TypeTransaction {
+  DEPOSITO
+  RETIRO
+}
+
+enum StatusRecharge {
+  CREADA
+  CANCELADA
+  COMPLETADA
+}
+
+enum TypesRecharges {
+  AUTOMATICA
+  MANUAL
+}
+
+enum TypesInstrumens {
+  PAGO_MOVIL
+  CUENTA_BANCARIA
+  CUENTA_DIGITAL
+  BILLETERA_MOVIL
+}
+
+enum USE_INSTRUMENTS {
+  PANET
+  CLIENT
+}
+
+enum TypeCola {
+  RECARGA
+  TRANSACCION
+}

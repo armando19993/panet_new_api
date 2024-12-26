@@ -1,0 +1,15 @@
+meta {
+  name: Obtener Paises
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{SERVER}}/country
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}

@@ -1,0 +1,31 @@
+meta {
+  name: Crear Pais
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{SERVER}}/country
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+
+body:json {
+  {
+    "name": "COLOMBIA",
+    "abbreviation": "CO",
+    "currency": "COP",
+    "profit": 10,
+    "ven_profit": 10,
+    "especial_profit": 10,
+    "rate_purchase": 10,
+    "rate_sales": 10,
+    "rate_wholesale": 10,
+    "code": "+58",
+    "amount": 10
+  }
+}

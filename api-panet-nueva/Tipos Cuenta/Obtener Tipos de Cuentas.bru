@@ -1,0 +1,19 @@
+meta {
+  name: Obtener Tipos de Cuentas
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{SERVER}}/account-type?countryId=54d84f79-8c83-49e1-ac7e-46ef8efc9603
+  body: none
+  auth: bearer
+}
+
+params:query {
+  countryId: 54d84f79-8c83-49e1-ac7e-46ef8efc9603
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Obntener Recarga
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{SERVER}}/recharge/e4e54859-a474-41c3-a20b-e447183f089e
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}

@@ -1,0 +1,22 @@
+meta {
+  name: Crear Tipo
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{SERVER}}/account-type
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+
+body:json {
+  {
+    "name": "Pago Movil",
+    "countryId": "54d84f79-8c83-49e1-ac7e-46ef8efc9603"
+  }
+}

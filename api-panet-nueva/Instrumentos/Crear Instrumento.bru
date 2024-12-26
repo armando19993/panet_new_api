@@ -1,0 +1,23 @@
+meta {
+  name: Crear Instrumento
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{SERVER}}/instruments-client
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "typeInstrument": "PAGO_MOVIL",
+    "holder": "Armando Campos",
+    "accountNumber": "04122362521",
+    "accountTypeId": "45abd235-9bb9-48c0-8aa9-8bdb3054fec6",
+    "useInstruments": "PANET",
+    "countryId": "54d84f79-8c83-49e1-ac7e-46ef8efc9603",
+    "userId": "fb7cb984-a4a2-46e5-806c-8d2dc7b363d0"
+  }
+}

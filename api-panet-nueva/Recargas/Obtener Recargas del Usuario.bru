@@ -1,0 +1,15 @@
+meta {
+  name: Obtener Recargas del Usuario
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{SERVER}}/recharge/for-user
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}

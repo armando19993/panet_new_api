@@ -1,0 +1,25 @@
+meta {
+  name: Crear Wallet
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{SERVER}}/wallet
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+
+body:json {
+  {
+    "userId": "fb7cb984-a4a2-46e5-806c-8d2dc7b363d0",
+    "countryId": "862dbaf7-78aa-42d0-9339-175983bb530c",
+    "consumer_id_type": "ce",
+    "consumer_id": "005078088",
+    "type": "RECARGA"
+  }
+}

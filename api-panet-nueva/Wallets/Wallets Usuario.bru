@@ -1,0 +1,19 @@
+meta {
+  name: Wallets Usuario
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{SERVER}}/wallet/for-user?type=RECARGA
+  body: none
+  auth: bearer
+}
+
+params:query {
+  type: RECARGA
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
