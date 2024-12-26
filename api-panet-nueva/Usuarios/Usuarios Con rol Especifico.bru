@@ -1,0 +1,15 @@
+meta {
+  name: Usuarios Con rol Especifico
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{SERVER}}/user/by-roles?roles=INTERMEDIARIO
+  body: none
+  auth: none
+}
+
+params:query {
+  roles: INTERMEDIARIO
+}
