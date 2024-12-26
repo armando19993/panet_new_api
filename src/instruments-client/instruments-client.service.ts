@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { CreateInstrumentsClientDto } from "./dto/create-instruments-client.dto";
 import { UpdateInstrumentsClientDto } from "./dto/update-instruments-client.dto";
 import { PrismaService } from "src/prisma/prisma.servise";
@@ -8,24 +8,45 @@ export class InstrumentsClientService {
   constructor(private prisma: PrismaService) { }
 
   async create(createInstrumentsClientDto: CreateInstrumentsClientDto) {
-    console.log(createInstrumentsClientDto.countryId)
-    const data = await this.prisma.instrumentsClient.create({
-      data: {
-        document: createInstrumentsClientDto.document || null,
-        holder: createInstrumentsClientDto.holder,
-        accountNumber: createInstrumentsClientDto.accountNumber,
-        accountTypeId: createInstrumentsClientDto.accountTypeId,
-        countryId: createInstrumentsClientDto.countryId,  // Solo el ID, no el objeto completo
-        bankId: createInstrumentsClientDto.bankId || null,
-        typeInstrument: createInstrumentsClientDto.typeInstrument,
-        useInstruments: createInstrumentsClientDto.useInstruments || null,
-        clientId: createInstrumentsClientDto.clientId || null,
-        userId: createInstrumentsClientDto.userId || null,
-      },
-    });
-    
+    // Validación inicial
+    if (!createInstrumentsClientDto) {
+      throw new BadRequestException('No se proporcionaron datos para crear el instrumento');
+    }
 
-    return { data, messsage: 'Instrumento Creado con exito' }
+    // Log para debug
+    console.log('DTO recibido:', JSON.stringify(createInstrumentsClientDto, null, 2));
+
+    try {
+      // Validar que countryId exista ya que es requerido
+      if (!createInstrumentsClientDto.countryId) {
+        throw new BadRequestException('El countryId es requerido');
+      }
+
+      const data = await this.prisma.instrumentsClient.create({
+        data: {
+          document: createInstrumentsClientDto.document ?? null,
+          holder: createInstrumentsClientDto.holder,
+          accountNumber: createInstrumentsClientDto.accountNumber,
+          accountTypeId: createInstrumentsClientDto.accountTypeId ?? null,
+          countryId: createInstrumentsClientDto.countryId,
+          bankId: createInstrumentsClientDto.bankId ?? null,
+          typeInstrument: createInstrumentsClientDto.typeInstrument,
+          useInstruments: createInstrumentsClientDto.useInstruments ?? null,
+          clientId: createInstrumentsClientDto.clientId ?? null,
+          userId: createInstrumentsClientDto.userId ?? null,
+        },
+      });
+
+      return {
+        data,
+        message: 'Instrumento Creado con éxito',
+      };
+    } catch (error) {
+      console.error('Error al crear instrumento:', error);
+      throw new BadRequestException(
+        error.message || 'Error al crear el instrumento'
+      );
+    }
   }
 
   async findAll(

@@ -43,13 +43,13 @@ export class CreateInstrumentsClientDto {
   @IsNotEmpty()
   accountNumber: string;
 
-  @IsUUID()
   @IsOptional()
+  @IsUUID()
   bankId?: string;
 
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  accountTypeId: string;
+  accountTypeId?: string;
 
   @IsUUID()
   countryId: string;
