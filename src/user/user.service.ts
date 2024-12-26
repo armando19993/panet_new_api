@@ -90,8 +90,10 @@ export class UserService {
     return `This action returns a #${id} user`;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id, updateUserDto) {
+    const data = await this.prisma.user.update({ where: { id }, data: updateUserDto })
+
+    return { data, message: 'Usuario Actualizado con exito' }
   }
 
   remove(id: number) {

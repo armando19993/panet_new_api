@@ -150,8 +150,8 @@ model WalletRequest {
 model Wallet {
   id               String               @id @default(uuid())
   publicId         Int                  @unique @default(autoincrement())
-  consumer_id_type String
-  consumer_id      String
+  consumer_id_type String?
+  consumer_id      String?
   type             WalletType
   balance          Decimal              @default(0.00) @db.Decimal(10, 2)
   user             User                 @relation("UserWallets", fields: [userId], references: [id])

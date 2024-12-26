@@ -12,10 +12,6 @@ export class InstrumentsClientService {
     if (!createInstrumentsClientDto) {
       throw new BadRequestException('No se proporcionaron datos para crear el instrumento');
     }
-
-    // Log para debug
-    console.log('DTO recibido:', JSON.stringify(createInstrumentsClientDto, null, 2));
-
     try {
       // Validar que countryId exista ya que es requerido
       if (!createInstrumentsClientDto.countryId) {
