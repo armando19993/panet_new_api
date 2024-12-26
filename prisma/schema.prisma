@@ -95,6 +95,8 @@ model Country {
   updatedAt         DateTime            @updatedAt
   InstrumentsClient InstrumentsClient[]
   WalletRequest     WalletRequest[]
+  RateOrigin        Rate[]              @relation("Origin")
+  RateDestinarion   Rate[]              @relation("Destination")
 }
 
 model Bank {
@@ -231,9 +233,9 @@ model InstrumentsClient {
   accountTypeId String?
   accountType   AccountType? @relation(fields: [accountTypeId], references: [id])
   countryId     String
-  country       Country     @relation(fields: [countryId], references: [id])
+  country       Country      @relation(fields: [countryId], references: [id])
   bankId        String?
-  bank          Bank?       @relation(fields: [bankId], references: [id])
+  bank          Bank?        @relation(fields: [bankId], references: [id])
 
   typeInstrument TypesInstrumens
   useInstruments USE_INSTRUMENTS @default(CLIENT)
@@ -273,10 +275,14 @@ model Rate {
   id            String   @id @default(uuid())
   publicId      Int      @unique @default(autoincrement())
   originId      String
+  origin        Country  @relation("Origin", fields: [originId], references: [id])
   destinationId String
+  destination   Country  @relation("Destination", fields: [destinationId], references: [id])
+  type_profit   String?
   amount        Decimal  @default(0.00) @db.Decimal(10, 4)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  countryId     String?
 }
 
 model ColaEspera {

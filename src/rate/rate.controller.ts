@@ -22,9 +22,9 @@ export class RateController {
     return this.rateService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRateDto: UpdateRateDto) {
-    return this.rateService.update(+id, updateRateDto);
+  @Patch('')
+  update() {
+    return this.rateService.update();
   }
 
   @Delete(':id')
