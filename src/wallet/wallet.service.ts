@@ -6,7 +6,7 @@ import { User, Wallet } from "@prisma/client";
 
 @Injectable()
 export class WalletService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createWalletDto: Wallet) {
     const existingWallet = await this.prisma.wallet.findFirst({
@@ -51,11 +51,23 @@ export class WalletService {
     return { data, message: "Wallets del Usuario obtenidos con éxito!" };
   }
 
-  findAll() {
-    return `This action returns all wallet`;
+  async findAll(query) {
+    const { userId, type } = query
+
+    const filters: any = {};
+    if (userId) {
+      filters.userId = userId
+    }
+    if (type) {
+      filters.type = type
+    }
+
+    const data = await this.prisma.wallet.findMany({ where: filters, include: { country: true } })
+
+    return { data, message: 'Wallets obtenidos con éxito' }
   }
 
-  findOne(id: number) {
+  findOne(id) {
     return `This action returns a #${id} wallet`;
   }
 

@@ -31,8 +31,8 @@ export class WalletController {
   }
 
   @Get()
-  findAll() {
-    return this.walletService.findAll();
+  findAll(@Query() query) {
+    return this.walletService.findAll(query);
   }
 
   @Get(":id")
