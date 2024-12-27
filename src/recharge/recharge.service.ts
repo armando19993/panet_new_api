@@ -81,7 +81,7 @@ export class RechargeService {
         }
       }
     } else {
-      const fileUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/uploads/${file.filename}`;
+      const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
       try {
         data = await this.prisma.recharge.create({
           data: {
