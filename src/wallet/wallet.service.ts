@@ -62,7 +62,7 @@ export class WalletService {
       filters.type = type
     }
 
-    const data = await this.prisma.wallet.findMany({ where: filters, include: { country: true } })
+    const data = await this.prisma.wallet.findMany({ where: filters, include: { country: true, user: true } })
 
     return { data, message: 'Wallets obtenidos con éxito' }
   }
