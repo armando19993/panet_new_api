@@ -53,7 +53,7 @@ export class RechargeController {
     return this.rechargeService.update(id, updateRechargeDto);
   }
 
-  @Patch("update-manual/:id")
+  @Post("update-manual/:id")
   @UseGuards(AuthGuard)
   updateManual(@Param("id") id: string, @Body() updateRechargeDto) {
     return this.rechargeService.updateManual(id, updateRechargeDto);

@@ -4,6 +4,7 @@ import {
   IsString,
   IsEnum,
   IsUUID,
+  IsNumber,
 } from 'class-validator';
 
 export enum TypesInstrumens {
@@ -57,6 +58,11 @@ export class CreateInstrumentsClientDto {
   @IsUUID()
   @IsOptional()
   userId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @IsOptional()
+  profit: number
 
   constructor(partial: Partial<CreateInstrumentsClientDto>) {
     Object.assign(this, partial);

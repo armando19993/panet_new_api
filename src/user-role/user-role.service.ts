@@ -28,7 +28,17 @@ export class UserRoleService {
     return `This action updates a #${id} userRole`;
   }
 
-  async remove(id: number) {
-    return `This action removes a #${id} userRole`;
+  async remove(userId, roleId) {
+    const data = await this.prisma.userRole.delete({
+      where:
+      {
+        userId_roleId: {
+          userId: userId,
+          roleId: roleId
+        }
+      }
+    })
+
+    return { data, message: 'Role Eliminado con exito' }
   }
 }

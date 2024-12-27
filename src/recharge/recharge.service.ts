@@ -99,6 +99,33 @@ export class RechargeService {
               : null,
           },
         });
+
+        const instrument = await this.prisma.instrumentsClient.findFirst({ where: { id: createRechargeDto.instrumentId }, include: { user: true } })
+
+        await this.prisma.colaEspera.upsert({
+          where: {
+            rechargeId_userId_type: {
+              rechargeId: data.id,
+              userId: instrument.user.id,
+              type: "RECARGA",
+            },
+          },
+          create: {
+            rechargeId: data.id,
+            userId: instrument.user.id,
+            type: "RECARGA",
+            status: "INICIADA",
+          },
+          update: {
+            status: "INICIADA",
+          },
+        });
+
+        const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
+
+        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}`;
+        await axios.get(whatsappUrl);
+
       } catch (error) {
         console.error("Error al crear la recarga manual:", error.message);
         return {
@@ -171,7 +198,197 @@ export class RechargeService {
   }
 
   async updateManual(id, updateRechargeDto) {
-    return `This action updates a #${id} recharge`;
+    const data = await this.prisma.recharge.findFirst({
+      where: {
+        id
+      },
+      include: {
+        instrument: {
+          include: {
+            user: true
+          }
+        },
+        wallet: true,
+        user: true
+      }
+    })
+
+    if (updateRechargeDto.status === 'CANCELADA') {
+      await this.prisma.recharge.update({
+        where: { id },
+        data: {
+          status: 'CANCELADA',
+          comentario: updateRechargeDto.comentario
+        }
+      })
+
+      const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n ha sido rechazada por el siguiente motivo *${updateRechargeDto.comentario}*\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
+
+      const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message)}`;
+      await axios.get(whatsappUrl);
+
+      return { data, message: 'Recarga Cancelada con exito' }
+    }
+
+    // sumar saldo al wallet de usuario que recarga
+    await this.prisma.wallet.update({
+      where: {
+        id: data.wallet.id,
+      },
+      data: {
+        balance: {
+          increment: data.amount,
+        },
+      },
+    });
+
+    await this.prisma.walletTransactions.create({
+      data: {
+        amount: data.amount,
+        amount_new: parseFloat(data.wallet.balance.toString()) + parseFloat(data.amount.toString()),
+        amount_old: data.wallet.balance,
+        wallet: {
+          connect: {
+            id: data.wallet.id,
+          },
+        },
+        description: "Recarga de Saldo REC-2025-" + data.publicId,
+        type: "DEPOSITO"
+      },
+    })
+
+    //  calcular saldos
+    const profitPercentage = parseFloat(data.instrument.profit.toString());
+    const profitAmount = (parseFloat(data.amount.toString()) * profitPercentage) / 100;
+    const saldoPanet = parseFloat(data.amount.toString()) - profitAmount;
+
+    //agregar saldo al wallet de recepcion PANET
+    let walletRecepcion = await this.prisma.wallet.findFirst({
+      where: {
+        userId: data.instrument.user.id,
+        countryId: data.instrument.countryId,
+        type: 'RECEPCION'
+      }
+    })
+    if (!walletRecepcion) {
+      walletRecepcion = await this.prisma.wallet.create({
+        data: {
+          userId: data.instrument.user.id,
+          countryId: data.instrument.countryId,
+          type: 'RECEPCION',
+          balance: saldoPanet
+        }
+      })
+    }
+    else {
+      await this.prisma.wallet.update({
+        where: { id: walletRecepcion.id }, data: {
+          balance: {
+            increment: saldoPanet
+          }
+        }
+      })
+    }
+
+    await this.prisma.walletTransactions.create({
+      data: {
+        amount: saldoPanet,
+        amount_new: parseFloat(walletRecepcion.balance.toString()) + saldoPanet,
+        amount_old: walletRecepcion.balance,
+        wallet: {
+          connect: {
+            id: walletRecepcion.id,
+          },
+        },
+        description: "Recarga de Saldo REC-2025-" + data.publicId,
+        type: "DEPOSITO"
+      },
+    })
+
+    //Agregar saldo de ganancia al duseño de cuenta
+    if (data.instrument.profit.toNumber() > 0) {
+      let walletGananciaDueno = await this.prisma.wallet.findFirst({
+        where: {
+          userId: data.instrument.user.id,
+          countryId: data.instrument.countryId,
+          type: 'GANANCIAS'
+        }
+      })
+      if (!walletGananciaDueno) {
+        walletGananciaDueno = await this.prisma.wallet.create({
+          data: {
+            userId: data.instrument.user.id,
+            countryId: data.instrument.countryId,
+            type: 'GANANCIAS',
+            balance: profitAmount
+          }
+        })
+      } else {
+        await this.prisma.wallet.update({
+          where: {
+            id: walletGananciaDueno.id,
+          },
+          data: {
+            balance: {
+              increment: profitAmount,
+            },
+          },
+        });
+      }
+
+
+
+      await this.prisma.walletTransactions.create({
+        data: {
+          amount: profitAmount,
+          amount_new: parseFloat(walletGananciaDueno.balance.toString()) + profitAmount,
+          amount_old: walletGananciaDueno.balance,
+          wallet: {
+            connect: {
+              id: walletGananciaDueno.id,
+            },
+          },
+          description: "Ganancia por recarga de Saldo REC-2025-" + data.publicId,
+          type: "DEPOSITO"
+        },
+      })
+
+    }
+
+    // actualizar recarga
+    await this.prisma.recharge.update({
+      where: { id },
+      data: {
+        status: 'COMPLETADA',
+        gananciDespachador: profitAmount,
+        saldoPanet
+      }
+    })
+
+    try {
+      await this.prisma.colaEspera.update({
+        where: {
+          rechargeId_userId_type: {
+            rechargeId: data.id,
+            userId: data.instrument.user.id,
+            type: 'RECARGA',
+          },
+        },
+        data: {
+          status: 'CERRADA'
+        }
+      })
+    }
+    catch{
+      console.log("No estamos actualizando esto correctamente")
+    }
+   
+    const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n ha sido APROBADA con exito, ya el saldo se encuentra disponible para su uso.\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
+
+    const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message)}`;
+    await axios.get(whatsappUrl);
+
+    return { data, message: 'Recarga Cancelada con exito' }
   }
 
   async updateAutomatic(data) {
@@ -229,7 +446,7 @@ export class RechargeService {
             amount_new: newAmount,
             type: "DEPOSITO",
             walletId: recharge.wallet.id,
-            description: "Deposito por Recarga: REC-2024-" + recharge.publicId,
+            description: "Deposito por Recarga: REC-2025-" + recharge.publicId,
           },
         });
 

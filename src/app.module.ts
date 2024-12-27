@@ -12,9 +12,17 @@ import { BankModule } from './bank/bank.module';
 import { AccountTypeModule } from './account-type/account-type.module';
 import { RoleModule } from './role/role.module';
 import { UserRoleModule } from './user-role/user-role.module';
+import { join } from "path";
+import { ServeStaticModule } from "@nestjs/serve-static";
+import { ColaEsperaModule } from './cola-espera/cola-espera.module';
 
 @Module({
-  imports: [AuthModule, UserModule, WalletModule, WalletTransactionsModule, RechargeModule, CountryModule, InstrumentsClientModule, ClientModule, RateModule, BankModule, AccountTypeModule, RoleModule, UserRoleModule],
+  imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads', 
+    }),
+    AuthModule, UserModule, WalletModule, WalletTransactionsModule, RechargeModule, CountryModule, InstrumentsClientModule, ClientModule, RateModule, BankModule, AccountTypeModule, RoleModule, UserRoleModule, ColaEsperaModule],
   controllers: [],
   providers: [],
 })

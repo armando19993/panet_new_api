@@ -64,6 +64,11 @@ export class InstrumentsClientService {
 
     const data = await this.prisma.instrumentsClient.findMany({
       where: filters,
+      include: {
+        bank: true,
+        country: true,
+        accountType: true
+      }
     });
 
     return { data, message: 'Instrumentos encontrados con éxito' };
