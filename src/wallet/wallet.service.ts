@@ -67,6 +67,109 @@ export class WalletService {
     return { data, message: 'Wallets obtenidos con éxito' }
   }
 
+  async transfer(user, transferData) {
+    const { sourceWalletId, targetWalletId, amount } = transferData;
+
+    const walletSalida = await this.prisma.wallet.findFirst({
+      where: {
+        id: sourceWalletId,
+      },
+    });
+
+    if (!walletSalida) {
+      throw new BadRequestException("La wallet origen no existe");
+    }
+
+    if (walletSalida.balance < amount) {
+      throw new BadRequestException("Fondos insuficientes");
+    }
+
+    const walletLlegada = await this.prisma.wallet.findFirst({
+      where: {
+        id: targetWalletId,
+      },
+    });
+
+    if (!walletLlegada) {
+      throw new BadRequestException("La wallet destino no existe");
+    }
+
+    await this.prisma.wallet.update({
+      where: {
+        id: sourceWalletId,
+      },
+      data: {
+        balance: {
+          decrement: amount,
+        },
+      },
+    });
+
+    await this.prisma.wallet.update({
+      where: {
+        id: targetWalletId,
+      },
+      data: {
+        balance: {
+          increment: amount,
+        },
+      },
+    });
+
+    await this.prisma.walletTransactions.create({
+      data: {
+        amount,
+        amount_new: parseFloat(walletSalida.balance.toString()) - amount,
+        amount_old: walletSalida.balance,
+        wallet: {
+          connect: {
+            id: walletSalida.id,
+          },
+        },
+        description: "Transferencia entre wallets",
+        type: "RETIRO"
+      },
+    })
+
+    await this.prisma.walletTransactions.create({
+      data: {
+        amount,
+        amount_new: parseFloat(walletLlegada.balance.toString()) + amount,
+        amount_old: walletLlegada.balance,
+        wallet: {
+          connect: {
+            id: walletLlegada.id,
+          },
+        },
+        description: "Transferencia entre wallets",
+        type: "DEPOSITO"
+      },
+    })
+
+    return { message: "Transferencia realizada con éxito" };
+  }
+
+  async updateBalance(user, id, updateBalance) {
+    const data = await this.prisma.wallet.update({ where: { id }, data: { balance: updateBalance.balance } })
+
+    await this.prisma.walletTransactions.create({
+      data: {
+        amount: updateBalance.balance,
+        amount_new: updateBalance.balance,
+        amount_old: data.balance,
+        wallet: {
+          connect: {
+            id: data.id,
+          },
+        },
+        description: "Actualización de balance por @" + user.user,
+        type: "DEPOSITO"
+      }
+    })
+
+    return { data, message: 'Balance actualizado con éxito' }
+  }
+
   findOne(id) {
     return `This action returns a #${id} wallet`;
   }
