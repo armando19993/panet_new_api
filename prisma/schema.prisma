@@ -52,12 +52,14 @@ model User {
   profitPercent     Decimal             @default(0.00) @db.Decimal(10, 2)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+  expoPushToken     String?
   wallets           Wallet[]            @relation("UserWallets")
   clientes          Client[]
   Recharge          Recharge[]
   WalletRequest     WalletRequest[]
   ColaEspera        ColaEspera[]
   InstrumentsClient InstrumentsClient[]
+  Transaction       Transaction[]       @relation("ClienteTransaction")
 }
 
 model UserRole {
@@ -73,30 +75,32 @@ model UserRole {
 }
 
 model Country {
-  id                String              @id @default(uuid())
-  publicId          Int                 @unique @default(autoincrement())
-  name              String
-  abbreviation      String
-  currency          String
-  profit            Decimal             @default(0.00) @db.Decimal(10, 2)
-  ven_profit        Decimal             @default(0.00) @db.Decimal(10, 2)
-  especial_profit   Decimal             @default(0.00) @db.Decimal(10, 2)
-  rate_purchase     Decimal             @default(0.00) @db.Decimal(10, 2)
-  rate_sales        Decimal             @default(0.00) @db.Decimal(10, 2)
-  rate_wholesale    Decimal             @default(0.00) @db.Decimal(10, 2)
-  status            Int                 @default(1)
-  code              String
-  amount            Int                 @default(0)
-  wallets           Wallet[]            @relation("CountryWallets")
-  banks             Bank[]
-  accountTypes      AccountType[]
-  typesDocuments    TypesDocuments[]    @relation("CountryTypesDocuments")
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  InstrumentsClient InstrumentsClient[]
-  WalletRequest     WalletRequest[]
-  RateOrigin        Rate[]              @relation("Origin")
-  RateDestinarion   Rate[]              @relation("Destination")
+  id                  String              @id @default(uuid())
+  publicId            Int                 @unique @default(autoincrement())
+  name                String
+  abbreviation        String
+  currency            String
+  profit              Decimal             @default(0.00) @db.Decimal(10, 2)
+  ven_profit          Decimal             @default(0.00) @db.Decimal(10, 2)
+  especial_profit     Decimal             @default(0.00) @db.Decimal(10, 2)
+  rate_purchase       Decimal             @default(0.00) @db.Decimal(10, 2)
+  rate_sales          Decimal             @default(0.00) @db.Decimal(10, 2)
+  rate_wholesale      Decimal             @default(0.00) @db.Decimal(10, 2)
+  status              Int                 @default(1)
+  code                String
+  amount              Int                 @default(0)
+  wallets             Wallet[]            @relation("CountryWallets")
+  banks               Bank[]
+  accountTypes        AccountType[]
+  typesDocuments      TypesDocuments[]    @relation("CountryTypesDocuments")
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  InstrumentsClient   InstrumentsClient[]
+  WalletRequest       WalletRequest[]
+  RateOrigin          Rate[]              @relation("Origin")
+  RateDestinarion     Rate[]              @relation("Destination")
+  TransactionsOrigen  Transaction[]       @relation("OrigenTransaction")
+  TransactionsDestino Transaction[]       @relation("DestinoTransaction")
 }
 
 model Bank {
@@ -163,6 +167,7 @@ model Wallet {
   transactions     WalletTransactions[] @relation("TransactionWallets")
   gastos           Gastos[]             @relation("GastosWallet")
   Recharge         Recharge[]
+  Transaction      Transaction[]        @relation("WalletTransaction")
 
   @@unique([userId, countryId, type])
 }
@@ -219,34 +224,32 @@ model Client {
   instruments    InstrumentsClient[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
+  Transaction    Transaction[]       @relation("ClientTransaction")
 }
 
 model InstrumentsClient {
-  id       String @id @default(uuid())
-  publicId Int    @unique @default(autoincrement())
-
-  document      String?
-  profit        Decimal @default(0.00) @db.Decimal(10, 2)
-  holder        String
-  accountNumber String
-
-  accountTypeId String?
-  accountType   AccountType? @relation(fields: [accountTypeId], references: [id])
-  countryId     String
-  country       Country      @relation(fields: [countryId], references: [id])
-  bankId        String?
-  bank          Bank?        @relation(fields: [bankId], references: [id])
-
+  id             String          @id @default(uuid())
+  publicId       Int             @unique @default(autoincrement())
+  document       String?
+  profit         Decimal         @default(0.00) @db.Decimal(10, 2)
+  holder         String
+  accountNumber  String
+  accountTypeId  String?
+  accountType    AccountType?    @relation(fields: [accountTypeId], references: [id])
+  countryId      String
+  country        Country         @relation(fields: [countryId], references: [id])
+  bankId         String?
+  bank           Bank?           @relation(fields: [bankId], references: [id])
   typeInstrument TypesInstrumens
   useInstruments USE_INSTRUMENTS @default(CLIENT)
   Client         Client?         @relation(fields: [clientId], references: [id])
   clientId       String?
   user           User?           @relation(fields: [userId], references: [id])
   userId         String?
-
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  Recharge  Recharge[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  Recharge       Recharge[]
+  Transaction    Transaction[]   @relation("InstrumentTransaction")
 }
 
 model Recharge {
@@ -292,7 +295,8 @@ model ColaEspera {
   publicId      Int         @unique @default(autoincrement())
   rechargeId    String?
   recharge      Recharge?   @relation(fields: [rechargeId], references: [id])
-  transactionIs String?
+  transactionId String?
+  transaction   Transaction? @relation("ColaTransaction", fields: [transactionId], references: [id])
   userId        String
   user          User        @relation(fields: [userId], references: [id])
   type          TypeCola
@@ -301,6 +305,39 @@ model ColaEspera {
   updatedAt     DateTime    @updatedAt
 
   @@unique([rechargeId, userId, type])
+}
+
+model Transaction {
+  id                    String             @id @default(uuid())
+  publicId              Int                @unique @default(autoincrement())
+  creadorId             String
+  creador               User               @relation("ClienteTransaction", fields: [creadorId], references: [id])
+  walletId              String
+  wallet                Wallet             @relation("WalletTransaction", fields: [walletId], references: [id])
+  clienteId             String?
+  cliente               Client?            @relation("ClientTransaction", fields: [clienteId], references: [id])
+  instrumentId          String
+  instrument            InstrumentsClient  @relation("InstrumentTransaction", fields: [instrumentId], references: [id])
+  origenId              String
+  origen                Country            @relation("OrigenTransaction", fields: [origenId], references: [id])
+  destinoId             String
+  destino               Country            @relation("DestinoTransaction", fields: [destinoId], references: [id])
+  montoOrigen           Decimal            @default(0.00) @db.Decimal(10, 3)
+  montoDestino          Decimal            @default(0.00) @db.Decimal(10, 3)
+  montoTasa             Decimal            @default(0.00) @db.Decimal(10, 3)
+  monedaOrigen          String
+  monedaDestino         String
+  montoComisionPasarela Decimal            @default(0.00) @db.Decimal(10, 3)
+  gananciaIntermediario Decimal            @default(0.00) @db.Decimal(10, 3)
+  gastosAdicionales     Decimal            @default(0.00) @db.Decimal(10, 3)
+  gananciaPanet         Decimal            @default(0.00) @db.Decimal(10, 3)
+  nro_referencia        String?
+  comprobante           String?
+  observacion           String?
+  status                StatusTransactions @default(CREADA)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  ColaEspera            ColaEspera[]       @relation("ColaTransaction")
 }
 
 enum WalletType {
@@ -350,4 +387,11 @@ enum TypeCola {
 enum STATUS_COLA {
   INICIADA
   CERRADA
+}
+
+enum StatusTransactions {
+  CREADA
+  OBSERVADA
+  ANULADA
+  COMPLETADA
 }

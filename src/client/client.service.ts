@@ -21,7 +21,13 @@ export class ClientService {
         document: document.toString(),
       },
       include: {
-        instruments: true,
+        instruments: {
+          include: {
+            country: true,
+            bank: true,
+            accountType: true
+          }
+        }
       },
     });
     if (!data) {

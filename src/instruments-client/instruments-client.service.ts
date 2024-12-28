@@ -20,18 +20,29 @@ export class InstrumentsClientService {
 
       const data = await this.prisma.instrumentsClient.create({
         data: {
-          document: createInstrumentsClientDto.document ?? null,
-          holder: createInstrumentsClientDto.holder,
-          accountNumber: createInstrumentsClientDto.accountNumber,
-          accountTypeId: createInstrumentsClientDto.accountTypeId ?? null,
-          countryId: createInstrumentsClientDto.countryId,
-          bankId: createInstrumentsClientDto.bankId ?? null,
-          typeInstrument: createInstrumentsClientDto.typeInstrument,
-          useInstruments: createInstrumentsClientDto.useInstruments ?? null,
-          clientId: createInstrumentsClientDto.clientId ?? null,
-          userId: createInstrumentsClientDto.userId ?? null,
+            document: createInstrumentsClientDto.document ?? null,
+            holder: createInstrumentsClientDto.holder,
+            accountNumber: createInstrumentsClientDto.accountNumber,
+            accountType: createInstrumentsClientDto.accountTypeId
+                ? { connect: { id: createInstrumentsClientDto.accountTypeId } }
+                : undefined,
+            country: createInstrumentsClientDto.countryId
+                ? { connect: { id: createInstrumentsClientDto.countryId } }
+                : undefined,
+            bank: createInstrumentsClientDto.bankId
+                ? { connect: { id: createInstrumentsClientDto.bankId } }
+                : undefined,
+            typeInstrument: createInstrumentsClientDto.typeInstrument,
+            useInstruments: createInstrumentsClientDto.useInstruments ?? null,
+            Client: createInstrumentsClientDto.clientId
+                ? { connect: { id: createInstrumentsClientDto.clientId } }
+                : undefined,
+            user: createInstrumentsClientDto.userId
+                ? { connect: { id: createInstrumentsClientDto.userId } }
+                : undefined,
         },
-      });
+    });
+    
 
       return {
         data,

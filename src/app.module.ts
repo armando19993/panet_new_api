@@ -15,6 +15,8 @@ import { UserRoleModule } from './user-role/user-role.module';
 import { join } from "path";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { ColaEsperaModule } from './cola-espera/cola-espera.module';
+import { TransactionModule } from './transaction/transaction.module';
+import { NotificationService } from './notification/notification.service';
 
 @Module({
   imports: [
@@ -22,8 +24,8 @@ import { ColaEsperaModule } from './cola-espera/cola-espera.module';
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads', 
     }),
-    AuthModule, UserModule, WalletModule, WalletTransactionsModule, RechargeModule, CountryModule, InstrumentsClientModule, ClientModule, RateModule, BankModule, AccountTypeModule, RoleModule, UserRoleModule, ColaEsperaModule],
+    AuthModule, UserModule, WalletModule, WalletTransactionsModule, RechargeModule, CountryModule, InstrumentsClientModule, ClientModule, RateModule, BankModule, AccountTypeModule, RoleModule, UserRoleModule, ColaEsperaModule, TransactionModule],
   controllers: [],
-  providers: [],
+  providers: [NotificationService],
 })
 export class AppModule {}

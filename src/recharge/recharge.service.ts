@@ -1,10 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.servise";
 import axios from "axios";
+import { NotificationService } from "src/notification/notification.service";
 
 @Injectable()
 export class RechargeService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private notification: NotificationService
+  ) { }
 
   async create(createRechargeDto, user, file) {
     let data = null;
@@ -123,9 +127,11 @@ export class RechargeService {
 
         const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
+        
         const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}`;
         await axios.get(whatsappUrl);
 
+        this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
       } catch (error) {
         console.error("Error al crear la recarga manual:", error.message);
         return {
@@ -227,6 +233,8 @@ export class RechargeService {
       const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message)}`;
       await axios.get(whatsappUrl);
 
+
+      this.notification.sendPushNotification(data.user.expoPushToken, 'Estado de Recarga Actualizado', `Tu recarga: REC-2025-${data.publicId} ha cambiado a estado ${updateRechargeDto.status}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
       return { data, message: 'Recarga Cancelada con exito' }
     }
 
@@ -379,10 +387,10 @@ export class RechargeService {
         }
       })
     }
-    catch{
+    catch {
       console.log("No estamos actualizando esto correctamente")
     }
-   
+
     const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n ha sido APROBADA con exito, ya el saldo se encuentra disponible para su uso.\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
     const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message)}`;

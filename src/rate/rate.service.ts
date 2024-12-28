@@ -14,7 +14,7 @@ export class RateService {
 
   async findAll(query) {
     const { originId, destinationId } = query;
-
+    let data = null
     const filters: any = {};
     if (originId) {
       filters.originId = originId;
@@ -23,10 +23,18 @@ export class RateService {
       filters.destinationId = destinationId;
     }
 
-    const data = await this.prisma.rate.findMany({
-      where: filters,
-      include: { origin: true, destination: true },
-    });
+    if (originId || destinationId) {
+      data = await this.prisma.rate.findFirst({
+        where: filters,
+        include: { origin: true, destination: true },
+      });
+    }
+    else {
+      const data = await this.prisma.rate.findMany({
+        include: { origin: true, destination: true },
+      });
+    }
+
 
     return { data, message: 'Tasas obtenidas con éxito' };
   }

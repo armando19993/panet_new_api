@@ -5,6 +5,7 @@ import { PrismaModule } from "src/prisma/prisma.module";
 import { MulterModule } from "@nestjs/platform-express";
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { NotificationService } from "src/notification/notification.service";
 
 @Module({
   imports: [
@@ -24,6 +25,6 @@ import { extname } from 'path';
     }),
   ],
   controllers: [RechargeController],
-  providers: [RechargeService],
+  providers: [RechargeService, NotificationService],
 })
 export class RechargeModule {}

@@ -1,0 +1,15 @@
+meta {
+  name: Obtener Todas las transacciones
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{SERVER}}/transaction
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}

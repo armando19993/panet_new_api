@@ -24,7 +24,7 @@ export class ColaEsperaService {
       filter.userId = userId
     }
 
-    if (status) {
+    if (status && status != 'ALL') {
       filter.status = status
     }
 
