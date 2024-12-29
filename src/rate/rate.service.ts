@@ -208,8 +208,16 @@ export class RateService {
           if (vExist === null) {
             await this.prisma.rate.create({
               data: {
-                originId: idOrigen,
-                destinationId: destination.id,
+                origin: {
+                  connect: {
+                    id: idOrigen
+                  }
+                },
+                destination: {
+                  connect: {
+                    id: destination.id
+                  }
+                },
                 amount: calculo,
                 type_profit: assigment
               }
