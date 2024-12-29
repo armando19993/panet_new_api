@@ -6,7 +6,7 @@ import { PrismaService } from 'src/prisma/prisma.servise';
 @Injectable()
 export class ColaEsperaService {
   constructor(private prisma: PrismaService) { }
-  
+
   create(createColaEsperaDto: CreateColaEsperaDto) {
     return 'This action adds a new colaEspera';
   }
@@ -28,7 +28,7 @@ export class ColaEsperaService {
       filter.status = status
     }
 
-    const data = await this.prisma.colaEspera.findMany({ where: filter, include: { recharge: true, transaction: true } })
+    const data = await this.prisma.colaEspera.findMany({ where: filter, include: { recharge: true, transaction: { include: { origen: true } } } })
 
     return { data, message: 'Transacciones Pendientes con exito' }
   }
