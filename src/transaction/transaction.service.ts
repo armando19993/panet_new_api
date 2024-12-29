@@ -223,7 +223,7 @@ export class TransactionService {
     return { data, message: 'Listado de Transacciones' }
   }
 
-  async procesar(id, dataAprobar) {
+  async procesar(dataAprobar, file) {
     
     console.log(dataAprobar)
   }
