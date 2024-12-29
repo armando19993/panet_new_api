@@ -224,7 +224,7 @@ export class TransactionService {
   }
 
   async procesar(dataAprobar, file) {
-    
+    console.log(file)
     console.log(dataAprobar)
   }
 
