@@ -40,4 +40,10 @@ export class TransactionController {
   notificar(@Body() data, @UploadedFile() file: Express.Multer.File){
     return this.transactionService.notificar(data, file)
   }
+
+  @Post('procesar-transaction')
+  @UseInterceptors(FileInterceptor('comprobante'))
+  procesar(@Body() DataTransfer,  @UploadedFile() file: Express.Multer.File){
+    return this.transactionService.procesar(DataTransfer, file)
+  }
 }

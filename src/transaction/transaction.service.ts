@@ -224,11 +224,8 @@ export class TransactionService {
   }
 
   async procesar(id, dataAprobar) {
-    let data = null
-    if (dataAprobar.status === 'OBSERVADA') {
-
-      return { data, message: 'Transaccion Observada con exito' }
-    }
+    
+    console.log(dataAprobar)
   }
 
   update(id: number, updateTransactionDto: UpdateTransactionDto) {
@@ -273,4 +270,5 @@ export class TransactionService {
 
     await axios.get(url);
   }
+
 }
