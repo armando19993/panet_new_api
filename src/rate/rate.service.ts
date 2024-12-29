@@ -204,7 +204,7 @@ export class RateService {
           }
         })
 
-        if (calculo > 0) {
+        if (typeof calculo === 'number' && calculo > 0) {
           if (vExist === null) {
             await this.prisma.rate.create({
               data: {
@@ -221,7 +221,7 @@ export class RateService {
                 amount: calculo,
                 type_profit: assigment
               }
-            })
+            });
           } else {
             await this.prisma.rate.update({
               where: {
@@ -231,9 +231,10 @@ export class RateService {
                 amount: calculo,
                 type_profit: assigment
               }
-            })
+            });
           }
         }
+
       }))
     }))
   }
