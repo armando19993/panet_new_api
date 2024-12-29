@@ -210,7 +210,13 @@ export class TransactionService {
         origen: true,
         destino: true,
         cliente: true,
-        instrument: true
+        instrument: {
+          include: {
+            accountType: true,
+            bank: true,
+            country: true
+          }
+        }
       }
     })
 
