@@ -14,7 +14,9 @@ export class RateService {
 
   async findAll(query) {
     const { originId, destinationId } = query;
-    let data = null
+    let data = null;
+
+    // Construcción de filtros
     const filters: any = {};
     if (originId) {
       filters.originId = originId;
@@ -23,21 +25,29 @@ export class RateService {
       filters.destinationId = destinationId;
     }
 
-    if (originId || destinationId) {
+    // Lógica condicional basada en los parámetros
+    if (originId && destinationId) {
+      // Si vienen ambos, buscar el primer registro que coincida con ambos
       data = await this.prisma.rate.findFirst({
         where: filters,
         include: { origin: true, destination: true },
       });
-    }
-    else {
-      const data = await this.prisma.rate.findMany({
+    } else if (originId || destinationId) {
+      // Si viene uno solo, buscar todos los registros que cumplan el criterio
+      data = await this.prisma.rate.findMany({
+        where: filters,
+        include: { origin: true, destination: true },
+      });
+    } else {
+      // Si no viene ninguno, devolver todos los registros
+      data = await this.prisma.rate.findMany({
         include: { origin: true, destination: true },
       });
     }
 
-
     return { data, message: 'Tasas obtenidas con éxito' };
   }
+
 
 
   findOne(id: number) {
