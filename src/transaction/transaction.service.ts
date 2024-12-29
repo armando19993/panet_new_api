@@ -44,6 +44,28 @@ export class TransactionService {
     const porcentajeIntermediario = parseFloat(creador.profitPercent.toString());
     const gananciaIntermediario = parseFloat(((transactionAmount * porcentajeIntermediario) / 100).toFixed(3));
 
+    //sumar el saldo al dusdeño de cuenta
+    await this.prisma.wallet.upsert({
+      where: {
+        userId_countryId_type: {
+          userId: creador.id,
+          countryId: origen.id,
+          type: 'GANANCIAS'
+        }
+      },
+      update: {
+        balance: {
+          increment: gananciaIntermediario
+        }
+      },
+      create: {
+        userId: creador.id,
+        countryId: origen.id,
+        type: 'GANANCIAS',
+        balance: gananciaIntermediario,
+      }
+    })
+
 
     const gananciaPanet = parseFloat((porcentajeDelMonto - gananciaIntermediario).toFixed(3));
 
@@ -93,7 +115,7 @@ export class TransactionService {
     });
 
     //buscar usuarios dueños de cuenta
-    const roles = ['DUEÑO DE CUENTA']
+    const roles = ['DESPACHADOR']
     const duenos = await this.prisma.user.findMany({
       where: {
         roles: {
@@ -266,6 +288,21 @@ export class TransactionService {
             decrement: data.montoDestino
           }
         }
+      })
+
+      await this.prisma.walletTransactions.create({
+        data: {
+          amount: data.montoDestino,
+          amount_new: parseFloat(wallet.balance.toString()) + parseFloat(data.montoDestino.toString()),
+          amount_old: wallet.balance,
+          wallet: {
+            connect: {
+              id: wallet.id,
+            },
+          },
+          description: "Recarga de Saldo REC-2025-" + data.publicId,
+          type: "RETIRO"
+        },
       })
 
       if (data.cliente) {
