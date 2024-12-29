@@ -28,7 +28,7 @@ export class ColaEsperaService {
       filter.status = status
     }
 
-    const data = await this.prisma.colaEspera.findMany({ where: filter, include: { recharge: true } })
+    const data = await this.prisma.colaEspera.findMany({ where: filter, include: { recharge: true, transaction: true } })
 
     return { data, message: 'Transacciones Pendientes con exito' }
   }
