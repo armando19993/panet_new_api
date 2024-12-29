@@ -33,7 +33,9 @@ export class TransactionService {
 
     // Cálculos principales
     const rateAmount = parseFloat(rate.amount.toString());
-    const montoDestino = parseFloat((rateAmount * transactionAmount).toFixed(3));
+    const porcentajePasarela = parseFloat(((transactionAmount * 2) / 100).toFixed(3));
+    const saldoCalculo = transactionAmount - porcentajePasarela
+    const montoDestino = parseFloat((rateAmount * saldoCalculo).toFixed(3));
 
     const tipoCalculo = rate.type_profit;
     const porcentajeCalculo = origen[tipoCalculo];
@@ -42,7 +44,6 @@ export class TransactionService {
     const porcentajeIntermediario = parseFloat(creador.profitPercent.toString());
     const gananciaIntermediario = parseFloat(((transactionAmount * porcentajeIntermediario) / 100).toFixed(3));
 
-    const porcentajePasarela = parseFloat(((transactionAmount * 2) / 100).toFixed(3));
 
     const gananciaPanet = parseFloat((porcentajeDelMonto - gananciaIntermediario).toFixed(3));
 
