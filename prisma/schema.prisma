@@ -305,6 +305,7 @@ model ColaEspera {
   updatedAt     DateTime    @updatedAt
 
   @@unique([rechargeId, userId, type])
+  @@unique([transactionId, userId, type])
 }
 
 model Transaction {

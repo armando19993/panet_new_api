@@ -223,9 +223,91 @@ export class TransactionService {
     return { data, message: 'Listado de Transacciones' }
   }
 
-  async procesar(dataAprobar, file) {
-    console.log(file)
+  async procesar(dataAprobar, file, user) {
     console.log(dataAprobar)
+    console.log(file)
+    const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
+
+    const data = await this.prisma.transaction.update({
+      where: { id: dataAprobar.transactionId },
+      data: {
+        comprobante: fileUrl,
+        nro_referencia: dataAprobar.referenceNumber,
+        status: 'COMPLETADA'
+      },
+      include: {
+        destino: true,
+        creador: true,
+        cliente: true
+      }
+    })
+
+    //disminuir el saldo en la cuenta del despachador
+    const wallet = await this.prisma.wallet.findFirst({
+      where: {
+        userId: user.id,
+        countryId: data.destino.id,
+        type: 'RECEPCION'
+      }
+    })
+
+    if (!wallet) {
+      throw new BadRequestException("El usuario despachador no tiene wallet activo, contactar con soporte!")
+    }
+
+    if (parseFloat(wallet.balance.toString()) >= parseFloat(data.montoDestino.toString())) {
+      //restar el saldo del wallet
+      await this.prisma.wallet.update({
+        where: {
+          id: wallet.id
+        },
+        data: {
+          balance: {
+            decrement: data.montoDestino
+          }
+        }
+      })
+
+      if (data.cliente) {
+        let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se ha procesada con exito!"
+        const url = `https://api-whatsapp.paneteirl.store/send-message?number=${data.cliente.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`
+
+        await axios.get(url);
+      }
+
+      this.notification.sendPushNotification(data.creador.expoPushToken, `Transaccion TRX-2025-${data.publicId} Completada`, 'Su transaccion se ha completado correctamente', {
+        screen: "ReciboEnvio",
+        params: { transaction: data.id }
+      })
+
+      await this.prisma.colaEspera.update({
+        where: {
+          transactionId_userId_type: {
+            transactionId: data.id,
+            type: 'TRANSACCION',
+            userId: user.id
+          }
+
+        },
+        data: {
+          status: 'CERRADA'
+        }
+      })
+    }
+    else {
+      const data = await this.prisma.transaction.update({
+        where: { id: dataAprobar.transactionId },
+        data: {
+          comprobante: "0",
+          nro_referencia: "0",
+          status: 'CREADA'
+        },
+      })
+
+      throw new BadRequestException("No cuentas con el saldo disponible para ejecutar esta transaccion")
+    }
+
+    return { data, message: 'Transaccion Eejcutada con exitos' }
   }
 
   update(id: number, updateTransactionDto: UpdateTransactionDto) {

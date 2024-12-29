@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -43,7 +43,7 @@ export class TransactionController {
 
   @Post('procesar-transaction')
   @UseInterceptors(FileInterceptor('comprobante'))
-  procesar(@Body() data,  @UploadedFile() file: Express.Multer.File){
-    return this.transactionService.procesar(data, file)
+  procesar(@Body() data,  @UploadedFile() file: Express.Multer.File, @Request() req){
+    return this.transactionService.procesar(data, file, req.user)
   }
 }
