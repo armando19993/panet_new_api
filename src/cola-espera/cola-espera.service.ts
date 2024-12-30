@@ -37,8 +37,17 @@ export class ColaEsperaService {
     return `This action returns a #${id} colaEspera`;
   }
 
-  update(id: number, updateColaEsperaDto: UpdateColaEsperaDto) {
-    return `This action updates a #${id} colaEspera`;
+  async update(id, updateColaEsperaDto) {
+    const update = await this.prisma.colaEspera.update({
+      where: {
+        id
+      },
+      data: {
+        status: updateColaEsperaDto.status
+      }
+    })
+
+    return { update, message: 'Cola Actualizado con exito' }
   }
 
   remove(id: number) {

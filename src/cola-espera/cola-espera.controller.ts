@@ -25,8 +25,8 @@ export class ColaEsperaController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateColaEsperaDto: UpdateColaEsperaDto) {
-    return this.colaEsperaService.update(+id, updateColaEsperaDto);
+  update(@Param('id') id: string, @Body() updateColaEsperaDto) {
+    return this.colaEsperaService.update(id, updateColaEsperaDto);
   }
 
   @Delete(':id')
