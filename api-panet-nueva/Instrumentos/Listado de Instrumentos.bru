@@ -5,7 +5,11 @@ meta {
 }
 
 get {
-  url: {{SERVER}}/instruments
+  url: {{SERVER}}/instruments-client
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
 }

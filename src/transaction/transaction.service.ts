@@ -216,6 +216,9 @@ export class TransactionService {
         cliente: true,
         instrument: true,
       },
+      orderBy: {
+        publicId: 'desc'
+      }
     });
 
     return { data, message: 'Transacciones Obtenidas con éxito' };
