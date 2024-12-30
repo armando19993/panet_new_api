@@ -78,7 +78,9 @@ export class InstrumentsClientService {
       include: {
         bank: true,
         country: true,
-        accountType: true
+        accountType: true,
+        user: true,
+        Client: true
       }
     });
 
