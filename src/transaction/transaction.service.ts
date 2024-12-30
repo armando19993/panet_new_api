@@ -69,6 +69,44 @@ export class TransactionService {
 
     const gananciaPanet = parseFloat((porcentajeDelMonto - gananciaIntermediario).toFixed(3));
 
+    const roles = ['DESPACHADOR']
+    const duenos = await this.prisma.user.findMany({
+      where: {
+        roles: {
+          some: {
+            role: {
+              name: {
+                in: roles,
+              },
+            },
+          },
+        },
+        wallets: {
+          some: {
+            countryId: wallet.country.id,
+            type: 'RECEPCION',
+            balance: {
+              gt: 0, 
+            },
+          },
+        },
+      },
+      include: {
+        wallets: true,
+        clientes: true,
+        referrals: true,
+        referrer: true,
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if(!duenos){
+      throw new BadRequestException("No hay despachador disponible")
+    }
     // Crear la transacción
     const transaction = await this.prisma.transaction.create({
       data: {
@@ -115,38 +153,7 @@ export class TransactionService {
     });
 
     //buscar usuarios dueños de cuenta
-    const roles = ['DESPACHADOR']
-    const duenos = await this.prisma.user.findMany({
-      where: {
-        roles: {
-          some: {
-            role: {
-              name: {
-                in: roles,
-              },
-            },
-          },
-        },
-        wallets: {
-          some: {
-            countryId: wallet.country.id,
-            type: 'RECEPCION'
-          },
-        },
-      },
-      include: {
-        wallets: true,
-        clientes: true,
-        referrals: true,
-        referrer: true,
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
-
+    
     const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
 
     await this.prisma.colaEspera.create({
@@ -169,6 +176,7 @@ export class TransactionService {
       data: transaction,
     };
   }
+
 
 
   async findAll(query, user) {
