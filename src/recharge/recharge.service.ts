@@ -17,10 +17,9 @@ export class RechargeService {
       const countryLowercase = createRechargeDto.country.toLowerCase();
 
       try {
-        const payload: { amount: string; sandbox: boolean; currency?: string } =
+        const payload: { amount: string; currency?: string } =
         {
           amount: createRechargeDto.amount.toString(),
-          sandbox: true,
         };
 
         // Agregar currency solo si el país es PE
