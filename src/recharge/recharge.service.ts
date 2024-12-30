@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.servise";
 import axios from "axios";
 import { NotificationService } from "src/notification/notification.service";
@@ -85,6 +85,17 @@ export class RechargeService {
         }
       }
     } else {
+
+      const validate = await this.prisma.recharge.findFirst({
+        where: {
+          nro_referencia: createRechargeDto.nro_referencia,
+          fecha_comprobante: createRechargeDto.fecha_comprobante
+        }
+      })
+
+      if (validate) {
+        throw new BadRequestException("Este numero de comprobante con esta fecha ya existe, contacta con administracion!")
+      }
       const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
       try {
         data = await this.prisma.recharge.create({
@@ -127,7 +138,7 @@ export class RechargeService {
 
         const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-        
+
         const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}`;
         await axios.get(whatsappUrl);
 
