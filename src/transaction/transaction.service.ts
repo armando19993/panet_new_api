@@ -16,7 +16,7 @@ export class TransactionService {
   async create(createTransactionDto: CreateTransactionDto) {
     // Buscar las relaciones necesarias
     const creador = await this.prisma.user.findFirstOrThrow({ where: { id: createTransactionDto.creadorId } });
-    const wallet = await this.prisma.wallet.findFirstOrThrow({ where: { id: createTransactionDto.walletId } });
+    const wallet = await this.prisma.wallet.findFirstOrThrow({ where: { id: createTransactionDto.walletId }, include: {country: true} });
     const origen = await this.prisma.country.findFirstOrThrow({ where: { id: createTransactionDto.origenId } });
     const destino = await this.prisma.country.findFirstOrThrow({ where: { id: createTransactionDto.destinoId } });
     const rate = await this.prisma.rate.findFirstOrThrow({ where: { id: createTransactionDto.rateId } });
@@ -129,7 +129,7 @@ export class TransactionService {
         },
         wallets: {
           some: {
-            countryId: wallet.countryId,
+            countryId: wallet.countryId.id,
             type: 'RECEPCION'
           },
         },
