@@ -28,7 +28,7 @@ export class ColaEsperaService {
       filter.status = status
     }
 
-    const data = await this.prisma.colaEspera.findMany({ where: filter, include: { recharge: true, user: true, transaction: { include: { origen: true } } }, orderBy: {publicId: 'desc'} })
+    const data = await this.prisma.colaEspera.findMany({ where: filter, include: { recharge: { include: { wallet: { include: { country: true } } } }, user: true, transaction: { include: { origen: true, destino: true } } }, orderBy: { publicId: 'desc' } })
 
     return { data, message: 'Transacciones Pendientes con exito' }
   }
