@@ -46,4 +46,9 @@ export class TransactionController {
   procesar(@Body() data,  @UploadedFile() file: Express.Multer.File, @Request() req){
     return this.transactionService.procesar(data, file, req.user)
   }
+
+  @Post('transferir')
+  transferir(@Body() data){
+    return this.transactionService.transferir(data)
+  }
 }

@@ -16,7 +16,7 @@ export class TransactionService {
   async create(createTransactionDto: CreateTransactionDto) {
     // Buscar las relaciones necesarias
     const creador = await this.prisma.user.findFirstOrThrow({ where: { id: createTransactionDto.creadorId } });
-    const wallet = await this.prisma.wallet.findFirstOrThrow({ where: { id: createTransactionDto.walletId }, include: {country: true} });
+    const wallet = await this.prisma.wallet.findFirstOrThrow({ where: { id: createTransactionDto.walletId }, include: { country: true } });
     const origen = await this.prisma.country.findFirstOrThrow({ where: { id: createTransactionDto.origenId } });
     const destino = await this.prisma.country.findFirstOrThrow({ where: { id: createTransactionDto.destinoId } });
     const rate = await this.prisma.rate.findFirstOrThrow({ where: { id: createTransactionDto.rateId } });
@@ -391,6 +391,20 @@ export class TransactionService {
     const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`
 
     await axios.get(url);
+  }
+
+
+  async transferir(data) {
+    const dataa = await this.prisma.colaEspera.update({
+      where: {
+        id: data.id
+      },
+      data: {
+        userId: data.userId
+      }
+    })
+
+    return { data: dataa, message: 'Transferencia echa con exito' }
   }
 
 }
