@@ -129,7 +129,7 @@ export class TransactionService {
         },
         wallets: {
           some: {
-            countryId: wallet.countryId.id,
+            countryId: wallet.country.id,
             type: 'RECEPCION'
           },
         },
