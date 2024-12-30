@@ -161,7 +161,7 @@ export class RechargeService {
     const filter: Record<string, any> = {};
 
     if (intermediario === "true" && userId) {
-      filter.userId = Number(userId); // Asegúrate de convertirlo a número si es necesario
+      filter.userId = userId; // Asegúrate de convertirlo a número si es necesario
     }
 
     if (status) {
@@ -169,7 +169,7 @@ export class RechargeService {
     }
 
     if (walletId) {
-      filter.walletId = Number(walletId); // Asegúrate de convertirlo a número si es necesario
+      filter.walletId = walletId; // Asegúrate de convertirlo a número si es necesario
     }
 
     const data = await this.prisma.recharge.findMany({
