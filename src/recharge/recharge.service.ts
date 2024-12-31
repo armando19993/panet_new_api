@@ -186,7 +186,9 @@ export class RechargeService {
           },
         },
         instrument: {
-          user: true
+          include: {
+            user: true
+          }
         }
       },
     });
