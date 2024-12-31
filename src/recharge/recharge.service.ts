@@ -183,11 +183,11 @@ export class RechargeService {
           include: {
             country: true,
             user: true,
-            instrument: {
-              user: true
-            }
           },
         },
+        instrument: {
+          user: true
+        }
       },
     });
 
