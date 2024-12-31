@@ -95,6 +95,7 @@ export class RechargeService {
       if (validate) {
         throw new BadRequestException("Este numero de comprobante con esta fecha ya existe, contacta con administracion!")
       }
+
       const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
       try {
         data = await this.prisma.recharge.create({
@@ -181,6 +182,10 @@ export class RechargeService {
         wallet: {
           include: {
             country: true,
+            user: true,
+            instrument: {
+              user: true
+            }
           },
         },
       },
