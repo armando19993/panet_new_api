@@ -216,7 +216,7 @@ model Client {
   id             String              @id @default(uuid())
   publicId       Int                 @unique @default(autoincrement())
   name           String
-  document       String
+  document       String              @unique
   phone          String
   email          String?
   intermediaryId String?
@@ -225,8 +225,7 @@ model Client {
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   Transaction    Transaction[]       @relation("ClientTransaction")
-
-  @@unique([document])
+  recharges      Recharge[]          @relation("ClientRecharges")
 }
 
 model InstrumentsClient {
@@ -276,6 +275,8 @@ model Recharge {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   ColaEspera         ColaEspera[]
+  Client             Client?            @relation("ClientRecharges", fields: [clientId], references: [id])
+  clientId           String?
 }
 
 model Rate {
@@ -293,18 +294,18 @@ model Rate {
 }
 
 model ColaEspera {
-  id            String      @id @default(uuid())
-  publicId      Int         @unique @default(autoincrement())
+  id            String       @id @default(uuid())
+  publicId      Int          @unique @default(autoincrement())
   rechargeId    String?
-  recharge      Recharge?   @relation(fields: [rechargeId], references: [id])
+  recharge      Recharge?    @relation(fields: [rechargeId], references: [id])
   transactionId String?
   transaction   Transaction? @relation("ColaTransaction", fields: [transactionId], references: [id])
   userId        String
-  user          User        @relation(fields: [userId], references: [id])
+  user          User         @relation(fields: [userId], references: [id])
   type          TypeCola
   status        STATUS_COLA
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@unique([rechargeId, userId, type])
   @@unique([transactionId, userId, type])

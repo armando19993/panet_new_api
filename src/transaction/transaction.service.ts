@@ -87,7 +87,7 @@ export class TransactionService {
             countryId: wallet.country.id,
             type: 'RECEPCION',
             balance: {
-              gt: 0, 
+              gt: 0,
             },
           },
         },
@@ -105,7 +105,7 @@ export class TransactionService {
       },
     });
 
-    if(!duenos){
+    if (!duenos) {
       throw new BadRequestException("No hay despachador disponible")
     }
     // Crear la transacción
@@ -154,7 +154,7 @@ export class TransactionService {
     });
 
     //buscar usuarios dueños de cuenta
-    
+
     const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
 
     await this.prisma.colaEspera.create({
@@ -243,7 +243,12 @@ export class TransactionService {
         creador: true,
         origen: true,
         destino: true,
-        cliente: true,
+        cliente: {
+          include: {
+            recharges: true,
+            Transaction: true
+          }
+        },
         instrument: {
           include: {
             accountType: true,
