@@ -200,6 +200,7 @@ export class RechargeService {
     const data = await this.prisma.recharge.findMany({
       where: { userId: user.id },
       include: {
+        user: true,
         wallet: {
           include: {
             country: true,
@@ -214,7 +215,16 @@ export class RechargeService {
   async findOne(id) {
     const data = await this.prisma.recharge.findFirst({
       where: { id },
-      include: { wallet: { include: { country: true } } },
+      include: { 
+        instrument: true,
+        Client: true,
+        user: true,
+        wallet: { 
+          include: { 
+            country: true 
+          } 
+        } 
+      },
     });
 
     return { data, message: "Recagar Obtenido con exito" };
