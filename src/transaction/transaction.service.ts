@@ -178,8 +178,6 @@ export class TransactionService {
     };
   }
 
-
-
   async findAll(query, user) {
     console.log(user);
 
@@ -233,55 +231,66 @@ export class TransactionService {
     return { data, message: 'Transacciones Obtenidas con éxito' };
   }
 
-
   async findOne(id) {
     const data = await this.prisma.transaction.findFirst({
       where: {
-        id
+        id,
       },
       include: {
         creador: true,
         origen: true,
         destino: true,
+        despachador: true,
+        wallet: true,
         cliente: {
           include: {
-            recharges: true,
-            Transaction: true
-          }
+            recharges: {
+              orderBy: {
+                publicId: 'desc',
+              },
+              take: 10,
+            },
+            Transaction: {
+              orderBy: {
+                publicId: 'desc',
+              },
+              take: 10,
+            },
+          },
         },
         instrument: {
           include: {
             accountType: true,
             bank: true,
-            country: true
-          }
-        }
-      }
-    })
+            country: true,
+          },
+        },
+      },
+    });
 
-    return { data, message: 'Listado de Transacciones' }
+    return { data, message: 'Listado de Transacciones' };
   }
 
-  async procesar(dataAprobar, file, user) {
-    console.log(dataAprobar)
-    console.log(file)
-    const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
 
+  async procesar(dataAprobar, file, user) {
+    const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
+    console.log(user.id)
     const data = await this.prisma.transaction.update({
       where: { id: dataAprobar.transactionId },
       data: {
         comprobante: fileUrl,
         nro_referencia: dataAprobar.referenceNumber,
-        status: 'COMPLETADA'
+        status: 'COMPLETADA',
+        despachadorId: user.id
       },
       include: {
         destino: true,
         creador: true,
-        cliente: true
+        cliente: true,
+        despachador: true
       }
     })
 
-    //disminuir el saldo en la cuenta del despachador
     const wallet = await this.prisma.wallet.findFirst({
       where: {
         userId: user.id,

@@ -1,0 +1,21 @@
+meta {
+  name: Aprobar Transaccion
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{SERVER}}/transaction/procesar-transaction
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+
+body:json {
+  {
+    
+  }
+}

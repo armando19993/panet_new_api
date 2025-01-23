@@ -39,27 +39,28 @@ model Permissions {
 }
 
 model User {
-  id                String              @id @default(uuid())
-  publicId          Int                 @unique @default(autoincrement())
-  name              String
-  user              String              @unique
-  password          String
-  phone             String?
-  roles             UserRole[] // Relación con la tabla intermedia
-  referredBy        String?
-  referrer          User?               @relation("UserReferrals", fields: [referredBy], references: [id])
-  referrals         User[]              @relation("UserReferrals")
-  profitPercent     Decimal             @default(0.00) @db.Decimal(10, 2)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  expoPushToken     String?
-  wallets           Wallet[]            @relation("UserWallets")
-  clientes          Client[]
-  Recharge          Recharge[]
-  WalletRequest     WalletRequest[]
-  ColaEspera        ColaEspera[]
-  InstrumentsClient InstrumentsClient[]
-  Transaction       Transaction[]       @relation("ClienteTransaction")
+  id                  String              @id @default(uuid())
+  publicId            Int                 @unique @default(autoincrement())
+  name                String
+  user                String              @unique
+  password            String
+  phone               String?
+  roles               UserRole[] // Relación con la tabla intermedia
+  referredBy          String?
+  referrer            User?               @relation("UserReferrals", fields: [referredBy], references: [id])
+  referrals           User[]              @relation("UserReferrals")
+  profitPercent       Decimal             @default(0.00) @db.Decimal(10, 2)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  expoPushToken       String?
+  wallets             Wallet[]            @relation("UserWallets")
+  clientes            Client[]
+  Recharge            Recharge[]
+  WalletRequest       WalletRequest[]
+  ColaEspera          ColaEspera[]
+  InstrumentsClient   InstrumentsClient[]
+  Transaction         Transaction[]       @relation("ClienteTransaction")
+  TransactionDespacho Transaction[]       @relation("DespachadorTransaction")
 }
 
 model UserRole {
@@ -342,6 +343,8 @@ model Transaction {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
   ColaEspera            ColaEspera[]       @relation("ColaTransaction")
+  despachador           User?              @relation("DespachadorTransaction", fields: [despachadorId], references: [id])
+  despachadorId         String?
 }
 
 enum WalletType {
