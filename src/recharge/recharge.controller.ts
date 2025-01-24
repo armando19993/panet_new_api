@@ -70,4 +70,10 @@ export class RechargeController {
   updateAutomatic(@Body() data) {
     return this.rechargeService.updateAutomatic(data);
   }
+
+  @Post("automatic")
+  @UseGuards(AuthGuard)
+  automatic(@Body() data, @Request() req){
+    return this.rechargeService.createAutomatic(data, req.user)
+  }
 }

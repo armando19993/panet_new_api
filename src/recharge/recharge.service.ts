@@ -2,28 +2,49 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.servise";
 import axios from "axios";
 import { NotificationService } from "src/notification/notification.service";
+import * as crypto from 'crypto';
+import { FlowApiService } from "src/flow-api/flow-api.service";
+
+const apiKey = '7171E94F-2712-4D0F-BF7F-85AC9493L24F'; // Reemplaza con tu API Key de Flow
+const secretKey = 'c27316db779ebf1f14bd83d8a3fb0bbb542dc71f'; // Reemplaza con tu Secret Key de Flow
+const flowApiUrl = 'https://sandbox.flow.cl/api/payment/create';
 
 @Injectable()
 export class RechargeService {
   constructor(
     private prisma: PrismaService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private flowApiService: FlowApiService
   ) { }
 
-  async create(createRechargeDto, user, file) {
-    let data = null;
+  async createAutomatic(data, user) {
+    if (data.pasarela === 'Flow') {
+      // Definir los parámetros necesarios para la solicitud
+      const params = {
+        commerceOrder: Math.floor(Math.random() * (2000 - 1100 + 1)) + 1100,
+        amount: 1,
+        subject: "prueba",
+        email: "armandocamposf@gmail.com",
+        currency: "PEN",
+        paymentMethod: "11"
+      };
+      console.log(params)
 
-    if (createRechargeDto.type === "AUTOMATIZADO") {
-      const countryLowercase = createRechargeDto.country.toLowerCase();
+      // Hacer la solicitud pasando los parámetros
+      let data = this.flowApiService.createPaymentLink(params)
+      return { data }
+    }
+    if (data.pasarela === 'Floid') {
+      const countryLowercase = data.countryCode.toLowerCase();
 
       try {
         const payload: { amount: string; currency?: string } =
         {
-          amount: createRechargeDto.amount.toString(),
+          amount: data.amount.toString(),
         };
 
         // Agregar currency solo si el país es PE
-        if (createRechargeDto.country === "PE") {
+        if (data.country === "PE") {
           payload.currency = "PEN";
         }
 
@@ -45,12 +66,12 @@ export class RechargeService {
           data = await this.prisma.recharge.create({
             data: {
               userId: user.id,
-              walletId: createRechargeDto.walletId,
-              amount: createRechargeDto.amount,
+              walletId: data.walletId,
+              amount: data.amount,
               type: "AUTOMATIZADO",
               status: "CREADA",
-              comprobante: createRechargeDto.comprobante || null,
-              comentario: createRechargeDto.comentario || null,
+              comprobante: data.comprobante || null,
+              comentario: data.comentario || null,
               nro_referencia: token,
               fecha_comprobante: new Date(),
             },
@@ -83,6 +104,16 @@ export class RechargeService {
           };
         }
       }
+    }
+  }
+
+  async create(createRechargeDto, user, file) {
+    let data = null;
+
+    if (createRechargeDto.type === "AUTOMATIZADO") {
+
+
+
     } else {
 
       const validate = await this.prisma.recharge.findFirst({
@@ -215,15 +246,15 @@ export class RechargeService {
   async findOne(id) {
     const data = await this.prisma.recharge.findFirst({
       where: { id },
-      include: { 
+      include: {
         instrument: true,
         Client: true,
         user: true,
-        wallet: { 
-          include: { 
-            country: true 
-          } 
-        } 
+        wallet: {
+          include: {
+            country: true
+          }
+        }
       },
     });
 
@@ -555,5 +586,21 @@ export class RechargeService {
 
   remove(id: number) {
     return `This action removes a #${id} recharge`;
+  }
+
+  generateSignature(params, secretKey) {
+    // Ordenar los parámetros alfabéticamente
+    const sortedKeys = Object.keys(params).sort();
+
+    // Concatenar nombres y valores de los parámetros
+    const stringToSign = sortedKeys.map(key => key + params[key]).join('');
+
+    // Firmar la cadena usando HMAC-SHA256
+    const signature = crypto
+      .createHmac('sha256', secretKey)
+      .update(stringToSign)
+      .digest('hex');
+
+    return signature;
   }
 }

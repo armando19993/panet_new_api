@@ -6,9 +6,11 @@ import { MulterModule } from "@nestjs/platform-express";
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { NotificationService } from "src/notification/notification.service";
+import { FlowApiModule } from "src/flow-api/flow-api.module";
 
 @Module({
   imports: [
+    FlowApiModule,
     PrismaModule,
     MulterModule.register({
       storage: diskStorage({

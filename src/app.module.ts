@@ -17,6 +17,7 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 import { ColaEsperaModule } from './cola-espera/cola-espera.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { NotificationService } from './notification/notification.service';
+import { FlowApiModule } from "./flow-api/flow-api.module";
 
 @Module({
   imports: [
@@ -24,7 +25,23 @@ import { NotificationService } from './notification/notification.service';
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads', 
     }),
-    AuthModule, UserModule, WalletModule, WalletTransactionsModule, RechargeModule, CountryModule, InstrumentsClientModule, ClientModule, RateModule, BankModule, AccountTypeModule, RoleModule, UserRoleModule, ColaEsperaModule, TransactionModule],
+    AuthModule, 
+    UserModule, 
+    WalletModule, 
+    WalletTransactionsModule, 
+    RechargeModule, 
+    CountryModule, 
+    InstrumentsClientModule, 
+    ClientModule, 
+    RateModule, 
+    BankModule, 
+    AccountTypeModule, 
+    RoleModule, 
+    UserRoleModule, 
+    ColaEsperaModule, 
+    TransactionModule,
+    FlowApiModule
+  ],
   controllers: [],
   providers: [NotificationService],
 })
