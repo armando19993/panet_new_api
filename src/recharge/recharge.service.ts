@@ -247,7 +247,16 @@ export class RechargeService {
     const data = await this.prisma.recharge.findFirst({
       where: { id },
       include: {
-        instrument: true,
+        instrument: {
+          include:
+          {
+            Client: true,
+            user: true,
+            accountType: true,
+            country: true,
+            bank: true
+          }
+        },
         Client: true,
         user: true,
         wallet: {
