@@ -175,10 +175,8 @@ export class RechargeService {
         const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
         const whatsappUrl2 = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message2)}&imageUrl=${fileUrl}`;
 
-        console.log(whatsappUrl)
-        console.log(whatsappUrl2)
-        // await axios.get(whatsappUrl);
-        // await axios.get(whatsappUrl2);
+        await axios.get(whatsappUrl);
+        await axios.get(whatsappUrl2);
 
         this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
         this.notification.sendPushNotification(data.user.expoPushToken, 'Nueva Recarga Pendiente', `Tienes una nueva recarga pendiente de aprobacion: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
