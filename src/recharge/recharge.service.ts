@@ -116,10 +116,11 @@ export class RechargeService {
 
     } else {
 
+      const fechaComprobante = new Date( createRechargeDto.fecha_comprobante)
       const validate = await this.prisma.recharge.findFirst({
         where: {
           nro_referencia: createRechargeDto.nro_referencia,
-          fecha_comprobante: createRechargeDto.fecha_comprobante
+          fecha_comprobante: fechaComprobante
         }
       })
 
