@@ -171,17 +171,14 @@ export class RechargeService {
         const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
         const message2 = `*PANET APP:*\n\nHola, ${user.name}}, has creado la recarga:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\n *Comentario:* ${data.comentario}, la misma se encuentra en revision espera nuestra comunicacion. Cualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-        console.log(data.user)
-        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
-        const whatsappUrl2 = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message2)}&imageUrl=${fileUrl}`;
-        await axios.get(whatsappUrl);
-        await axios.get(whatsappUrl2);
 
-        console.log("se ejecuto")
+        // const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
+        // const whatsappUrl2 = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message2)}&imageUrl=${fileUrl}`;
+        // await axios.get(whatsappUrl);
+        // await axios.get(whatsappUrl2);
+
         this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
         this.notification.sendPushNotification(data.user.expoPushToken, 'Nueva Recarga Pendiente', `Tienes una nueva recarga pendiente de aprobacion: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
-
-        return { data, message: "Recarga Creada con exito" }
       } catch (error) {
         console.error("Error al crear la recarga manual:", error.message);
         return {
