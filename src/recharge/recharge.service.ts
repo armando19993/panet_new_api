@@ -142,6 +142,9 @@ export class RechargeService {
               ? new Date(createRechargeDto.fecha_comprobante)
               : null,
           },
+          include: {
+            user: true
+          }
         });
 
         const instrument = await this.prisma.instrumentsClient.findFirst({ where: { id: createRechargeDto.instrumentId }, include: { user: true } })
@@ -170,9 +173,12 @@ export class RechargeService {
 
 
         const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
+        const whatsappUrl2 = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message2)}&imageUrl=${fileUrl}`;
         await axios.get(whatsappUrl);
+        await axios.get(whatsappUrl2);
 
         this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
+        this.notification.sendPushNotification(data.user.expoPushToken, 'Nueva Recarga Pendiente', `Tienes una nueva recarga pendiente de aprobacion: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
       } catch (error) {
         console.error("Error al crear la recarga manual:", error.message);
         return {
