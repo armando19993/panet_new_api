@@ -5,7 +5,12 @@ meta {
 }
 
 get {
-  url: {{SERVER}}/rate
+  url: {{SERVER}}/rate?originId=c8cb936b-0e18-4330-9e23-517be292b0ca&destinationId=c8cb936b-0e18-4330-9e23-517be292b0ca
   body: none
   auth: none
+}
+
+params:query {
+  originId: c8cb936b-0e18-4330-9e23-517be292b0ca
+  destinationId: c8cb936b-0e18-4330-9e23-517be292b0ca
 }

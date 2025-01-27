@@ -14,7 +14,6 @@ export class TransactionService {
   ) { }
 
   async create(createTransactionDto: CreateTransactionDto) {
-    throw new BadRequestException("Mensaje de TI: Por favor procede a crear las transacciones en nuestra antigua aplicacion.");
     // Buscar las relaciones necesarias
     const creador = await this.prisma.user.findFirstOrThrow({ where: { id: createTransactionDto.creadorId } });
     const wallet = await this.prisma.wallet.findFirstOrThrow({ where: { id: createTransactionDto.walletId }, include: { country: true } });
