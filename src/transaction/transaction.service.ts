@@ -104,9 +104,6 @@ export class TransactionService {
       },
     });
 
-    if (!duenos) {
-      throw new BadRequestException("No hay despachador disponible")
-    }
     // Crear la transacción
     const transaction = await this.prisma.transaction.create({
       data: {
@@ -156,14 +153,23 @@ export class TransactionService {
 
     const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
 
-    await this.prisma.colaEspera.create({
-      data: {
-        type: 'TRANSACCION',
-        userId: randomUser.id,
-        transactionId: transaction.id,
-        status: 'INICIADA'
-      }
-    })
+    if (!duenos) {
+      const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
+      const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
+
+      await axios.get(whatsappUrl);
+    } else {
+      await this.prisma.colaEspera.create({
+        data: {
+          type: 'TRANSACCION',
+          userId: randomUser.id,
+          transactionId: transaction.id,
+          status: 'INICIADA'
+        }
+      })
+    }
+
+
 
     this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
       screen: "DespachoPage",
