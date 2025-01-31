@@ -403,7 +403,7 @@ export class RechargeService {
         }
       })
 
-      const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data.comentario} ha sido rechazada por el siguiente motivo *${updateRechargeDto.comentario}*\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
+      const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data?.comentario ? data.comentario : '*Sin Comentario*'} ha sido rechazada por el siguiente motivo *${updateRechargeDto.comentario}*\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
       const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message)}`;
       await axios.get(whatsappUrl);
@@ -477,7 +477,7 @@ export class RechargeService {
 
 
       //crear la transaccion
-      await this.prisma.transaction.create({
+      const trans = await this.prisma.transaction.create({
         data: {
           creador: {
             connect: { id: info.creadorId }
@@ -510,9 +510,72 @@ export class RechargeService {
           comprobante: '0',
           observacion: 'ninguna',
           status: "CREADA",
+        },
+        include: {
+          wallet: {
+            include: {
+              country: true
+            }
+          }
         }
       })
+      //agregar en cola
+
+      const roles = ['DESPACHADOR']
+      const duenos = await this.prisma.user.findMany({
+        where: {
+          roles: {
+            some: {
+              role: {
+                name: {
+                  in: roles,
+                },
+              },
+            },
+          },
+          wallets: {
+            some: {
+              countryId: trans.wallet.country.id,
+              type: 'RECEPCION',
+              balance: {
+                gt: 0,
+              },
+            },
+          },
+        },
+        include: {
+          wallets: true,
+          clientes: true,
+          referrals: true,
+          referrer: true,
+          roles: {
+            include: {
+              role: true,
+            },
+          },
+        },
+      });
+
+      if (!duenos) {
+        const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
+        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
+
+        await axios.get(whatsappUrl);
+      }
+      else {
+        const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
+
+        await this.prisma.colaEspera.create({
+          data: {
+            type: 'TRANSACCION',
+            userId: randomUser.id,
+            transactionId: trans.id,
+            status: 'INICIADA'
+          }
+        })
+      }
     }
+
 
     // sumar saldo al wallet de usuario que recarga
     await this.prisma.wallet.update({
@@ -832,14 +895,14 @@ export class RechargeService {
         } else {
           montoDestino = saldoCalculo * rateAmount;
         }
-  
+
         if (rate.origin.name === "VENEZUELA" && rate.destination.name === "COLOMBIA") {
           montoDestino = saldoCalculo * rateAmount;
         }
         if (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") {
           montoDestino = saldoCalculo / rateAmount;
         }
-  
+
         if (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA") {
           montoDestino = saldoCalculo / rateAmount;
         }
