@@ -4,6 +4,7 @@ import axios from "axios";
 import { NotificationService } from "src/notification/notification.service";
 import * as crypto from 'crypto';
 import { FlowApiService } from "src/flow-api/flow-api.service";
+import { StatusRecharge, StatusTransactionsTemporal, TypeRecharge } from "@prisma/client";
 
 const apiKey = '7171E94F-2712-4D0F-BF7F-85AC9493L24F'; // Reemplaza con tu API Key de Flow
 const secretKey = 'c27316db779ebf1f14bd83d8a3fb0bbb542dc71f'; // Reemplaza con tu Secret Key de Flow
@@ -18,92 +19,185 @@ export class RechargeService {
   ) { }
 
   async createAutomatic(data, user) {
-    if (data.pasarela === 'Flow') {
-      // Definir los parámetros necesarios para la solicitud
-      const params = {
-        commerceOrder: Math.floor(Math.random() * (2000 - 1100 + 1)) + 1100,
-        amount: 1,
-        subject: "prueba",
-        email: "armandocamposf@gmail.com",
-        currency: "PEN",
-        paymentMethod: "11"
-      };
-      console.log(params)
+    // if (data.pasarela === 'Flow') {
+    //   const rechargeAutomatic = await this.prisma.recharge.create({
+    //     data: {
+    //       userId: user.id,
+    //       walletId: data.walletId,
+    //       amount: data.amount,
+    //       type: "AUTOMATIZADO",
+    //       status: "CREADA",
+    //       comprobante: data.comprobante || null,
+    //       comentario: 'Flow',
+    //       nro_referencia: token,
+    //       fecha_comprobante: new Date(),
+    //     },
+    //   });
 
-      // Hacer la solicitud pasando los parámetros
-      let data = this.flowApiService.createPaymentLink(params)
-      return { data }
-    }
-    if (data.pasarela === 'Floid') {
-      const countryLowercase = data.countryCode.toLowerCase();
+    //   const params = {
+    //     amount: 1,
+    //     commerceOrder: `${Math.floor(Math.random() * (2000 - 1100 + 1)) + 1100}`,
+    //     currency: "PEN",
+    //     email: "armandocamposf@gmail.com",
+    //     subject: "prueba",
+    //     paymentMethod: 11
+    //   };
 
-      try {
-        const payload: { amount: string; currency?: string } =
-        {
-          amount: data.amount.toString(),
-        };
+    //   // Hacer la solicitud pasando los parámetros
+    //   let data = await this.flowApiService.createPaymentLink(params)
+    //   return { data, url: `${data.url}?token=${data.token}` }
+    // }
+    // if (data.pasarela === 'Floid') {
+    //   const countryLowercase = data.countryCode.toLowerCase();
 
-        // Agregar currency solo si el país es PE
-        if (data.country === "PE") {
-          payload.currency = "PEN";
-        }
+    //   try {
+    //     const payload: { amount: string; currency?: string } =
+    //     {
+    //       amount: data.amount.toString(),
+    //     };
 
-        const response = await axios.post(
-          `https://api.floid.app/${countryLowercase}/payments/create`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer 786b64a673122aa03a5fa3909c6d100adad544fa3be9be01cfbb129cb11488d566a733bd98ca7204118baaaf3e086cd17b15ab969eb7b149084f10a898e9c2da`,
-              "Content-Type": "application/json",
-              Cookie: "PHPSESSID=rjku07cupvna4bjuf5bigs4ntk",
-            },
-          }
-        );
+    //     // Agregar currency solo si el país es PE
+    //     if (data.country === "PE") {
+    //       payload.currency = "PEN";
+    //     }
 
-        const token = response.data.payment_token;
+    //     const response = await axios.post(
+    //       `https://api.floid.app/${countryLowercase}/payments/create`,
+    //       payload,
+    //       {
+    //         headers: {
+    //           Authorization: `Bearer 786b64a673122aa03a5fa3909c6d100adad544fa3be9be01cfbb129cb11488d566a733bd98ca7204118baaaf3e086cd17b15ab969eb7b149084f10a898e9c2da`,
+    //           "Content-Type": "application/json",
+    //           Cookie: "PHPSESSID=rjku07cupvna4bjuf5bigs4ntk",
+    //         },
+    //       }
+    //     );
 
-        try {
-          data = await this.prisma.recharge.create({
-            data: {
-              userId: user.id,
-              walletId: data.walletId,
-              amount: data.amount,
-              type: "AUTOMATIZADO",
-              status: "CREADA",
-              comprobante: data.comprobante || null,
-              comentario: data.comentario || null,
-              nro_referencia: token,
-              fecha_comprobante: new Date(),
-            },
-          });
+    //     const token = response.data.payment_token;
 
-          return { data, message: "Recarga creada con exito!" };
-        } catch (error) {
-          console.error("Error al crear la recarga manual:", error.message);
-          return {
-            data: null,
-            message: "Error al crear la recarga manual",
-          };
-        }
-      } catch (error) {
-        if (error.response) {
-          console.error(
-            "Error al crear el pago automatizado:",
-            error.response.data
-          );
-          return {
-            data: error.response.data,
-            status: error.response.status,
-            message: "Error al crear el pago automatizado",
-          };
-        } else {
-          console.error("Error sin respuesta del servidor:", error.message);
-          return {
-            data: null,
-            message: "Error de conexión o de red",
-          };
-        }
+    //     try {
+    //       data = await this.prisma.recharge.create({
+    //         data: {
+    //           userId: user.id,
+    //           walletId: data.walletId,
+    //           amount: data.amount,
+    //           type: "AUTOMATIZADO",
+    //           status: "CREADA",
+    //           comprobante: data.comprobante || null,
+    //           comentario: data.comentario || null,
+    //           nro_referencia: token,
+    //           fecha_comprobante: new Date(),
+    //         },
+    //       });
+
+    //       return { data, message: "Recarga creada con exito!" };
+    //     } catch (error) {
+    //       console.error("Error al crear la recarga manual:", error.message);
+    //       return {
+    //         data: null,
+    //         message: "Error al crear la recarga manual",
+    //       };
+    //     }
+    //   } catch (error) {
+    //     if (error.response) {
+    //       console.error(
+    //         "Error al crear el pago automatizado:",
+    //         error.response.data
+    //       );
+    //       return {
+    //         data: error.response.data,
+    //         status: error.response.status,
+    //         message: "Error al crear el pago automatizado",
+    //       };
+    //     } else {
+    //       console.error("Error sin respuesta del servidor:", error.message);
+    //       return {
+    //         data: null,
+    //         message: "Error de conexión o de red",
+    //       };
+    //     }
+    //   }
+    // }
+  }
+
+  async createFull(data, user, file) {
+    const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
+    //RECARGA 
+    const recharge = await this.prisma.recharge.create({
+      data: {
+        userId: user.id,
+        walletId: data.walletId,
+        amount: data.montoOrigen,
+        type: "MANUAL",
+        status: "CREADA",
+        comprobante: fileUrl || null,
+        comentario: data.comentario || null,
+        nro_referencia: data.nro_referencia || null,
+        instrumentId: data.instrumentId || null,
+        fecha_comprobante: data.fecha_comprobante
+          ? new Date(data.fecha_comprobante)
+          : null,
+      },
+      include: {
+        user: true
       }
+    })
+
+    //Transaccion Temporal
+    const transactionT = await this.prisma.transactionTemporal.create({
+      data: {
+        creadorId: user.id,
+        walletId: data.walletId,
+        clienteId: data.clienteId,
+        instrumentId: data.instrumentPagoId,
+        origenId: data.origenId,
+        destinoId: data.destinoId,
+        montoOrigen: data.montoOrigen,
+        status: StatusTransactionsTemporal.CREADA,
+        recharge: {
+          connect: {
+            id: recharge.id
+          }
+        },
+      }
+    })
+
+    const instrument = await this.prisma.instrumentsClient.findFirst({ where: { id: data.instrumentId }, include: { user: true } })
+
+    await this.prisma.colaEspera.upsert({
+      where: {
+        rechargeId_userId_type: {
+          rechargeId: recharge.id,
+          userId: instrument.user.id,
+          type: "RECARGA",
+        },
+      },
+      create: {
+        rechargeId: recharge.id,
+        userId: instrument.user.id,
+        type: "RECARGA",
+        status: "INICIADA",
+      },
+      update: {
+        status: "INICIADA",
+      },
+    });
+
+    console.log(instrument)
+
+    const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
+
+    const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
+
+    await axios.get(whatsappUrl);
+
+    this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
+    return {
+      data: {
+        recharge,
+        transactionT
+      },
+      message: 'Transaccion Temporal Creada con exito!'
     }
   }
 
@@ -297,13 +391,18 @@ export class RechargeService {
     })
 
     if (updateRechargeDto.status === 'CANCELADA') {
-      await this.prisma.recharge.update({
+      const updateRecharge = await this.prisma.recharge.update({
         where: { id },
         data: {
           status: 'CANCELADA',
           comentario: updateRechargeDto.comentario
+        },
+        include: {
+          TransactionTemporal: true
         }
       })
+
+      console.log(updateRecharge)
 
       const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data.comentario} ha sido rechazada por el siguiente motivo *${updateRechargeDto.comentario}*\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
@@ -312,6 +411,18 @@ export class RechargeService {
 
 
       this.notification.sendPushNotification(data.user.expoPushToken, 'Estado de Recarga Actualizado', `Tu recarga: REC-2025-${data.publicId} ha cambiado a estado ${updateRechargeDto.status}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
+
+      //cancela si existe un registro 
+      if (updateRecharge.TransactionTemporal) {
+        await this.prisma.transactionTemporal.update({
+          where: {
+            id: updateRecharge.TransactionTemporal[0].id
+          },
+          data: {
+            status: "RECHAZADA"
+          }
+        })
+      }
       return { data, message: 'Recarga Cancelada con exito' }
     }
 
@@ -580,7 +691,7 @@ export class RechargeService {
         status: updateRecharge.status,
         comentario: updateRecharge.comentario
       },
-      include: { wallet: true }
+      include: { wallet: true, TransactionTemporal: true }
     })
 
     if (updateRecharge.status === 'COMPLETADA') {
@@ -594,6 +705,107 @@ export class RechargeService {
           balance: newAmount,
         },
       });
+
+      if (data.TransactionTemporal) {
+        await this.prisma.transactionTemporal.update({
+          where: {
+            id: data.TransactionTemporal[0].id
+          },
+          data: {
+            status: StatusTransactionsTemporal.APROBADA
+          }
+        })
+
+        const info = data.TransactionTemporal[0]
+        const origen = await this.prisma.country.findUnique({ where: { id: info.origenId } })
+        const destino = await this.prisma.country.findUnique({ where: { id: info.destinoId } })
+        const rate = await this.prisma.rate.findFirst({
+          where: {
+            originId: info.origenId,
+            destinationId: info.destinoId
+          },
+          include: {
+            origin: true,
+            destination: true
+          }
+        })
+        const rateAmount = parseFloat(rate.amount.toString());
+        const porcentajePasarela = parseFloat(((parseFloat(info.montoOrigen.toString()) * 2) / 100).toFixed(3));
+        const saldoCalculo = parseFloat(info.montoOrigen.toString()) - porcentajePasarela
+
+        const tipoCalculo = rate.type_profit;
+        const porcentajeCalculo = origen[tipoCalculo];
+        const porcentajeDelMonto = parseFloat(((parseFloat(info.montoOrigen.toString()) * porcentajeCalculo) / 100).toFixed(3));
+
+        let montoDestino = 0
+
+        if (rate.origin.name !== "VENEZUELA" && rate.origin.name !== "COLOMBIA") {
+          montoDestino = saldoCalculo * rateAmount;
+        } else {
+          montoDestino = saldoCalculo * rateAmount;
+        }
+  
+        if (rate.origin.name === "VENEZUELA" && rate.destination.name === "COLOMBIA") {
+          montoDestino = saldoCalculo * rateAmount;
+        }
+        if (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") {
+          montoDestino = saldoCalculo / rateAmount;
+        }
+  
+        if (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA") {
+          montoDestino = saldoCalculo / rateAmount;
+        }
+
+
+        //crear la transaccion
+        await this.prisma.transaction.create({
+          data: {
+            creador: {
+              connect: { id: info.creadorId }
+            },
+            wallet: {
+              connect: { id: info.walletId }
+            },
+            cliente: info.clienteId ? {
+              connect: { id: info.clienteId }
+            } : undefined,
+            instrument: {
+              connect: { id: info.instrumentId }
+            },
+            origen: {
+              connect: { id: info.origenId }
+            },
+            destino: {
+              connect: { id: info.destinoId }
+            },
+            montoOrigen: info.montoOrigen,
+            montoDestino: montoDestino,
+            montoTasa: rateAmount,
+            monedaOrigen: origen.currency,
+            monedaDestino: destino.currency,
+            montoComisionPasarela: porcentajePasarela,
+            gananciaIntermediario: 0,
+            gananciaPanet: porcentajeDelMonto,
+            gastosAdicionales: 0,
+            nro_referencia: '0',
+            comprobante: '0',
+            observacion: 'ninguna',
+            status: "CREADA",
+          }
+        })
+      }
+
+
+    } else {
+      console.log(data.TransactionTemporal)
+      await this.prisma.transactionTemporal.update({
+        where: {
+          id: data.TransactionTemporal[0].id
+        },
+        data: {
+          status: StatusTransactionsTemporal.RECHAZADA
+        }
+      })
     }
 
     return { data, message: 'Recarga Actuializada con exito' }

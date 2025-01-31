@@ -37,8 +37,8 @@ export class FlowApiService {
   ) {
     const baseParams = {
       ...params,
-      urlConfirmation: `${process.env.BASE_URL}/api/flow/confirm`,
-      urlReturn: `${process.env.BASE_URL}/api/flow/return`,
+      urlConfirmation: `http://localhost:3000/api/flow/confirm`,
+      urlReturn: `http://localhost:3000/api/flow/return`,
       apiKey: this.apiKey
     };
 
@@ -66,7 +66,13 @@ export class FlowApiService {
         const { data } = await axios.get(url, { params: requestParams });
         return data;
       } else {
-        const { data } = await axios.post(url, requestParams);
+
+        // const encodedParams = qs.stringify(requestParams);         
+        const { data } = await axios.post(url, requestParams, {           
+          headers: {             
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }, 
+        });
         return data;
       }
     } catch (error) {
@@ -75,12 +81,12 @@ export class FlowApiService {
   }
 
   async createPaymentLink(paymentData: {
-    commerceOrder: any;
+    commerceOrder: string;
     amount: number;
     subject: string;
     email: string;
     currency?: string;
-    paymentMethod?: string;
+    paymentMethod?: number;
   }) {
     return this.send('payment/create', paymentData);
   }

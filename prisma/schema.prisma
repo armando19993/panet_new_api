@@ -255,29 +255,30 @@ model InstrumentsClient {
 }
 
 model Recharge {
-  id                 String             @id @default(uuid())
-  publicId           Int                @unique @default(autoincrement())
-  amount             Decimal            @default(0.00) @db.Decimal(10, 2)
-  wallet             Wallet             @relation(fields: [walletId], references: [id])
-  walletId           String
-  user               User               @relation(fields: [userId], references: [id])
-  userId             String
-  type               TypeRecharge
-  status             StatusRecharge
-  comprobante        String?
-  comentario         String?
-  nro_referencia     String?
-  fecha_comprobante  DateTime?          @db.Date
-  instrumentId       String?
-  instrument         InstrumentsClient? @relation(fields: [instrumentId], references: [id])
-  pasarela_response  Json?
-  gananciDespachador Decimal?           @default(0.00) @db.Decimal(10, 2)
-  saldoPanet         Decimal?           @default(0.00) @db.Decimal(10, 2)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  ColaEspera         ColaEspera[]
-  Client             Client?            @relation("ClientRecharges", fields: [clientId], references: [id])
-  clientId           String?
+  id                  String                @id @default(uuid())
+  publicId            Int                   @unique @default(autoincrement())
+  amount              Decimal               @default(0.00) @db.Decimal(10, 2)
+  wallet              Wallet                @relation(fields: [walletId], references: [id])
+  walletId            String
+  user                User                  @relation(fields: [userId], references: [id])
+  userId              String
+  type                TypeRecharge
+  status              StatusRecharge
+  comprobante         String?
+  comentario          String?
+  nro_referencia      String?
+  fecha_comprobante   DateTime?             @db.Date
+  instrumentId        String?
+  instrument          InstrumentsClient?    @relation(fields: [instrumentId], references: [id])
+  pasarela_response   Json?
+  gananciDespachador  Decimal?              @default(0.00) @db.Decimal(10, 2)
+  saldoPanet          Decimal?              @default(0.00) @db.Decimal(10, 2)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  ColaEspera          ColaEspera[]
+  Client              Client?               @relation("ClientRecharges", fields: [clientId], references: [id])
+  clientId            String?
+  TransactionTemporal TransactionTemporal[]
 }
 
 model Rate {
@@ -347,6 +348,23 @@ model Transaction {
   despachadorId         String?
 }
 
+model TransactionTemporal {
+  id           String                     @id @default(uuid())
+  publicId     Int                        @unique @default(autoincrement())
+  creadorId    String
+  walletId     String
+  clienteId    String
+  instrumentId String
+  origenId     String
+  destinoId    String
+  montoOrigen  Decimal                    @db.Decimal(10, 2)
+  status       StatusTransactionsTemporal
+  recharge     Recharge                   @relation(fields: [rechargeId], references: [id])
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  rechargeId   String
+}
+
 enum WalletType {
   RECEPCION
   RECARGA
@@ -401,4 +419,10 @@ enum StatusTransactions {
   OBSERVADA
   ANULADA
   COMPLETADA
+}
+
+enum StatusTransactionsTemporal {
+  CREADA
+  RECHAZADA
+  APROBADA
 }
