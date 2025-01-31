@@ -386,7 +386,8 @@ export class RechargeService {
             country: true
           }
         },
-        user: true
+        user: true,
+        TransactionTemporal: true
       }
     })
 
@@ -401,8 +402,6 @@ export class RechargeService {
           TransactionTemporal: true
         }
       })
-
-      console.log(updateRecharge)
 
       const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data.comentario} ha sido rechazada por el siguiente motivo *${updateRechargeDto.comentario}*\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
@@ -424,6 +423,95 @@ export class RechargeService {
         })
       }
       return { data, message: 'Recarga Cancelada con exito' }
+    }
+
+    if (data.TransactionTemporal) {
+      await this.prisma.transactionTemporal.update({
+        where: {
+          id: data.TransactionTemporal[0].id
+        },
+        data: {
+          status: StatusTransactionsTemporal.APROBADA
+        }
+      })
+
+      const info = data.TransactionTemporal[0]
+      const origen = await this.prisma.country.findUnique({ where: { id: info.origenId } })
+      const destino = await this.prisma.country.findUnique({ where: { id: info.destinoId } })
+      const rate = await this.prisma.rate.findFirst({
+        where: {
+          originId: info.origenId,
+          destinationId: info.destinoId
+        },
+        include: {
+          origin: true,
+          destination: true
+        }
+      })
+      const rateAmount = parseFloat(rate.amount.toString());
+      const porcentajePasarela = parseFloat(((parseFloat(info.montoOrigen.toString()) * 2) / 100).toFixed(3));
+      const saldoCalculo = parseFloat(info.montoOrigen.toString()) - porcentajePasarela
+
+      const tipoCalculo = rate.type_profit;
+      const porcentajeCalculo = origen[tipoCalculo];
+      const porcentajeDelMonto = parseFloat(((parseFloat(info.montoOrigen.toString()) * porcentajeCalculo) / 100).toFixed(3));
+
+      let montoDestino = 0
+
+      if (rate.origin.name !== "VENEZUELA" && rate.origin.name !== "COLOMBIA") {
+        montoDestino = saldoCalculo * rateAmount;
+      } else {
+        montoDestino = saldoCalculo * rateAmount;
+      }
+
+      if (rate.origin.name === "VENEZUELA" && rate.destination.name === "COLOMBIA") {
+        montoDestino = saldoCalculo * rateAmount;
+      }
+      if (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") {
+        montoDestino = saldoCalculo / rateAmount;
+      }
+
+      if (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA") {
+        montoDestino = saldoCalculo / rateAmount;
+      }
+
+
+      //crear la transaccion
+      await this.prisma.transaction.create({
+        data: {
+          creador: {
+            connect: { id: info.creadorId }
+          },
+          wallet: {
+            connect: { id: info.walletId }
+          },
+          cliente: info.clienteId ? {
+            connect: { id: info.clienteId }
+          } : undefined,
+          instrument: {
+            connect: { id: info.instrumentId }
+          },
+          origen: {
+            connect: { id: info.origenId }
+          },
+          destino: {
+            connect: { id: info.destinoId }
+          },
+          montoOrigen: info.montoOrigen,
+          montoDestino: montoDestino,
+          montoTasa: rateAmount,
+          monedaOrigen: origen.currency,
+          monedaDestino: destino.currency,
+          montoComisionPasarela: porcentajePasarela,
+          gananciaIntermediario: 0,
+          gananciaPanet: porcentajeDelMonto,
+          gastosAdicionales: 0,
+          nro_referencia: '0',
+          comprobante: '0',
+          observacion: 'ninguna',
+          status: "CREADA",
+        }
+      })
     }
 
     // sumar saldo al wallet de usuario que recarga
@@ -794,8 +882,6 @@ export class RechargeService {
           }
         })
       }
-
-
     } else {
       console.log(data.TransactionTemporal)
       await this.prisma.transactionTemporal.update({
