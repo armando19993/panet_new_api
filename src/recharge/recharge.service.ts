@@ -425,7 +425,8 @@ export class RechargeService {
       return { data, message: 'Recarga Cancelada con exito' }
     }
 
-    if (data.TransactionTemporal) {
+    console.log(data.TransactionTemporal[0])
+    if (data.TransactionTemporal[0]) {
       await this.prisma.transactionTemporal.update({
         where: {
           id: data.TransactionTemporal[0].id
@@ -575,7 +576,6 @@ export class RechargeService {
         })
       }
     }
-
 
     // sumar saldo al wallet de usuario que recarga
     await this.prisma.wallet.update({
