@@ -425,7 +425,6 @@ export class RechargeService {
       return { data, message: 'Recarga Cancelada con exito' }
     }
 
-    console.log(data.TransactionTemporal[0])
     if (data.TransactionTemporal[0]) {
       await this.prisma.transactionTemporal.update({
         where: {
@@ -557,9 +556,7 @@ export class RechargeService {
         },
       });
 
-      console.log(duenos)
-
-      if (!duenos) {
+      if (duenos.length === 0) {
         const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
         const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
 
