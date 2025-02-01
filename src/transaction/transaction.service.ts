@@ -297,37 +297,51 @@ export class TransactionService {
 
   async procesar(dataAprobar, file, user) {
     const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
-    console.log(user.id)
+    console.log(user.id);
+  
+    // Buscamos la transacción actual (podrías obtenerla previamente para calcular el extra)
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id: dataAprobar.transactionId },
+    });
+  
+    // Calculamos el monto extra si se indicó gasto adicional.
+    // Se asume que dataAprobar.gastoAdicional es un string "true" o "false"
+    const isAdditional = dataAprobar.gastoAdicional === 'true' || dataAprobar.gastoAdicional === true;
+    const extraCharge = isAdditional ? parseFloat(transaction.montoDestino.toString()) * 0.003 : 0;
+  
+    // Actualizamos la transacción agregando el valor en el campo gastosAdicionales
     const data = await this.prisma.transaction.update({
       where: { id: dataAprobar.transactionId },
       data: {
         comprobante: fileUrl,
         nro_referencia: dataAprobar.referenceNumber,
         status: 'COMPLETADA',
-        despachadorId: user.id
+        despachadorId: user.id,
+        // Se guarda el valor calculado, ya sea 0 o el 0.3% del montoDestino
+        gastosAdicionales: extraCharge,
       },
       include: {
         destino: true,
         creador: true,
         cliente: true,
-        despachador: true
+        despachador: true,
       }
-    })
-
+    });
+  
     const wallet = await this.prisma.wallet.findFirst({
       where: {
         userId: user.id,
         countryId: data.destino.id,
         type: 'RECEPCION'
       }
-    })
-
+    });
+  
     if (!wallet) {
-      throw new BadRequestException("El usuario despachador no tiene wallet activo, contactar con soporte!")
+      throw new BadRequestException("El usuario despachador no tiene wallet activo, contactar con soporte!");
     }
-
+  
     if (parseFloat(wallet.balance.toString()) >= parseFloat(data.montoDestino.toString())) {
-      //restar el saldo del wallet
+      // Resta el saldo del wallet
       await this.prisma.wallet.update({
         where: {
           id: wallet.id
@@ -337,8 +351,8 @@ export class TransactionService {
             decrement: data.montoDestino
           }
         }
-      })
-
+      });
+  
       await this.prisma.walletTransactions.create({
         data: {
           amount: data.montoDestino,
@@ -352,20 +366,24 @@ export class TransactionService {
           description: "Recarga de Saldo REC-2025-" + data.publicId,
           type: "RETIRO"
         },
-      })
-
+      });
+  
       if (data.cliente) {
-        let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se ha procesada con exito!"
-        const url = `https://api-whatsapp.paneteirl.store/send-message?number=${data.cliente.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`
-
+        let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se ha procesada con exito!";
+        const url = `https://api-whatsapp.paneteirl.store/send-message?number=${data.cliente.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
         await axios.get(url);
       }
-
-      this.notification.sendPushNotification(data.creador.expoPushToken, `Transaccion TRX-2025-${data.publicId} Completada`, 'Su transaccion se ha completado correctamente', {
-        screen: "ReciboEnvio",
-        params: { transaction: data.id }
-      })
-
+  
+      this.notification.sendPushNotification(
+        data.creador.expoPushToken,
+        `Transaccion TRX-2025-${data.publicId} Completada`,
+        'Su transaccion se ha completado correctamente',
+        {
+          screen: "ReciboEnvio",
+          params: { transaction: data.id }
+        }
+      );
+  
       await this.prisma.colaEspera.update({
         where: {
           transactionId_userId_type: {
@@ -373,28 +391,26 @@ export class TransactionService {
             type: 'TRANSACCION',
             userId: user.id
           }
-
         },
         data: {
           status: 'CERRADA'
         }
-      })
-    }
-    else {
-      const data = await this.prisma.transaction.update({
+      });
+    } else {
+      const dataRollback = await this.prisma.transaction.update({
         where: { id: dataAprobar.transactionId },
         data: {
           comprobante: "0",
           nro_referencia: "0",
           status: 'CREADA'
         },
-      })
-
-      throw new BadRequestException("No cuentas con el saldo disponible para ejecutar esta transaccion")
+      });
+      throw new BadRequestException("No cuentas con el saldo disponible para ejecutar esta transaccion");
     }
-
-    return { data, message: 'Transaccion Eejcutada con exitos' }
+  
+    return { data, message: 'Transaccion Ejecutada con éxito' }
   }
+  
 
   update(id: number, updateTransactionDto: UpdateTransactionDto) {
     return `This action updates a #${id} transaction`;
