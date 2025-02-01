@@ -557,6 +557,8 @@ export class RechargeService {
         },
       });
 
+      console.log(duenos)
+
       if (!duenos) {
         const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
         const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
