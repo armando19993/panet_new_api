@@ -3,6 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import * as bcrypt from "bcryptjs"
+import axios from 'axios';
 
 @Injectable()
 export class UserService {
@@ -92,12 +93,23 @@ export class UserService {
 
   async updatePassword(user, password) {
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     const validate = await this.prisma.user.findFirst({ where: { user } })
 
     if (!validate) throw new BadRequestException('Usuario no encontrado')
 
     const data = await this.prisma.user.update({ where: { user }, data: { password: hashedPassword } })
+
+    const message = `
+        Hola 👋, soy PanaMoney, tu asistente de PANET.
+        Te traigo un mensaje importante:
+        Tu contraseña ha sido restablecida exitosamente.
+        Si no has realizado esta acción, por favor, comunícate con nosotros lo antes posible.
+        ¡Gracias por confiar en nosotros!
+    `;
+    const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${validate.phone}&message=${encodeURIComponent(message)}`;
+
+    await axios.get(whatsappUrl);
 
     return { data, message: 'Contraseña actualizada con exito' }
   }
