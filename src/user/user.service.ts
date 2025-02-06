@@ -12,13 +12,20 @@ export class UserService {
   constructor(private prisma: PrismaService) { }
 
   async create(createUserDto) {
-    // Verificar si el usuario ya existe
     const validate = await this.prisma.user.findFirst({
-      where: { user: createUserDto.user },
+      where: {
+        OR: [
+          { user: createUserDto.user },
+          { phone: createUserDto.phone }, 
+        ],
+      },
     });
+    
     if (validate) {
-      throw new BadRequestException("Este Nombre de usuario ya existe");
+      throw new BadRequestException("El nombre de usuario o el número de teléfono ya existen");
     }
+
+    
 
     // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);

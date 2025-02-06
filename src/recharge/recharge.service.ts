@@ -682,8 +682,6 @@ export class RechargeService {
         });
       }
 
-
-
       await this.prisma.walletTransactions.create({
         data: {
           amount: profitAmount,
