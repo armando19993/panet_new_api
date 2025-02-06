@@ -60,7 +60,14 @@ export class AuthService {
       throw new BadRequestException('Usuario no encontrado')
     }
 
-    const message = `Hola te saluda *PanaMoney* y te traigo desde nuestros servidores un mensaje de parte de PANET: \n Tu Codigo para restablecer tu contraseña esa: \n\n *${otp}*`
+    const message = `
+        Hola 👋, soy PanaMoney, tu asistente de PANET.
+        Te traigo un mensaje importante:
+        Aquí está tu código para restablecer tu contraseña:
+        Código: *${otp}*
+    `;
+
+    //const message = `Hola te saluda *PanaMoney* y te traigo desde nuestros servidores un mensaje de parte de PANET: \n Tu Codigo para restablecer tu contraseña esa: \n\n *${otp}*`
 
     const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${getUser.phone}&message=${encodeURIComponent(message)}`;
 
