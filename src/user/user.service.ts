@@ -93,9 +93,9 @@ export class UserService {
 
   async updatePassword(user, password) {
     const hashedPassword = await bcrypt.hash(password, 10);
-
+    console.log(password)
     const validate = await this.prisma.user.findFirst({ where: { user } })
-
+    console.log(validate)
     if (!validate) throw new BadRequestException('Usuario no encontrado')
 
     const data = await this.prisma.user.update({ where: { user }, data: { password: hashedPassword } })
