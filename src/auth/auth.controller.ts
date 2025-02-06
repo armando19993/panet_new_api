@@ -2,7 +2,9 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
+  Query,
   Request,
   UseGuards,
 } from "@nestjs/common";
@@ -11,7 +13,7 @@ import { AuthGuard } from "./auth.guard";
 
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post("login")
   login(@Body() req) {
@@ -22,5 +24,11 @@ export class AuthController {
   @UseGuards(AuthGuard)
   profile(@Request() req) {
     return req.user;
+  }
+
+  @Get("send-otp")
+  sendOtp(@Query("") query) {
+    const { user, otp } = query
+    return this.authService.sendOtp(user, otp)
   }
 }

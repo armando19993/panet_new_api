@@ -3,8 +3,6 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import * as bcrypt from "bcryptjs"
-import axios from 'axios';
-import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class UserService {

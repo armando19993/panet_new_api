@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import axios from "axios";
 import * as bcrypt from "bcryptjs";
 import { NotificationService } from "src/notification/notification.service";
 import { PrismaService } from "src/prisma/prisma.servise";
@@ -50,5 +51,16 @@ export class AuthService {
       token,
       message: "Usuario a iniciado sesion correctamente!",
     };
+  }
+
+  async sendOtp(user, otp) {
+    const getUser = await this.prisma.user.findFirst({ where: { user } })
+    const message = `Hola te saluda *PanaMoney* y te traigo desde nuestros servidores un mensaje de parte de PANET: \n Tu Codigo para restablecer tu contraseña esa: \n\n *${otp}*`
+
+    const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${getUser.phone}&message=${encodeURIComponent(message)}`;
+
+    await axios.get(whatsappUrl);
+
+    return { data: getUser, message: 'Codigo enviado correctamente' }
   }
 }
