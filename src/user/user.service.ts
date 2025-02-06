@@ -14,16 +14,16 @@ export class UserService {
       where: {
         OR: [
           { user: createUserDto.user },
-          { phone: createUserDto.phone }, 
+          { phone: createUserDto.phone },
         ],
       },
     });
-    
+
     if (validate) {
       throw new BadRequestException("El nombre de usuario o el número de teléfono ya existen");
     }
 
-    
+
 
     // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -88,6 +88,18 @@ export class UserService {
     const data = await this.prisma.user.update({ where: { id }, data: updateUserDto })
 
     return { data, message: 'Usuario Actualizado con exito' }
+  }
+
+  async updatePassword(user, password) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const validate = await this.prisma.user.findFirst({ where: { user } })
+
+    if (!validate) throw new BadRequestException('Usuario no encontrado')
+
+    const data = await this.prisma.user.update({ where: { user }, data: { password: hashedPassword } })
+
+    return { data, message: 'Contraseña actualizada con exito' }
   }
 
   remove(id: number) {

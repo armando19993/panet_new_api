@@ -37,4 +37,9 @@ export class UserController {
   async getUsersByRoles(@Query('roles') roles) {
     return this.userService.getUsersByRoles(roles);
   }
+
+  @Get('update-password')
+  async updatePassword(@Query('user') user, @Query('password') password) {
+    return this.userService.updatePassword(user, password);
+  }
 }
