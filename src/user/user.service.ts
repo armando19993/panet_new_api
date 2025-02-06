@@ -41,17 +41,6 @@ export class UserService {
       },
     });
 
-    const message = `*Departamento de TI - PANET EIRL:*\n\nHola, ${createUserDto.name}, te informamos que tus accesos a nuestras apps han cambiado. Ahora son:\n\n*Usuario:* ${createUserDto.user}\n*Password:* ${createUserDto.password}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
-
-    const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${createUserDto.phone}&message=${encodeURIComponent(message)}`;
-
-    try {
-      await axios.get(whatsappUrl);
-      console.log('Mensaje enviado con éxito a través de WhatsApp');
-    } catch (error) {
-      console.error('Error al enviar el mensaje por WhatsApp:', error.message);
-    }
-
     return { data, message: "Usuario creado con éxito" };
   }
 
