@@ -38,7 +38,7 @@ export class UserController {
     return this.userService.getUsersByRoles(roles);
   }
 
-  @Get('update-password')
+  @Get('update/password')
   async updatePassword(@Query('user') user, @Query('password') password) {
     console.log(user, password)
     return this.userService.updatePassword(user, password);
