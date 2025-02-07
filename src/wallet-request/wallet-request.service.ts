@@ -17,19 +17,21 @@ export class WalletRequestService {
       selfie_document?: string;
     }
   ) {
-    return this.prisma.walletRequest.create({
+    const data = await this.prisma.walletRequest.create({
       data: {
         ...createWalletRequestDto,
         front_document: documentPaths.front_document,
         back_document: documentPaths.back_document,
         selfie_document: documentPaths.selfie_document,
         userId: user.id,
-        countryId: user.countryId,
+        countryId: createWalletRequestDto.countryId,
       },
     });
+
+    return { data, message: 'Wallet request created successfully' }
   }
 
-  findAll() {
+  async findAll() {
     return `This action returns all walletRequest`;
   }
 
