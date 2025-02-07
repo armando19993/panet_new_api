@@ -17,8 +17,6 @@ export class WalletRequestService {
       selfie_document?: string;
     }
   ) {
-    console.log(createWalletRequestDto, user, documentPaths)
-    return { data: null, message: 'exito' }
     return this.prisma.walletRequest.create({
       data: {
         ...createWalletRequestDto,
