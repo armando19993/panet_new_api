@@ -37,7 +37,7 @@ export class WalletRequestController {
     )
   )
   async create(
-    @Body() createWalletRequestDto: CreateWalletRequestDto,
+    @Body() createWalletRequestDto,
     @Request() req,
     @UploadedFiles() files: { 
       front_document?: Express.Multer.File[],
