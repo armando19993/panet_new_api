@@ -9,7 +9,7 @@ export class WalletRequestService {
   constructor(private prisma: PrismaService) { }
 
   async create(
-    createWalletRequestDto: CreateWalletRequestDto,
+    createWalletRequestDto,
     user: any,
     documentPaths: {
       front_document?: string;
@@ -17,6 +17,8 @@ export class WalletRequestService {
       selfie_document?: string;
     }
   ) {
+    console.log(createWalletRequestDto, user, documentPaths)
+    return { data: null, message: 'exito' }
     return this.prisma.walletRequest.create({
       data: {
         ...createWalletRequestDto,
