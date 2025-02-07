@@ -138,18 +138,21 @@ model TypesDocuments {
 }
 
 model WalletRequest {
-  id               String   @id @default(uuid())
-  publicId         Int      @unique @default(autoincrement())
-  consumer_id_type String
-  consumer_id      String
-  image_document   String
-  document_state   String
-  user             User     @relation(fields: [userId], references: [id])
+  id               String      @id @default(uuid())
+  publicId         Int         @unique @default(autoincrement())
+  consumer_id_type String //tipo de documento
+  consumer_id      String // numero de documento
+  front_document   String // fontral del documento
+  back_document    String // back del documento
+  selfie_document  String // selfie del documento
+  name_document    String
+  wallet_state     WalletState @default(ENREVISION)
+  user             User        @relation(fields: [userId], references: [id])
   userId           String
-  country          Country  @relation(fields: [countryId], references: [id])
+  country          Country     @relation(fields: [countryId], references: [id])
   countryId        String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 model Wallet {
@@ -425,4 +428,10 @@ enum StatusTransactionsTemporal {
   CREADA
   RECHAZADA
   APROBADA
+}
+
+enum WalletState {
+  APROBADO
+  RECHAZADO
+  ENREVISION
 }

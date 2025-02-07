@@ -18,6 +18,7 @@ import { ColaEsperaModule } from './cola-espera/cola-espera.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { NotificationService } from './notification/notification.service';
 import { FlowApiModule } from "./flow-api/flow-api.module";
+import { WalletRequestModule } from './wallet-request/wallet-request.module';
 
 @Module({
   imports: [
@@ -40,7 +41,8 @@ import { FlowApiModule } from "./flow-api/flow-api.module";
     UserRoleModule, 
     ColaEsperaModule, 
     TransactionModule,
-    FlowApiModule
+    FlowApiModule,
+    WalletRequestModule
   ],
   controllers: [],
   providers: [NotificationService],
