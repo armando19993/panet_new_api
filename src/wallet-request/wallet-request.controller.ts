@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, Request, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, Request, UploadedFiles, Query } from '@nestjs/common';
 import { WalletRequestService } from './wallet-request.service';
 import { CreateWalletRequestDto } from './dto/create-wallet-request.dto';
 import { UpdateWalletRequestDto } from './dto/update-wallet-request.dto';
@@ -55,8 +55,8 @@ export class WalletRequestController {
   }
 
   @Get()
-  findAll() {
-    return this.walletRequestService.findAll();
+  findAll(@Query() query) {
+    return this.walletRequestService.findAll(query);
   }
 
   @Get(':id')

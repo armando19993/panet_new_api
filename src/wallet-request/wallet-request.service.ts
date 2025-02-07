@@ -31,8 +31,32 @@ export class WalletRequestService {
     return { data, message: 'Wallet request created successfully' }
   }
 
-  async findAll() {
-    return `This action returns all walletRequest`;
+  async findAll(query) {
+    const { userId, status, startDate, endDate } = query;
+
+    const where: any = {};
+
+    if (userId) {
+      where.userId = userId;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (startDate && endDate) {
+      where.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
+    const data = await this.prisma.walletRequest.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return { data, message: 'Listado de solicitudes obtenidas con exito!' };
   }
 
   findOne(id: number) {
