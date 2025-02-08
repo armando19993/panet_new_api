@@ -61,6 +61,8 @@ export class RechargeService {
           payload.currency = "PEN";
         }
 
+        console.log(payload)
+
         const response = await axios.post(
           `https://api.floid.app/${countryLowercase}/payments/create`,
           payload,
