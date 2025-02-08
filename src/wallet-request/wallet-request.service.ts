@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateWalletRequestDto } from './dto/create-wallet-request.dto';
 import { UpdateWalletRequestDto } from './dto/update-wallet-request.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
@@ -133,6 +133,8 @@ export class WalletRequestService {
           wallet_state: WalletState.RECHAZADO,
         }
       })
+
+      throw new BadRequestException('Solicitud rechazada con éxito!')
     }
 
     return { data, message: `Wallet ${updateWalletRequestDto.status} con exito!` }

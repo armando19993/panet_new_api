@@ -47,77 +47,77 @@ export class RechargeService {
     //   let data = await this.flowApiService.createPaymentLink(params)
     //   return { data, url: `${data.url}?token=${data.token}` }
     // }
-    // if (data.pasarela === 'Floid') {
-    //   const countryLowercase = data.countryCode.toLowerCase();
+    if (data.pasarela === 'Floid') {
+      const countryLowercase = data.countryCode.toLowerCase();
 
-    //   try {
-    //     const payload: { amount: string; currency?: string } =
-    //     {
-    //       amount: data.amount.toString(),
-    //     };
+      try {
+        const payload: { amount: string; currency?: string } =
+        {
+          amount: data.amount.toString(),
+        };
 
-    //     // Agregar currency solo si el país es PE
-    //     if (data.country === "PE") {
-    //       payload.currency = "PEN";
-    //     }
+        //Agregar currency solo si el país es PE
+        if (data.country === "PE") {
+          payload.currency = "PEN";
+        }
 
-    //     const response = await axios.post(
-    //       `https://api.floid.app/${countryLowercase}/payments/create`,
-    //       payload,
-    //       {
-    //         headers: {
-    //           Authorization: `Bearer 786b64a673122aa03a5fa3909c6d100adad544fa3be9be01cfbb129cb11488d566a733bd98ca7204118baaaf3e086cd17b15ab969eb7b149084f10a898e9c2da`,
-    //           "Content-Type": "application/json",
-    //           Cookie: "PHPSESSID=rjku07cupvna4bjuf5bigs4ntk",
-    //         },
-    //       }
-    //     );
+        const response = await axios.post(
+          `https://api.floid.app/${countryLowercase}/payments/create`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer 786b64a673122aa03a5fa3909c6d100adad544fa3be9be01cfbb129cb11488d566a733bd98ca7204118baaaf3e086cd17b15ab969eb7b149084f10a898e9c2da`,
+              "Content-Type": "application/json",
+              Cookie: "PHPSESSID=rjku07cupvna4bjuf5bigs4ntk",
+            },
+          }
+        );
 
-    //     const token = response.data.payment_token;
+        const token = response.data.payment_token;
 
-    //     try {
-    //       data = await this.prisma.recharge.create({
-    //         data: {
-    //           userId: user.id,
-    //           walletId: data.walletId,
-    //           amount: data.amount,
-    //           type: "AUTOMATIZADO",
-    //           status: "CREADA",
-    //           comprobante: data.comprobante || null,
-    //           comentario: data.comentario || null,
-    //           nro_referencia: token,
-    //           fecha_comprobante: new Date(),
-    //         },
-    //       });
+        try {
+          data = await this.prisma.recharge.create({
+            data: {
+              userId: user.id,
+              walletId: data.walletId,
+              amount: data.amount,
+              type: "AUTOMATIZADO",
+              status: "CREADA",
+              comprobante: data.comprobante || null,
+              comentario: data.comentario || null,
+              nro_referencia: token,
+              fecha_comprobante: new Date(),
+            },
+          });
 
-    //       return { data, message: "Recarga creada con exito!" };
-    //     } catch (error) {
-    //       console.error("Error al crear la recarga manual:", error.message);
-    //       return {
-    //         data: null,
-    //         message: "Error al crear la recarga manual",
-    //       };
-    //     }
-    //   } catch (error) {
-    //     if (error.response) {
-    //       console.error(
-    //         "Error al crear el pago automatizado:",
-    //         error.response.data
-    //       );
-    //       return {
-    //         data: error.response.data,
-    //         status: error.response.status,
-    //         message: "Error al crear el pago automatizado",
-    //       };
-    //     } else {
-    //       console.error("Error sin respuesta del servidor:", error.message);
-    //       return {
-    //         data: null,
-    //         message: "Error de conexión o de red",
-    //       };
-    //     }
-    //   }
-    // }
+          return { data, message: "Recarga creada con exito!" };
+        } catch (error) {
+          console.error("Error al crear la recarga manual:", error.message);
+          return {
+            data: null,
+            message: "Error al crear la recarga manual",
+          };
+        }
+      } catch (error) {
+        if (error.response) {
+          console.error(
+            "Error al crear el pago automatizado:",
+            error.response.data
+          );
+          return {
+            data: error.response.data,
+            status: error.response.status,
+            message: "Error al crear el pago automatizado",
+          };
+        } else {
+          console.error("Error sin respuesta del servidor:", error.message);
+          return {
+            data: null,
+            message: "Error de conexión o de red",
+          };
+        }
+      }
+    }
   }
 
   async createFull(data, user, file) {
