@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateWalletRequestDto } from './dto/create-wallet-request.dto';
 import { UpdateWalletRequestDto } from './dto/update-wallet-request.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
+import { WalletState, WalletStatus } from '@prisma/client';
 
 @Injectable()
 export class WalletRequestService {
@@ -100,8 +101,42 @@ export class WalletRequestService {
     return { data, message: 'Solicitud obtenida con éxito!' }
   }
 
-  update(id: number, updateWalletRequestDto: UpdateWalletRequestDto) {
-    return `This action updates a #${id} walletRequest`;
+  async update(id, updateWalletRequestDto: UpdateWalletRequestDto) {
+    let data = null
+    if (updateWalletRequestDto.status === 'APROBADO') {
+      data = await this.prisma.walletRequest.update({
+        where: { id },
+        data: {
+          wallet_state: WalletState.APROBADO,
+        },
+        include: {
+          country: true,
+          user: true
+        }
+      })
+
+      await this.prisma.wallet.create({
+        data: {
+          consumer_id_type: data.consumer_id_type,
+          consumer_id: data.consumer_id,
+          type: 'RECARGA',
+          balance: 0,
+          userId: data.userId,
+          countryId: data.countryId,
+          status: WalletStatus.ACTIVO,
+        }
+      })
+    }
+    if (updateWalletRequestDto.status === 'RECHAZADO') {
+      data = await this.prisma.walletRequest.update({
+        where: { id },
+        data: {
+          wallet_state: WalletState.RECHAZADO,
+        }
+      })
+    }
+
+    return { data, message: `Wallet ${updateWalletRequestDto.status} con exito!` }
   }
 
   remove(id: number) {

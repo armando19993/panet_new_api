@@ -66,7 +66,7 @@ export class WalletRequestController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateWalletRequestDto: UpdateWalletRequestDto) {
-    return this.walletRequestService.update(+id, updateWalletRequestDto);
+    return this.walletRequestService.update(id, updateWalletRequestDto);
   }
 
   @Delete(':id')

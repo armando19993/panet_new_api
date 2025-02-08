@@ -53,6 +53,7 @@ model User {
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   expoPushToken       String?
+  status              WalletStatus        @default(ACTIVO)
   wallets             Wallet[]            @relation("UserWallets")
   clientes            Client[]
   Recharge            Recharge[]
@@ -153,6 +154,7 @@ model WalletRequest {
   countryId        String
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+  Wallet           Wallet[]
 }
 
 model Wallet {
@@ -166,12 +168,15 @@ model Wallet {
   userId           String
   country          Country              @relation("CountryWallets", fields: [countryId], references: [id])
   countryId        String
+  request          WalletRequest?        @relation(fields: [walletRequestId], references: [id])
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
   transactions     WalletTransactions[] @relation("TransactionWallets")
   gastos           Gastos[]             @relation("GastosWallet")
+  status           WalletStatus         @default(ACTIVO)
   Recharge         Recharge[]
   Transaction      Transaction[]        @relation("WalletTransaction")
+  walletRequestId  String?
 
   @@unique([userId, countryId, type])
 }
@@ -434,4 +439,10 @@ enum WalletState {
   APROBADO
   RECHAZADO
   ENREVISION
+}
+
+enum WalletStatus {
+  ACTIVO
+  BLOQUEADO
+  INACTIVO
 }
