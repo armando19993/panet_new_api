@@ -48,6 +48,7 @@ export class RechargeService {
     //   return { data, url: `${data.url}?token=${data.token}` }
     // }
     if (data.pasarela === 'Floid') {
+      console.log(data)
       const countryLowercase = data.countryCode.toLowerCase();
 
       try {
