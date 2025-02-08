@@ -78,8 +78,26 @@ export class WalletRequestService {
 
 
 
-  findOne(id: number) {
-    return `This action returns a #${id} walletRequest`;
+  async findOne(id) {
+    const data = await this.prisma.walletRequest.findUnique({
+      where: { id },
+      include: {
+        user: {
+          include: {
+            Recharge: true,
+            Transaction: true,
+            WalletRequest: true,
+          }
+        },
+        country: true
+      }
+    });
+
+    if (!data) {
+      throw new Error('No se encontró la solicitud');
+    }
+
+    return { data, message: 'Solicitud obtenida con éxito!' }
   }
 
   update(id: number, updateWalletRequestDto: UpdateWalletRequestDto) {
