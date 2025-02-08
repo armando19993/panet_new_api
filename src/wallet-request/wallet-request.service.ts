@@ -44,20 +44,33 @@ export class WalletRequestService {
       where.status = status;
     }
 
-    if (startDate && endDate) {
+    if (startDate) {
+      const start = new Date(startDate);
+      const end = endDate ? new Date(endDate) : new Date(start);
+
+      // Si no hay endDate, tomamos todo el día de startDate
+      if (!endDate) {
+        end.setHours(23, 59, 59, 999);
+      }
+
       where.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: start,
+        lte: end,
       };
     }
 
     const data = await this.prisma.walletRequest.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      include: {
+        user: true,
+        country: true
+      }
     });
 
-    return { data, message: 'Listado de solicitudes obtenidas con exito!' };
+    return { data, message: 'Listado de solicitudes obtenidas con éxito!' };
   }
+
 
   findOne(id: number) {
     return `This action returns a #${id} walletRequest`;
