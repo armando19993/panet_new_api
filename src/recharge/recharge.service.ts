@@ -58,7 +58,7 @@ export class RechargeService {
         };
 
         //Agregar currency solo si el país es PE
-        if (data.country == "PE") {
+        if (data.countryCode == "PE") {
           payload.currency = "PEN";
         }
 
