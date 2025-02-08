@@ -77,8 +77,6 @@ export class WalletRequestService {
     return { data, message: 'Listado de solicitudes obtenidas con éxito!' };
   }
 
-
-
   async findOne(id) {
     const data = await this.prisma.walletRequest.findUnique({
       where: { id },
@@ -124,6 +122,7 @@ export class WalletRequestService {
           userId: data.userId,
           countryId: data.countryId,
           status: WalletStatus.ACTIVO,
+          walletRequestId: data.id
         }
       })
     }
