@@ -46,10 +46,15 @@ export class WalletRequestService {
 
     if (startDate) {
       const start = new Date(startDate);
-      const end = endDate ? new Date(endDate) : new Date(start);
+      let end;
 
-      // Si no hay endDate, tomamos todo el día de startDate
-      if (!endDate) {
+      if (endDate) {
+        // Si se proporciona endDate, incluir todo el día hasta las 23:59:59
+        end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+      } else {
+        // Si solo se proporciona startDate, incluir todo ese día hasta las 23:59:59
+        end = new Date(start);
         end.setHours(23, 59, 59, 999);
       }
 
@@ -70,6 +75,7 @@ export class WalletRequestService {
 
     return { data, message: 'Listado de solicitudes obtenidas con éxito!' };
   }
+
 
 
   findOne(id: number) {
