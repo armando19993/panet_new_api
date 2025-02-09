@@ -51,9 +51,8 @@ export class RechargeService {
         paymentMethod: dataVar.id
       };
 
-      console.log(params)
       try {
-        let data = await this.flowApiService.createPaymentLink(params)
+        let data = await this.flowApiService.createPaymentLink(params, currency)
 
         await this.prisma.recharge.update({
           where: {

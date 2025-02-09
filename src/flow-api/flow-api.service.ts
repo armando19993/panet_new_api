@@ -4,59 +4,67 @@ import axios from 'axios';
 
 @Injectable()
 export class FlowApiService {
-  private readonly apiKey: string;
-  private readonly secretKey: string;
+  private readonly apiKeys: Record<string, { apiKey: string; secretKey: string }>;
   private readonly baseUrl: string;
 
   constructor() {
-    this.apiKey = process.env.FLOW_API_KEY;
-    this.secretKey = process.env.FLOW_SECRET_KEY;
-    this.baseUrl = process.env.NODE_ENV === 'production'
-      ? 'https://www.flow.cl/api'
-      : 'https://sandbox.flow.cl/api';
+    this.apiKeys = {
+      PEN: {
+        apiKey: '6DCE1AFA-C640-476E-AF43-79F8593LC698',
+        secretKey: 'ee8251193785a45b2b3358dcab042a5f87eb3f9a',
+      },
+      CLP: {
+        apiKey: '486CFE9D-6033-4DD5-8051-7F6C2CBL6008',
+        secretKey: 'a97e8df55adde54cdcfd2cb3a914b82e17053dc7',
+      },
+    };
+
+    // URL base según el entorno
+    this.baseUrl =
+      process.env.NODE_ENV === 'production'
+        ? 'https://www.flow.cl/api'
+        : 'https://sandbox.flow.cl/api';
   }
 
-  private generateSignature(params: Record<string, any>): string {
+  private generateSignature(params: Record<string, any>, secretKey: string): string {
     const sortedKeys = Object.keys(params)
-      .filter(key => key !== 's')
+      .filter((key) => key !== 's')
       .sort();
 
-    const stringToSign = sortedKeys
-      .map(key => `${key}${params[key]}`)
-      .join('');
+    const stringToSign = sortedKeys.map((key) => `${key}${params[key]}`).join('');
 
-    return createHmac('sha256', this.secretKey)
-      .update(stringToSign)
-      .digest('hex');
+    return createHmac('sha256', secretKey).update(stringToSign).digest('hex');
   }
 
   async send(
     serviceName: string,
     params: Record<string, any>,
-    method: 'GET' | 'POST' = 'POST'
+    method: 'GET' | 'POST' = 'POST',
+    currency: string = 'CLP' // Valor por defecto
   ) {
+    // Seleccionar las claves según el currency
+    const { apiKey, secretKey } = this.apiKeys[currency] || this.apiKeys['CLP']; // Usar CLP como valor por defecto
+
     const baseParams = {
       ...params,
       urlConfirmation: `http://localhost:3000/api/flow/confirm`,
       urlReturn: `http://localhost:3000/api/flow/return`,
-      apiKey: this.apiKey
+      apiKey: apiKey, // Usar la apiKey correspondiente
     };
 
     // Ordenar los parámetros alfabéticamente
     const sortedParams = Object.keys(baseParams)
-      .sort() // Ordena las claves alfabéticamente
+      .sort()
       .reduce((acc, key) => {
-        acc[key] = baseParams[key]; // Asigna los valores a las claves ordenadas
+        acc[key] = baseParams[key];
         return acc;
       }, {});
 
-    console.log(sortedParams)
-
-    const signature = this.generateSignature(sortedParams);
+    const signature = this.generateSignature(sortedParams, secretKey); // Usar la secretKey correspondiente
 
     const requestParams = {
       ...sortedParams,
-      s: signature // Añadir la firma generada
+      s: signature, // Añadir la firma generada
     };
 
     console.log(requestParams);
@@ -68,11 +76,9 @@ export class FlowApiService {
         const { data } = await axios.get(url, { params: requestParams });
         return data;
       } else {
-
-        // const encodedParams = qs.stringify(requestParams);         
         const { data } = await axios.post(url, requestParams, {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
         });
         return data;
@@ -82,18 +88,21 @@ export class FlowApiService {
     }
   }
 
-  async createPaymentLink(paymentData: {
-    commerceOrder: string;
-    amount: number;
-    subject: string;
-    email: string;
-    currency?: string;
-    paymentMethod?: number;
-  }) {
-    return this.send('payment/create', paymentData);
+  async createPaymentLink(
+    paymentData: {
+      commerceOrder: string;
+      amount: number;
+      subject: string;
+      email: string;
+      currency?: string;
+      paymentMethod?: number;
+    },
+    currency: string = 'CLP' // Valor por defecto
+  ) {
+    return this.send('payment/create', paymentData, 'POST', currency);
   }
 
-  async checkPaymentStatus(token: string) {
-    return this.send('payment/getStatus', { token }, 'GET');
+  async checkPaymentStatus(token: string, currency: string = 'CLP') {
+    return this.send('payment/getStatus', { token }, 'GET', currency);
   }
 }
