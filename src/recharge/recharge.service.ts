@@ -19,34 +19,57 @@ export class RechargeService {
   ) { }
 
   async createAutomatic(data, user) {
-    // if (data.pasarela === 'Flow') {
-    //   const rechargeAutomatic = await this.prisma.recharge.create({
-    //     data: {
-    //       userId: user.id,
-    //       walletId: data.walletId,
-    //       amount: data.amount,
-    //       type: "AUTOMATIZADO",
-    //       status: "CREADA",
-    //       comprobante: data.comprobante || null,
-    //       comentario: 'Flow',
-    //       nro_referencia: token,
-    //       fecha_comprobante: new Date(),
-    //     },
-    //   });
+    if (data.pasarela === 'Flow') {
+      const dataVar = data
+      const rechargeAutomatic = await this.prisma.recharge.create({
+        data: {
+          userId: user.id,
+          walletId: dataVar.walletId,
+          amount: dataVar.amount,
+          type: "AUTOMATIZADO",
+          status: "CREADA",
+          comprobante: dataVar.comprobante || null,
+          comentario: 'Flow',
+          nro_referencia: "",
+          fecha_comprobante: new Date(),
+        },
+      });
+      let currency = ""
+      if (dataVar.countryCode == "PE") {
+        currency = "PEN"
+      }
+      else {
+        currency = "CLP"
+      }
 
-    //   const params = {
-    //     amount: 1,
-    //     commerceOrder: `${Math.floor(Math.random() * (2000 - 1100 + 1)) + 1100}`,
-    //     currency: "PEN",
-    //     email: "armandocamposf@gmail.com",
-    //     subject: "prueba",
-    //     paymentMethod: 11
-    //   };
+      const params = {
+        amount: dataVar.amount,
+        commerceOrder: `${rechargeAutomatic.id}`,
+        currency: currency,
+        email: user.email,
+        subject: "Recarga PANET APP",
+        paymentMethod: dataVar.id
+      };
 
-    //   // Hacer la solicitud pasando los parámetros
-    //   let data = await this.flowApiService.createPaymentLink(params)
-    //   return { data, url: `${data.url}?token=${data.token}` }
-    // }
+      //Hacer la solicitud pasando los parámetros
+
+      try {
+        let data = await this.flowApiService.createPaymentLink(params)
+
+        await this.prisma.recharge.update({
+          where: {
+            id: rechargeAutomatic.id
+          },
+          data: {
+            nro_referencia: data.token
+          }
+        })
+        return { data, url: `${data.url}?token=${data.token}` }
+      } catch (error) {
+        return { data: null, message: error.response.data.message }
+      }
+    }
+
     if (data.pasarela === 'Floid') {
       console.log(data)
       const countryLowercase = data.countryCode.toLowerCase();
