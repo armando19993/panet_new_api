@@ -50,6 +50,8 @@ export class FlowApiService {
         return acc;
       }, {});
 
+    console.log(sortedParams)
+
     const signature = this.generateSignature(sortedParams);
 
     const requestParams = {
@@ -68,10 +70,10 @@ export class FlowApiService {
       } else {
 
         // const encodedParams = qs.stringify(requestParams);         
-        const { data } = await axios.post(url, requestParams, {           
-          headers: {             
+        const { data } = await axios.post(url, requestParams, {
+          headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
-          }, 
+          },
         });
         return data;
       }
