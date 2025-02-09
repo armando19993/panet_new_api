@@ -46,7 +46,7 @@ export class RechargeService {
         amount: dataVar.amount,
         commerceOrder: `${rechargeAutomatic.id}`,
         currency: currency,
-        email: user.email,
+        email: user.user+'@panet.app',
         subject: "Recarga PANET APP",
         paymentMethod: dataVar.id
       };
