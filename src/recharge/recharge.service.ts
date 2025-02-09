@@ -66,7 +66,8 @@ export class RechargeService {
         })
         return { data, url: `${data.url}?token=${data.token}` }
       } catch (error) {
-        return { data: null, message: error.response.data.message }
+        console.log(error)
+        return { data: null }
       }
     }
 
