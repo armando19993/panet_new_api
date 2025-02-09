@@ -51,8 +51,7 @@ export class RechargeService {
         paymentMethod: dataVar.id
       };
 
-      //Hacer la solicitud pasando los parámetros
-
+      console.log(params)
       try {
         let data = await this.flowApiService.createPaymentLink(params)
 
