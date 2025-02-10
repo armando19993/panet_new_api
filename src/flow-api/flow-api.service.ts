@@ -19,7 +19,6 @@ export class FlowApiService {
       },
     };
 
-    // URL base según el entorno
     this.baseUrl = 'https://www.flow.cl/api'
   }
 
@@ -39,7 +38,6 @@ export class FlowApiService {
     method: 'GET' | 'POST' = 'POST',
     currency: string = 'CLP' // Valor por defecto
   ) {
-    // Seleccionar las claves según el currency
     const { apiKey, secretKey } = this.apiKeys[currency] || this.apiKeys['CLP']; // Usar CLP como valor por defecto
 
     const baseParams = {
@@ -64,13 +62,12 @@ export class FlowApiService {
       s: signature, // Añadir la firma generada
     };
 
-    console.log(requestParams);
-
     try {
       const url = `${this.baseUrl}/${serviceName}`;
 
       if (method === 'GET') {
         const { data } = await axios.get(url, { params: requestParams });
+        console.log(data)
         return data;
       } else {
         const { data } = await axios.post(url, requestParams, {
