@@ -6,10 +6,6 @@ import * as crypto from 'crypto';
 import { FlowApiService } from "src/flow-api/flow-api.service";
 import { StatusRecharge, StatusTransactionsTemporal, TypeRecharge } from "@prisma/client";
 
-const apiKey = '7171E94F-2712-4D0F-BF7F-85AC9493L24F'; // Reemplaza con tu API Key de Flow
-const secretKey = 'c27316db779ebf1f14bd83d8a3fb0bbb542dc71f'; // Reemplaza con tu Secret Key de Flow
-const flowApiUrl = 'https://sandbox.flow.cl/api/payment/create';
-
 @Injectable()
 export class RechargeService {
   constructor(
@@ -315,11 +311,10 @@ export class RechargeService {
   async findAll(query: Record<string, any>) {
     const { status, userId, walletId, intermediario } = query;
 
-    // Construir el filtro dinámicamente
     const filter: Record<string, any> = {};
 
-    if (intermediario === "true" && userId) {
-      filter.userId = userId; // Asegúrate de convertirlo a número si es necesario
+    if (userId) {
+      filter.userId = userId;
     }
 
     if (status) {
@@ -327,7 +322,7 @@ export class RechargeService {
     }
 
     if (walletId) {
-      filter.walletId = walletId; // Asegúrate de convertirlo a número si es necesario
+      filter.walletId = walletId;
     }
 
     const data = await this.prisma.recharge.findMany({
