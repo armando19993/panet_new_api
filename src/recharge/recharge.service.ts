@@ -70,19 +70,20 @@ export class RechargeService {
     }
 
     if (data.pasarela === 'Floid') {
-      console.log(data)
+      const wallet = await this.prisma.wallet.findFirst({ where: { id: data.walletId } })
       const countryLowercase = data.countryCode.toLowerCase();
 
       try {
-        const payload: { amount: string; currency?: string } =
+        const payload: { amount: string; currency?: string; consumer_id?: string; consumir_id_type?: string } =
         {
           amount: data.amount.toString(),
         };
 
-        //Agregar currency solo si el país es PE
         if (data.countryCode == "PE") {
           payload.currency = "PEN";
+          payload.consumir_id_type = wallet.consumer_id_type
         }
+        payload.consumer_id = wallet.consumer_id
 
         console.log(payload)
 
