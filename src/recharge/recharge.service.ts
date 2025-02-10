@@ -80,7 +80,7 @@ export class RechargeService {
         };
 
         if (data.countryCode == "PE") {
-          payload.currency = "PEN";
+          payload.currency = "PEN"
           payload.consumir_id_type = wallet.consumer_id_type
         }
         payload.consumer_id = wallet.consumer_id
