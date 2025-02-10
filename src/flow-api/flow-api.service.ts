@@ -20,10 +20,7 @@ export class FlowApiService {
     };
 
     // URL base según el entorno
-    this.baseUrl =
-      process.env.NODE_ENV === 'production'
-        ? 'https://www.flow.cl/api'
-        : 'https://sandbox.flow.cl/api';
+    this.baseUrl = 'https://www.flow.cl/api'
   }
 
   private generateSignature(params: Record<string, any>, secretKey: string): string {
