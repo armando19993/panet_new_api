@@ -187,12 +187,12 @@ export class TransactionService {
       })
     }
 
-
-
-    this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
-      screen: "DespachoPage",
-      params: { transactionId: transaction.id }
-    })
+    if (randomUser.expoPushToken) {
+      this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
+        screen: "DespachoPage",
+        params: { transactionId: transaction.id }
+      })
+    }
 
     return {
       success: true,
@@ -298,17 +298,17 @@ export class TransactionService {
   async procesar(dataAprobar, file, user) {
     const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
     console.log(user.id);
-  
+
     // Buscamos la transacción actual (podrías obtenerla previamente para calcular el extra)
     const transaction = await this.prisma.transaction.findUnique({
       where: { id: dataAprobar.transactionId },
     });
-  
+
     // Calculamos el monto extra si se indicó gasto adicional.
     // Se asume que dataAprobar.gastoAdicional es un string "true" o "false"
     const isAdditional = dataAprobar.gastoAdicional === 'true' || dataAprobar.gastoAdicional === true;
     const extraCharge = isAdditional ? parseFloat(transaction.montoDestino.toString()) * 0.003 : 0;
-  
+
     // Actualizamos la transacción agregando el valor en el campo gastosAdicionales
     const data = await this.prisma.transaction.update({
       where: { id: dataAprobar.transactionId },
@@ -327,7 +327,7 @@ export class TransactionService {
         despachador: true,
       }
     });
-  
+
     const wallet = await this.prisma.wallet.findFirst({
       where: {
         userId: user.id,
@@ -335,11 +335,11 @@ export class TransactionService {
         type: 'RECEPCION'
       }
     });
-  
+
     if (!wallet) {
       throw new BadRequestException("El usuario despachador no tiene wallet activo, contactar con soporte!");
     }
-  
+
     if (parseFloat(wallet.balance.toString()) >= parseFloat(data.montoDestino.toString())) {
       // Resta el saldo del wallet
       await this.prisma.wallet.update({
@@ -352,7 +352,7 @@ export class TransactionService {
           }
         }
       });
-  
+
       await this.prisma.walletTransactions.create({
         data: {
           amount: data.montoDestino,
@@ -367,13 +367,13 @@ export class TransactionService {
           type: "RETIRO"
         },
       });
-  
+
       if (data.cliente) {
         let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se ha procesada con exito!";
         const url = `https://api-whatsapp.paneteirl.store/send-message?number=${data.cliente.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
         await axios.get(url);
       }
-  
+
       this.notification.sendPushNotification(
         data.creador.expoPushToken,
         `Transaccion TRX-2025-${data.publicId} Completada`,
@@ -383,7 +383,7 @@ export class TransactionService {
           params: { transaction: data.id }
         }
       );
-  
+
       await this.prisma.colaEspera.update({
         where: {
           transactionId_userId_type: {
@@ -407,10 +407,10 @@ export class TransactionService {
       });
       throw new BadRequestException("No cuentas con el saldo disponible para ejecutar esta transaccion");
     }
-  
+
     return { data, message: 'Transaccion Ejecutada con éxito' }
   }
-  
+
 
   update(id: number, updateTransactionDto: UpdateTransactionDto) {
     return `This action updates a #${id} transaction`;

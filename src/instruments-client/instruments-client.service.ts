@@ -20,7 +20,7 @@ export class InstrumentsClientService {
 
       const data = await this.prisma.instrumentsClient.create({
         data: {
-          document: createInstrumentsClientDto.document ?? null,
+          document: createInstrumentsClientDto.document,
           holder: createInstrumentsClientDto.holder,
           accountNumber: createInstrumentsClientDto.accountNumber,
           accountType: createInstrumentsClientDto.accountTypeId
