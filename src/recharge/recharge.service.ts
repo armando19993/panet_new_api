@@ -74,13 +74,14 @@ export class RechargeService {
       const countryLowercase = data.countryCode.toLowerCase();
 
       try {
-        const payload: { amount: string; currency?: string; consumer_id?: string; consumir_id_type?: string } =
+        const payload: { amount: string; currency?: string; consumer_id?: string; consumer_id_type?: string } =
         {
           amount: data.amount.toString(),
         };
 
         if (data.countryCode == "PE") {
           payload.currency = "PEN"
+          payload.consumer_id_type = wallet.consumer_id_type
         }
         payload.consumer_id = wallet.consumer_id
 
