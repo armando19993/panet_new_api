@@ -68,6 +68,7 @@ export class AuthService {
     `;
     const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${getUser.phone}&message=${encodeURIComponent(message)}`;
 
+    console.log(whatsappUrl)
     await axios.get(whatsappUrl);
 
     return { data: getUser, message: 'Codigo enviado correctamente' }

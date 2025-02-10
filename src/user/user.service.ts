@@ -24,8 +24,6 @@ export class UserService {
       throw new BadRequestException("El nombre de usuario o el número de teléfono ya existen");
     }
 
-
-
     // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
