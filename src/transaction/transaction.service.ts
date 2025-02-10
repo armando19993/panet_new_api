@@ -176,6 +176,12 @@ export class TransactionService {
       const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
 
       await axios.get(whatsappUrl);
+      if (randomUser.expoPushToken) {
+        this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
+          screen: "DespachoPage",
+          params: { transactionId: transaction.id }
+        })
+      }
     } else {
       await this.prisma.colaEspera.create({
         data: {
@@ -187,12 +193,6 @@ export class TransactionService {
       })
     }
 
-    if (randomUser.expoPushToken) {
-      this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
-        screen: "DespachoPage",
-        params: { transactionId: transaction.id }
-      })
-    }
 
     return {
       success: true,
