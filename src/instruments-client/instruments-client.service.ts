@@ -8,7 +8,6 @@ export class InstrumentsClientService {
   constructor(private prisma: PrismaService) { }
 
   async create(createInstrumentsClientDto: CreateInstrumentsClientDto) {
-    console.log(createInstrumentsClientDto)
     // Validación inicial
     if (!createInstrumentsClientDto) {
       throw new BadRequestException('No se proporcionaron datos para crear el instrumento');
