@@ -33,7 +33,7 @@ export class CreateInstrumentsClientDto {
   clientId?: string;
 
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   document?: string;
 
   @IsString()
