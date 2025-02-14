@@ -42,9 +42,9 @@ export class FlowApiService {
 
     const baseParams = {
       ...params,
-      urlConfirmation: `http://localhost:3000/api/flow/confirm`,
+      urlConfirmation: `https://api.paneteirl.com/response/flow`,
       urlReturn: `http://localhost:3000/api/flow/return`,
-      apiKey: apiKey, // Usar la apiKey correspondiente
+      apiKey: apiKey,
     };
 
     // Ordenar los parámetros alfabéticamente
