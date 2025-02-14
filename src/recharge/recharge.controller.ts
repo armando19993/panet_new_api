@@ -87,6 +87,5 @@ export class RechargeController {
   @Post("response/flow")
   responseFlow(@Body() data) {
     return this.rechargeService.responseFlow(data)
-
   }
 }
