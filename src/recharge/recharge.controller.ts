@@ -92,7 +92,7 @@ export class RechargeController {
     return this.rechargeService.responseFlow(data)
   }
 
-  @Get('status/flow')
+  @Post('status/flow')
   async statusFlow(
     @Query('token') token: string, // Token de la operación
     @Res() res: Response, // Objeto de respuesta para redireccionar
