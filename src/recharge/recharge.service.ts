@@ -2,7 +2,6 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.servise";
 import axios from "axios";
 import { NotificationService } from "src/notification/notification.service";
-import * as crypto from 'crypto';
 import { FlowApiService } from "src/flow-api/flow-api.service";
 import { StatusRecharge, StatusTransactionsTemporal, TypeRecharge } from "@prisma/client";
 
@@ -996,14 +995,37 @@ export class RechargeService {
       data: {
         status,
         pasarela_response: response
+      },
+      include: {
+        wallet: true
       }
     })
 
+    await this.prisma.wallet.update({
+      where: { id: recharge.walletId },
+      data: {
+        balance: {
+          increment: recharge.amount,
+        },
+      },
+    });
+
+    await this.prisma.walletTransactions.create({
+      data: {
+        amount: recharge.amount,
+        amount_new: parseFloat(recharge.wallet.balance.toString()) + parseFloat(recharge.amount.toString()),
+        amount_old: recharge.wallet.balance,
+        wallet: {
+          connect: {
+            id: recharge.walletId,
+          },
+        },
+        description: "Deposito por Recarga: REC-2025-" + recharge.publicId,
+        type: "DEPOSITO"
+      },
+    })
+
     return { data: recharge, message: 'Recarga Actualizada con exito' }
-  }
-
-  async statusFlow(){
-
   }
 
   remove(id: number) {
