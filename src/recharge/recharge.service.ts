@@ -981,6 +981,7 @@ export class RechargeService {
     let token = data.token
 
     const response = await this.flowApiService.checkPaymentStatus(token, 'PEN')
+    console.log(response)
     let status = null
     if (response.status === 2) {
       status = 'COMPLETADA'
