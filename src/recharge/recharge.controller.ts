@@ -87,7 +87,7 @@ export class RechargeController {
     return this.rechargeService.createAutomatic(data, req.user)
   }
 
-  @Post("response/flow")
+  @Post("response/flow/pasarela")
   responseFlow(@Body() data) {
     return this.rechargeService.responseFlow(data)
   }
