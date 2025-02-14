@@ -979,26 +979,30 @@ export class RechargeService {
   }
 
   async responseFlow(data) {
-    console.log(data)
+    let token = data.token
+
+    const response = await this.flowApiService.checkPaymentStatus(token, 'PEN')
+    let status = null
+    if (response.status === 2) {
+      status = 'COMPLETADA'
+    } else {
+      status = 'CANCELADA'
+    }
+
+    const recharge = await this.prisma.recharge.update({
+      where: {
+        id: response.commerceOrder
+      },
+      data: {
+        status
+      }
+    })
+
+    return { data: recharge, message: 'Recarga Actualizada con exito' }
   }
 
   remove(id: number) {
     return `This action removes a #${id} recharge`;
   }
 
-  generateSignature(params, secretKey) {
-    // Ordenar los parámetros alfabéticamente
-    const sortedKeys = Object.keys(params).sort();
-
-    // Concatenar nombres y valores de los parámetros
-    const stringToSign = sortedKeys.map(key => key + params[key]).join('');
-
-    // Firmar la cadena usando HMAC-SHA256
-    const signature = crypto
-      .createHmac('sha256', secretKey)
-      .update(stringToSign)
-      .digest('hex');
-
-    return signature;
-  }
 }

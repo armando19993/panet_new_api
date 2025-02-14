@@ -67,7 +67,6 @@ export class FlowApiService {
 
       if (method === 'GET') {
         const { data } = await axios.get(url, { params: requestParams });
-        console.log(data)
         return data;
       } else {
         const { data } = await axios.post(url, requestParams, {
