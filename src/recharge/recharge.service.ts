@@ -995,7 +995,7 @@ export class RechargeService {
       },
       data: {
         status,
-        pasarela_response: response
+        pasarela_response: JSON.stringify(response)
       },
       include: {
         wallet: true
