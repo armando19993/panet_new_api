@@ -11,12 +11,15 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  Res,
+  Req,
 } from "@nestjs/common";
 import { RechargeService } from "./recharge.service";
 import { CreateRechargeDto } from "./dto/create-recharge.dto";
 import { UpdateRechargeDto } from "./dto/update-recharge.dto";
 import { AuthGuard } from "src/auth/auth.guard";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { Response } from "express";
 
 @Controller("recharge")
 export class RechargeController {
@@ -87,5 +90,29 @@ export class RechargeController {
   @Post("response/flow")
   responseFlow(@Body() data) {
     return this.rechargeService.responseFlow(data)
+  }
+
+  @Get('status/flow')
+  async statusFlow(
+    @Query('token') token: string, // Token de la operación
+    @Res() res: Response, // Objeto de respuesta para redireccionar
+    @Req() req: Request, // Objeto de solicitud para verificar el User-Agent
+  ) {
+    // Verifica si el usuario está en un dispositivo móvil
+    const userAgent = req.headers['user-agent'];
+    const isMobile = /Mobile|Android|iP(hone|od)|IEMobile/.test(userAgent);
+
+    // URL de redirección para dispositivos móviles (Deep Linking)
+    const appDeepLink = `myapp://payment-success?token=${token}`;
+
+    // URL de redirección para navegadores web
+    const webUrl = `https://myapp.com/payment-success?token=${token}`;
+
+    // Redirige al usuario según el dispositivo
+    if (isMobile) {
+      return res.redirect(appDeepLink);
+    } else {
+      return res.redirect(webUrl);
+    }
   }
 }
