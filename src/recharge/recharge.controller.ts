@@ -74,13 +74,19 @@ export class RechargeController {
   @Post('transaction/full')
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('comprobante'))
-  transactionFull(@Body() createRechargeDto, @Request() req, @UploadedFile() file: Express.Multer.File,){
+  transactionFull(@Body() createRechargeDto, @Request() req, @UploadedFile() file: Express.Multer.File,) {
     return this.rechargeService.createFull(createRechargeDto, req.user, file)
   }
 
   @Post("automatic")
   @UseGuards(AuthGuard)
-  automatic(@Body() data, @Request() req){
+  automatic(@Body() data, @Request() req) {
     return this.rechargeService.createAutomatic(data, req.user)
+  }
+
+  @Post("response/flow")
+  responseFlow(@Body() data) {
+    return this.rechargeService.responseFlow(data)
+
   }
 }

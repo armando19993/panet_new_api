@@ -785,7 +785,7 @@ export class RechargeService {
         }
       );
 
-      const transactionStatus = response.data?.status; // Ajustar según la estructura de la respuesta de la API
+      const transactionStatus = response.data?.status;
 
       if (!transactionStatus) {
         throw new Error(
@@ -976,6 +976,10 @@ export class RechargeService {
     }
 
     return { data, message: 'Recarga Actuializada con exito' }
+  }
+
+  async responseFlow(data) {
+    console.log(data)
   }
 
   remove(id: number) {
