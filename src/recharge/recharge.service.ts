@@ -21,7 +21,7 @@ export class RechargeService {
         data: {
           userId: user.id,
           walletId: dataVar.walletId,
-          amount: dataVar.amount,
+          amount: parseFloat(dataVar.amount),
           type: "AUTOMATIZADO",
           status: "CREADA",
           comprobante: dataVar.comprobante || null,
@@ -1003,7 +1003,7 @@ export class RechargeService {
   }
 
   async statusFlow(){
-      
+
   }
 
   remove(id: number) {
