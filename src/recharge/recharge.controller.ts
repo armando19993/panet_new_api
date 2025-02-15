@@ -93,26 +93,7 @@ export class RechargeController {
   }
 
   @Post('status/flow')
-  async statusFlow(
-    @Query('token') token: string, // Token de la operación
-    @Res() res: Response, // Objeto de respuesta para redireccionar
-    @Req() req: Request, // Objeto de solicitud para verificar el User-Agent
-  ) {
-    // Verifica si el usuario está en un dispositivo móvil
-    const userAgent = req.headers['user-agent'];
-    const isMobile = /Mobile|Android|iP(hone|od)|IEMobile/.test(userAgent);
-
-    // URL de redirección para dispositivos móviles (Deep Linking)
-    const appDeepLink = `myapp://payment-success?token=${token}`;
-
-    // URL de redirección para navegadores web
-    const webUrl = `https://myapp.com/payment-success?token=${token}`;
-
-    // Redirige al usuario según el dispositivo
-    if (isMobile) {
-      return res.redirect(appDeepLink);
-    } else {
-      return res.redirect(webUrl);
-    }
+  async statusFlow( @Query('token') token: string,  ) {
+      return this.rechargeService.responseFlow({ token })
   }
 }
