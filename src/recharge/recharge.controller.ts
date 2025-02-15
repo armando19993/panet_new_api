@@ -45,7 +45,6 @@ export class RechargeController {
   }
 
   @Get(":id")
-  @UseGuards(AuthGuard)
   findOne(@Param("id") id: string) {
     return this.rechargeService.findOne(id);
   }
