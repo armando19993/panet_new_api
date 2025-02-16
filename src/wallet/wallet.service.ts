@@ -1,12 +1,15 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { CreateWalletDto } from "./dto/create-wallet.dto";
 import { UpdateWalletDto } from "./dto/update-wallet.dto";
 import { PrismaService } from "src/prisma/prisma.servise";
-import { User, Wallet } from "@prisma/client";
+import { Wallet } from "@prisma/client";
+import { NotificationService } from "src/notification/notification.service";
 
 @Injectable()
 export class WalletService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private notificaciones: NotificationService
+  ) { }
 
   async create(createWalletDto: Wallet) {
     const existingWallet = await this.prisma.wallet.findFirst({
@@ -170,7 +173,13 @@ export class WalletService {
     return { data, message: 'Balance actualizado con éxito' }
   }
 
-  findOne(id) {
+  async findOne(id) {
+    await this.notificaciones.sendPushNotification(
+      'ExponentPushToken[zkTqvPDDD2NDxoSs1Le3do]',
+      'Esto es Una notificacion',
+      'Desde el backend'
+    )
+
     return `This action returns a #${id} wallet`;
   }
 

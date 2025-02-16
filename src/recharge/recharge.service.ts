@@ -28,7 +28,15 @@ export class RechargeService {
           nro_referencia: "",
           fecha_comprobante: new Date(),
         },
+        include: {
+          wallet: {
+            include: {
+              user: true
+            }
+          }
+        }
       });
+
       let currency = ""
       if (dataVar.countryCode == "PE") {
         currency = "PEN"
@@ -57,6 +65,13 @@ export class RechargeService {
             nro_referencia: data.token
           }
         })
+
+        await this.notification.sendPushNotification(
+          rechargeAutomatic.wallet.user.expoPushToken,
+          `Recarga Creada: REC-2025-${rechargeAutomatic.publicId}`,
+          `Estimado cliente tu recarga REC-2025-${rechargeAutomatic.publicId}, ha sido creada con exito, procede por favor a realizar la misma, te notificaremos cuando tu saldo este disponible.`
+        )
+
         return { data, url: `${data.url}?token=${data.token}` }
       } catch (error) {
         console.log(error)
@@ -756,7 +771,6 @@ export class RechargeService {
   }
 
   async updateAutomatic(data) {
-    // Obtener información de la recarga
     const recharge = await this.prisma.recharge.findFirst({
       where: { id: data.rechargeId },
       include: { wallet: { include: { country: true } } },
@@ -997,9 +1011,19 @@ export class RechargeService {
         pasarela_response: JSON.stringify(response)
       },
       include: {
-        wallet: true
+        wallet: {
+          include: {
+            user: true
+          }
+        }
       }
     })
+
+    await this.notification.sendPushNotification(
+      recharge.wallet.user.expoPushToken,
+      `Cambio de Estado en tu recarga REC-2025-${recharge.publicId}`,
+      `Estimado cliente tu recarga en nuestra app PANET se ecuentra en estado ${status}`
+    )
 
     await this.prisma.wallet.update({
       where: { id: recharge.walletId },

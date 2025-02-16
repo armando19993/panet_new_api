@@ -16,7 +16,7 @@ export class TransactionService {
   async create(createTransactionDto: CreateTransactionDto) {
     // Buscar las relaciones necesarias
     const creador = await this.prisma.user.findFirstOrThrow({ where: { id: createTransactionDto.creadorId } });
-    const wallet = await this.prisma.wallet.findFirstOrThrow({ where: { id: createTransactionDto.walletId }, include: { country: true } });
+    const wallet = await this.prisma.wallet.findFirstOrThrow({ where: { id: createTransactionDto.walletId }, include: { country: true, user: true } });
     const origen = await this.prisma.country.findFirstOrThrow({ where: { id: createTransactionDto.origenId } });
     const destino = await this.prisma.country.findFirstOrThrow({ where: { id: createTransactionDto.destinoId } });
     const rate = await this.prisma.rate.findFirstOrThrow({ where: { id: createTransactionDto.rateId }, include: { origin: true, destination: true } });
@@ -194,6 +194,12 @@ export class TransactionService {
         })
       }
     }
+
+    await this.notification.sendPushNotification(
+      wallet.user.expoPushToken,
+      `Estimado cliente tu Operacion TRX-2025-${transaction.publicId}`,
+      `Hemos creado tu operacion exitosamente en nuestro sistema, en los proximos minutos, tendras actualizaciones de estado de la misma, recuerda el tiempo para una operacion es de 1 a 30 minutos`
+    )
 
 
     return {
@@ -412,7 +418,6 @@ export class TransactionService {
 
     return { data, message: 'Transaccion Ejecutada con éxito' }
   }
-
 
   update(id: number, updateTransactionDto: UpdateTransactionDto) {
     return `This action updates a #${id} transaction`;
