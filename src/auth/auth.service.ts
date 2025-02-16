@@ -34,7 +34,7 @@ export class AuthService {
       );
 
     if (data.pushToken) {
-      await this.prisma.user.update({ where: { id: val.id }, data: { expoPushToken: data.pushToken } })
+      await this.prisma.user.update({ where: { id: val.id }, data: { expoPushToken: data.pushToken.data } })
     }
 
     const isPasswordValid = await bcrypt.compare(password, val.password);
