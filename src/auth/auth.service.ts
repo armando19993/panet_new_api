@@ -41,7 +41,7 @@ export class AuthService {
     if (!isPasswordValid)
       throw new BadRequestException("Contraseña incorrecta");
 
-    this.notificationService.sendPushNotification(data.pushToken, 'Has Iniciado Sesion', 'Has iniciado sesion en un nuevo dispositivo, hemos actualizado tu codigo de notificacion')
+    this.notificationService.sendPushNotification(data.pushToken.data, 'Has Iniciado Sesion', 'Has iniciado sesion en un nuevo dispositivo, hemos actualizado tu codigo de notificacion')
 
     const token = await this.jwtService.signAsync(val);
     const roles = val.roles.map((userRole) => userRole.role.name);
