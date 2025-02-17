@@ -268,7 +268,16 @@ export class TransactionService {
         id,
       },
       include: {
-        creador: true,
+        creador: {
+          include:{
+            Transaction: {
+              orderBy: {
+                publicId: 'desc'
+              },
+              take: 10
+            }
+          }
+        },
         origen: true,
         destino: true,
         despachador: true,
