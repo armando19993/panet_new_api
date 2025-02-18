@@ -9,7 +9,6 @@ export class ColaEsperaService {
 
   async create(createColaEsperaDto: CreateColaEsperaDto) {
     if (createColaEsperaDto.type === 'transaction') {
-      console.log(createColaEsperaDto.transactionId)
       let validate = await this.prisma.colaEspera.findFirst({
         where: {
           AND: [
@@ -45,6 +44,68 @@ export class ColaEsperaService {
 
       return { validate, message: 'Has asignado correctamente la operacion a la cola!' }
     }
+  }
+
+  async transferMasive(data) {
+    const { transactionsIds, despachadorId, type } = data
+
+    transactionsIds.map(async (row) => {
+      if (row !== 1) {
+        if (type === "TRANSACCION") {
+          try {
+            console.log(row)
+            const exist = await this.prisma.colaEspera.findFirst({ where: { transactionId: row } })
+            console.log(exist)
+            if (exist) {
+              await this.prisma.colaEspera.update({ where: { id: exist.id }, data: { status: 'INICIADA' } })
+            }
+            else {
+              await this.prisma.colaEspera.create({
+                data: {
+                  type: 'TRANSACCION',
+                  status: 'INICIADA',
+                  userId: despachadorId,
+                  transactionId: row,
+                },
+              });
+            }
+
+          } catch (error) {
+            console.log("Error", error)
+          }
+        }
+        if (type === "RECARGA") {
+          try {
+            const updatedCount = await this.prisma.colaEspera.updateMany({
+              where: {
+                rechargeId: row,
+              },
+              data: {
+                type: 'RECARGA',
+                status: 'INICIADA',
+                userId: despachadorId,
+              },
+            });
+
+            if (updatedCount.count === 0) {
+              await this.prisma.colaEspera.create({
+                data: {
+                  type: 'RECARGA',
+                  status: 'INICIADA',
+                  userId: despachadorId,
+                  rechargeId: row,
+                },
+              });
+            }
+
+          } catch (error) {
+            console.log("Error", error)
+          }
+        }
+      }
+    })
+
+    return { data, message: 'Transferencia Masiva echa con exito' }
   }
 
   async findAll(query: any) {
