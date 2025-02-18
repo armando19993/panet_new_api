@@ -43,7 +43,8 @@ export class FlowApiService {
     const baseParams = {
       ...params,
       urlConfirmation: `https://api.paneteirl.com/recharge/response/flow/pasarela`,
-      urlReturn: `https://payment.paneteirl.com/${params.commerceOrder ? params.commerceOrder : ''}`,
+      urlReturn: `https://api.paneteirl.com/recharge/redirect/page/${params.commerceOrder ? params.commerceOrder : ''}`,
+      //urlReturn: `https://payment.paneteirl.com/${params.commerceOrder ? params.commerceOrder : ''}`,
       apiKey: apiKey,
     };
 

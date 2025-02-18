@@ -13,6 +13,7 @@ import {
   UploadedFile,
   Res,
   Req,
+  Redirect,
 } from "@nestjs/common";
 import { RechargeService } from "./recharge.service";
 import { CreateRechargeDto } from "./dto/create-recharge.dto";
@@ -91,8 +92,15 @@ export class RechargeController {
     return this.rechargeService.responseFlow(data)
   }
 
+  @Post("redirect/page/:id")
+  @Redirect()
+  redirect(@Param('id') id: string) {
+    const url = `https://payment.paneteirl.com/${id}`;
+    return { url, statusCode: 302 };
+  }
+
   @Post('status/flow')
-  async statusFlow( @Query('token') token: string,  ) {
-      return this.rechargeService.responseFlow({ token })
+  async statusFlow(@Query('token') token: string,) {
+    return this.rechargeService.responseFlow({ token })
   }
 }
