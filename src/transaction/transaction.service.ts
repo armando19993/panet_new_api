@@ -270,6 +270,10 @@ export class TransactionService {
         creador: {
           include:{
             Transaction: {
+              include: {
+                origen: true,
+                destino: true
+              },
               orderBy: {
                 publicId: 'desc'
               },
