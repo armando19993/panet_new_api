@@ -168,7 +168,6 @@ export class TransactionService {
     });
 
     //buscar usuarios dueños de cuenta
-
     const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
 
     if (duenos.length === 0) {
@@ -281,7 +280,11 @@ export class TransactionService {
         origen: true,
         destino: true,
         despachador: true,
-        wallet: true,
+        wallet: {
+          include: {
+            country: true
+          }
+        },
         cliente: {
           include: {
             recharges: {
