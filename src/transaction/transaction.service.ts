@@ -294,6 +294,10 @@ export class TransactionService {
               take: 10,
             },
             Transaction: {
+              include: {
+                origen: true,
+                destino: true
+              },
               orderBy: {
                 publicId: 'desc',
               },
