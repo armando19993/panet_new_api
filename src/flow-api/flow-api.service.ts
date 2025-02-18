@@ -10,8 +10,8 @@ export class FlowApiService {
   constructor() {
     this.apiKeys = {
       PEN: {
-        apiKey: '6DCE1AFA-C640-476E-AF43-79F8593LC698',
-        secretKey: 'ee8251193785a45b2b3358dcab042a5f87eb3f9a',
+        apiKey: '7171E94F-2712-4D0F-BF7F-85AC9493L24F',
+        secretKey: 'c27316db779ebf1f14bd83d8a3fb0bbb542dc71f',
       },
       CLP: {
         apiKey: '486CFE9D-6033-4DD5-8051-7F6C2CBL6008',
@@ -19,7 +19,8 @@ export class FlowApiService {
       },
     };
 
-    this.baseUrl = 'https://www.flow.cl/api'
+    //this.baseUrl = 'https://www.flow.cl/api'
+    this.baseUrl = 'https://sandbox.flow.cl/api'
   }
 
   private generateSignature(params: Record<string, any>, secretKey: string): string {
