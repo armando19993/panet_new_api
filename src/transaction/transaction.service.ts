@@ -278,6 +278,14 @@ export class TransactionService {
                 publicId: 'desc'
               },
               take: 10
+            },
+            // Agregamos el conteo total de transacciones
+            _count: {
+              select: {
+                Transaction: true,
+                Recharge: true,
+                wallets: true
+              }
             }
           }
         },
@@ -321,7 +329,6 @@ export class TransactionService {
 
     return { data, message: 'Listado de Transacciones' };
   }
-
 
   async procesar(dataAprobar, file, user) {
     const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
