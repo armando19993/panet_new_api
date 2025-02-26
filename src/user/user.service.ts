@@ -89,7 +89,7 @@ export class UserService {
     return { data, message: 'Usuario Actualizado con exito' }
   }
 
-  async updatePassword(user, password) {
+  async updatePassword(user: any, password: any) {
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log(password)
     const validate = await this.prisma.user.findFirst({ where: { user } })
