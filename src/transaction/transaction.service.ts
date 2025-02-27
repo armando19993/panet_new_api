@@ -467,11 +467,16 @@ export class TransactionService {
     return { data, message: 'Transaccion Ejecutada con éxito' }
   }
 
-  update(id: number, updateTransactionDto: UpdateTransactionDto) {
-    return `This action updates a #${id} transaction`;
+  async update(id: string, updateTransactionDto) {
+    const data = await this.prisma.transaction.update({
+      where: { id },
+      data: { status: 'ANULADA' }
+    })
+
+    return { data, message: 'Transaccion Anulada con exito' }
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} transaction`;
   }
 

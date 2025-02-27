@@ -26,13 +26,13 @@ export class TransactionController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTransactionDto: UpdateTransactionDto) {
-    return this.transactionService.update(+id, updateTransactionDto);
+  update(@Param('id') id: string, @Body() updateTransactionDto) {
+    return this.transactionService.update(id, updateTransactionDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.transactionService.remove(+id);
+    return this.transactionService.remove(id);
   }
 
   @Post('notificar')
