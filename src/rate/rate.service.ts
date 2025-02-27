@@ -2,11 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { CreateRateDto } from './dto/create-rate.dto';
 import { UpdateRateDto } from './dto/update-rate.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class RateService {
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private notification: NotificationService
+  ) { }
 
   create(createRateDto: CreateRateDto) {
     return 'This action adds a new rate';
@@ -60,6 +64,7 @@ export class RateService {
 
     await Promise.all(countries.map(async (origin) => {
       const idOrigen = origin.id;
+
       await Promise.all(countries.map(async (destination) => {
         let calculo = 0;
 
@@ -187,8 +192,6 @@ export class RateService {
           const resultado = montoInicial - restar;
 
           calculo = resultado;
-
-          console.log(`Cálculo de origen distinto a COLOMBIA y VENEZUELA: montoInicial=${montoInicial}, profit=${porcentaje}, resultado=${calculo}`);
         }
 
         if (origin.name === "VENEZUELA") {
@@ -215,6 +218,21 @@ export class RateService {
         })
 
         if (typeof calculo === 'number' && calculo > 0) {
+          if (destination.name === 'VENEZUELA') {
+            const wallets = await this.prisma.wallet.findMany({ where: { countryId: origin.id }, include: { user: true } })
+
+            for (const wallet of wallets) {
+              if (wallet.user.expoPushToken) {
+                await this.notification.sendPushNotification(
+                  wallet.user.expoPushToken,
+                  'Tasa Actualizada',
+                  `Nueva tasa de ${origin.name} --> ${destination.name} 1 ${origin.currency} = ${calculo} ${destination.currency}`
+                )
+              }
+
+            }
+          }
+
           if (vExist === null) {
             await this.prisma.rate.create({
               data: {
@@ -247,6 +265,8 @@ export class RateService {
 
       }))
     }))
+
+    //notificar a todos los usuarios que se actualizaron tasas
   }
 
   remove(id: number) {
