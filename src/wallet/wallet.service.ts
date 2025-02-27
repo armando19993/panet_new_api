@@ -174,7 +174,7 @@ export class WalletService {
   }
 
   async findOne(id) {
-    const data = await this.prisma.wallet.findUnique({ where: { id }, include: { transactions: true } })
+    const data = await this.prisma.wallet.findUnique({ where: { id }, include: { transactions: true, country: true } })
 
     return { data, message: 'Wallet obtenido con exito' }
   }
