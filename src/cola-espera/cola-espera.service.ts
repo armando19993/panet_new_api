@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateColaEsperaDto } from './dto/create-cola-espera.dto';
 import { UpdateColaEsperaDto } from './dto/update-cola-espera.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
@@ -9,6 +9,11 @@ export class ColaEsperaService {
 
   async create(createColaEsperaDto: CreateColaEsperaDto) {
     if (createColaEsperaDto.type === 'transaction') {
+      const val = await this.prisma.transaction.findUnique({ where: { id: createColaEsperaDto.transactionId } })
+      if (val.status === 'COMPLETADA') {
+        throw new BadRequestException("Esta Transaccion se encuentra en estado completado, para poder colocarlo en cola, contacta con TI")
+        return
+      }
       let validate = await this.prisma.colaEspera.findFirst({
         where: {
           AND: [
@@ -17,9 +22,8 @@ export class ColaEsperaService {
           ]
         }
       })
-      console.log
+
       if (validate) {
-        console.log("se actualizo")
         await this.prisma.colaEspera.update({
           where: {
             id: validate.id
@@ -100,7 +104,9 @@ export class ColaEsperaService {
     return { update, message: 'Cola Actualizado con exito' }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} colaEspera`;
+  async remove(id) {
+    const data = await this.prisma.colaEspera.delete({ where: { id } })
+
+    return { data, message: 'Cola eliminada con exito' }
   }
 }

@@ -31,7 +31,7 @@ export class ColaEsperaController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.colaEsperaService.remove(+id);
+    return this.colaEsperaService.remove(id);
   }
 
   @Post("transfer/masive")
