@@ -220,13 +220,20 @@ export class RateService {
         if (typeof calculo === 'number' && calculo > 0) {
           if (destination.name === 'VENEZUELA') {
             const wallets = await this.prisma.wallet.findMany({ where: { countryId: origin.id }, include: { user: true } })
+            let calculoF = null
+
+            if (calculo >= 1) {
+              calculoF = calculo.toFixed(2);
+            } else {
+              calculoF = calculo.toFixed(4);
+            }
 
             for (const wallet of wallets) {
               if (wallet.user.expoPushToken) {
                 await this.notification.sendPushNotification(
                   wallet.user.expoPushToken,
                   'Tasa Actualizada',
-                  `Nueva tasa de ${origin.name} --> ${destination.name} 1 ${origin.currency} = ${calculo} ${destination.currency}`
+                  `Nueva tasa de ${origin.name} --> ${destination.name} 1 ${origin.currency} = ${calculoF} ${destination.currency}`
                 )
               }
 
