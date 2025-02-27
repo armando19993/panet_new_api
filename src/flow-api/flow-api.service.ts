@@ -36,9 +36,9 @@ export class FlowApiService {
     serviceName: string,
     params: Record<string, any>,
     method: 'GET' | 'POST' = 'POST',
-    currency: string = 'CLP' // Valor por defecto
+    currency: string = 'CLP'
   ) {
-    const { apiKey, secretKey } = this.apiKeys[currency] || this.apiKeys['CLP']; // Usar CLP como valor por defecto
+    const { apiKey, secretKey } = this.apiKeys[currency] || this.apiKeys['CLP'];
 
     const baseParams = {
       ...params,
@@ -55,11 +55,11 @@ export class FlowApiService {
         return acc;
       }, {});
 
-    const signature = this.generateSignature(sortedParams, secretKey); // Usar la secretKey correspondiente
+    const signature = this.generateSignature(sortedParams, secretKey);
 
     const requestParams = {
       ...sortedParams,
-      s: signature, // Añadir la firma generada
+      s: signature,
     };
 
     try {
@@ -90,7 +90,7 @@ export class FlowApiService {
       currency?: string;
       paymentMethod?: number;
     },
-    currency: string = 'CLP' // Valor por defecto
+    currency: string = 'CLP'
   ) {
     return this.send('payment/create', paymentData, 'POST', currency);
   }

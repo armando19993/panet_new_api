@@ -175,7 +175,7 @@ export class TransactionService {
       const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
 
       await axios.get(whatsappUrl);
-      
+
     } else {
       await this.prisma.colaEspera.create({
         data: {
@@ -268,7 +268,7 @@ export class TransactionService {
       },
       include: {
         creador: {
-          include:{
+          include: {
             Transaction: {
               include: {
                 origen: true,
@@ -501,6 +501,67 @@ export class TransactionService {
     })
 
     return { data: dataa, message: 'Transferencia echa con exito' }
+  }
+
+  async paymentsMethods() {
+    const methods = [
+      {
+        countryCode: 'PE',
+        methods: [
+          {
+            id: 29,
+            pasarela: 'Flow',
+            name: 'Pago Efectivo',
+            image: 'https://www.blaventech.com/wp-content/uploads/2021/11/pago-efectivo.png',
+            description: 'Realiza tus pagos en efectivo en agentes y establecimientos autorizados.',
+            min: 100
+          },
+          {
+            id: 152,
+            pasarela: 'Flow',
+            name: 'Yape',
+            image: 'https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-original-577x577/s3/032021/yape.png?sbmszL8CD.TqS8SZ5YaqDfOHxLgBAJid&itok=FFFRSqls',
+            description: 'Realiza un yape rapido y directo!',
+            min: 60
+          },
+          {
+            id: 153,
+            pasarela: 'Floid',
+            name: 'Transferencia Bancaria',
+            image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
+            description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
+          }
+        ],
+        alertas: [
+          {
+            type: 'error',
+            title: 'Información Importante',
+            description: 'Solo se encuentran funcionales bancos Interbank y BCP, los otros estan presentando intermitencias'
+          }
+        ]
+      },
+      {
+        countryCode: 'CL',
+        methods: [
+          {
+            id: 0,
+            pasarela: 'Floid',
+            name: 'Transferencia Bancaria',
+            image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
+            description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.'
+          },
+          {
+            id: 15,
+            pasarela: 'Flow',
+            name: 'Match',
+            image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
+            description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.'
+          }
+        ]
+      }
+    ]
+
+    return { data: methods, message: 'Metodos obtenidos con exito' }
   }
 
 }

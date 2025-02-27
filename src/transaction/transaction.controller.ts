@@ -51,4 +51,9 @@ export class TransactionController {
   transferir(@Body() data){
     return this.transactionService.transferir(data)
   }
+
+  @Get('payments/methods')
+  paymentsMethods(){
+      return this.transactionService.paymentsMethods()
+  }
 }
