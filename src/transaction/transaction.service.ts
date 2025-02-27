@@ -62,29 +62,6 @@ export class TransactionService {
     const porcentajeIntermediario = parseFloat(creador.profitPercent.toString());
     const gananciaIntermediario = parseFloat(((transactionAmount * porcentajeIntermediario) / 100).toFixed(3));
 
-    //sumar el saldo al dusdeño de cuenta
-    await this.prisma.wallet.upsert({
-      where: {
-        userId_countryId_type: {
-          userId: creador.id,
-          countryId: origen.id,
-          type: 'GANANCIAS'
-        }
-      },
-      update: {
-        balance: {
-          increment: gananciaIntermediario
-        }
-      },
-      create: {
-        userId: creador.id,
-        countryId: origen.id,
-        type: 'GANANCIAS',
-        balance: gananciaIntermediario,
-      }
-    })
-
-
     const gananciaPanet = parseFloat((porcentajeDelMonto - gananciaIntermediario).toFixed(3));
 
     const roles = ['DESPACHADOR']
@@ -200,6 +177,50 @@ export class TransactionService {
       `Hemos creado tu operacion exitosamente en nuestro sistema, en los proximos minutos, tendras actualizaciones de estado de la misma, recuerda el tiempo para una operacion es de 1 a 30 minutos`
     )
 
+    if (porcentajeIntermediario > 0) {
+      const sumGI = await this.prisma.wallet.upsert({
+        where: {
+          userId_countryId_type: {
+            userId: creador.id,
+            countryId: origen.id,
+            type: 'GANANCIAS'
+          }
+        },
+        update: {
+          balance: {
+            increment: gananciaIntermediario
+          }
+        },
+        create: {
+          userId: creador.id,
+          countryId: origen.id,
+          type: 'GANANCIAS',
+          balance: gananciaIntermediario,
+        }
+      })
+
+      await this.prisma.walletTransactions.create({
+        data: {
+          amount: gananciaIntermediario,
+          amount_old: 0,
+          amount_new: sumGI.balance,
+          description: 'Ingreso por ganancias de operacion',
+          type: 'DEPOSITO',
+          walletId: sumGI.id,
+        }
+      })
+    }
+
+    await this.prisma.walletTransactions.create({
+      data: {
+        amount: createTransactionDto.amount,
+        amount_old: wallet.balance,
+        amount_new: parseFloat(createTransactionDto.amount.toString()) - parseFloat(wallet.balance.toString()),
+        description: `Egreso por transaccion ${transaction.id}`,
+        type: 'RETIRO',
+        walletId: wallet.id,
+      }
+    })
 
     return {
       success: true,
