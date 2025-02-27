@@ -174,13 +174,9 @@ export class WalletService {
   }
 
   async findOne(id) {
-    await this.notificaciones.sendPushNotification(
-      'ExponentPushToken[zkTqvPDDD2NDxoSs1Le3do]',
-      'Esto es Una notificacion',
-      'Desde el backend'
-    )
+    const data = await this.prisma.wallet.findUnique({ where: { id }, include: { transactions: true } })
 
-    return `This action returns a #${id} wallet`;
+    return { data, message: 'Wallet obtenido con exito' }
   }
 
   update(id: number, updateWalletDto: UpdateWalletDto) {
