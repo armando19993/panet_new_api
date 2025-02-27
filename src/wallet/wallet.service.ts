@@ -174,9 +174,23 @@ export class WalletService {
   }
 
   async findOne(id) {
-    const data = await this.prisma.wallet.findUnique({ where: { id }, include: { transactions: true, country: true } })
+    const data = await this.prisma.wallet.findUnique({
+      where: { id },
+      include: { transactions: true, country: true }
+    });
 
-    return { data, message: 'Wallet obtenido con exito' }
+    // Contar transacciones por tipo
+    const depositosCount = data.transactions.filter(tx => tx.type === 'DEPOSITO').length;
+    const retirosCount = data.transactions.filter(tx => tx.type === 'RETIRO').length;
+
+    return {
+      data,
+      message: 'Wallet obtenido con éxito',
+      transaccionesPorTipo: {
+        depositos: depositosCount,
+        retiros: retirosCount
+      }
+    };
   }
 
   update(id: number, updateWalletDto: UpdateWalletDto) {
