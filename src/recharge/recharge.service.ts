@@ -28,6 +28,10 @@ export class RechargeService {
         }
       })
 
+      if(validate){
+        console.log(`https://www.flow.cl/app/web/pay.php?token=${valiudate.nro_referencia}`)
+        return { data: valiudate, url: `https://www.flow.cl/app/web/pay.php?token=${valiudate.nro_referencia}` }
+      }
 
       const rechargeAutomatic = await this.prisma.recharge.create({
         data: {
@@ -85,7 +89,6 @@ export class RechargeService {
           `Estimado cliente tu recarga REC-2025-${rechargeAutomatic.publicId}, ha sido creada con exito, procede por favor a realizar la misma, te notificaremos cuando tu saldo este disponible.`
         )
 
-        console.log(`${data.url}?token=${data.token}`)
         return { data, url: `${data.url}?token=${data.token}` }
       } catch (error) {
         console.log(error)
