@@ -176,7 +176,7 @@ export class WalletService {
   async findOne(id) {
     const data = await this.prisma.wallet.findUnique({
       where: { id },
-      include: { transactions: true, country: true }
+      include: { transactions: true, country: true, user: true }
     });
 
     // Contar transacciones por tipo
