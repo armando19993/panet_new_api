@@ -29,6 +29,7 @@ export class TransactionService {
       throw new BadRequestException("No cuentas con saldo para realizar esta transacción");
     }
 
+    // Restar el saldo del wallet de quien crea
     await this.prisma.wallet.update({ where: { id: wallet.id }, data: { balance: { decrement: createTransactionDto.amount } } })
 
     // Cálculos principales
@@ -98,6 +99,8 @@ export class TransactionService {
         },
       },
     });
+
+    console.log(duenos)
 
     // Crear la transacción
     const transaction = await this.prisma.transaction.create({
