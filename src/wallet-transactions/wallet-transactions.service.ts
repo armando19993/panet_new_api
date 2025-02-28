@@ -7,8 +7,8 @@ import { PrismaService } from "src/prisma/prisma.servise";
 export class WalletTransactionsService {
   constructor(private prisma: PrismaService) {}
 
-  create(createWalletTransactionDto: CreateWalletTransactionDto) {
-    return "This action adds a new walletTransaction";
+  async create(createWalletTransactionDto: CreateWalletTransactionDto) {
+    const data = await this.prisma
   }
 
   async findAll(walletId) {

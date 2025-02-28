@@ -18,20 +18,7 @@ export class RechargeService {
     if (data.pasarela === 'Flow') {
       const dataVar = data
 
-      const valiudate = await this.prisma.recharge.findFirst({
-        where: {
-          AND: [
-            {status: "CREADA"},
-            {walletId: dataVar.walletId},
-            {amount: parseFloat(dataVar.amount)}
-          ]
-        }
-      })
-
-      if(validate){
-        console.log(`https://www.flow.cl/app/web/pay.php?token=${valiudate.nro_referencia}`)
-        return { data: valiudate, url: `https://www.flow.cl/app/web/pay.php?token=${valiudate.nro_referencia}` }
-      }
+      
 
       const rechargeAutomatic = await this.prisma.recharge.create({
         data: {
