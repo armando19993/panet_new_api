@@ -29,6 +29,7 @@ export class RechargeService {
       })
 
       if(validate){
+        console.log(`https://api.flow.cl?token=${valiudate.nro_referencia}`)
         return { data: valiudate, url: `https://api.flow.cl?token=${valiudate.nro_referencia}` }
       }
 
