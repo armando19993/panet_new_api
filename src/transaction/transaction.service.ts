@@ -79,7 +79,7 @@ export class TransactionService {
         },
         wallets: {
           some: {
-            countryId: wallet.country.id,
+            countryId: destino.id,
             type: 'RECEPCION',
             balance: {
               gt: 0,
