@@ -4,6 +4,7 @@ import axios from "axios";
 import { NotificationService } from "src/notification/notification.service";
 import { FlowApiService } from "src/flow-api/flow-api.service";
 import { StatusRecharge, StatusTransactionsTemporal, TypeRecharge } from "@prisma/client";
+import { validate } from "class-validator";
 
 @Injectable()
 export class RechargeService {
@@ -16,6 +17,21 @@ export class RechargeService {
   async createAutomatic(data, user) {
     if (data.pasarela === 'Flow') {
       const dataVar = data
+
+      const valiudate = await this.prisma.recharge.findFirst({
+        where: {
+          AND: [
+            {status: "CREADA"},
+            {walletId: dataVar.walletId},
+            {amount: parseFloat(dataVar.amount)}
+          ]
+        }
+      })
+
+      if(validate){
+        return { data: valiudate, url: `https://api.flow.cl?token=${valiudate.nro_referencia}` }
+      }
+
       const rechargeAutomatic = await this.prisma.recharge.create({
         data: {
           userId: user.id,

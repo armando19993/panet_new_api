@@ -100,8 +100,6 @@ export class TransactionService {
       },
     });
 
-    console.log(duenos)
-
     // Crear la transacción
     const transaction = await this.prisma.transaction.create({
       data: {
@@ -155,7 +153,6 @@ export class TransactionService {
       const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
 
       await axios.get(whatsappUrl);
-
     } else {
       await this.prisma.colaEspera.create({
         data: {
@@ -171,6 +168,11 @@ export class TransactionService {
           screen: "DespachoPage",
           params: { transactionId: transaction.id }
         })
+
+        const message = `La transaccion N° ${transaction.publicId} esta pendiente de despacho! `
+        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${randomUser.phone}&message=${encodeURIComponent(message)}`;
+  
+        await axios.get(whatsappUrl);
       }
     }
 
@@ -303,7 +305,6 @@ export class TransactionService {
               },
               take: 10
             },
-            // Agregamos el conteo total de transacciones
             _count: {
               select: {
                 Transaction: true,

@@ -3,11 +3,15 @@ import { CreateWalletRequestDto } from './dto/create-wallet-request.dto';
 import { UpdateWalletRequestDto } from './dto/update-wallet-request.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import { WalletState, WalletStatus } from '@prisma/client';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class WalletRequestService {
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationService
+  ) { }
 
   async create(
     createWalletRequestDto,
