@@ -11,6 +11,11 @@ export class UserService {
   constructor(private prisma: PrismaService) { }
 
   async create(createUserDto) {
+    // Limpiar y formatear los campos
+    createUserDto.user = createUserDto.user.trim().toUpperCase();
+    createUserDto.phone = createUserDto.phone.trim();
+
+    // Validar si el usuario o el teléfono ya existen
     const validate = await this.prisma.user.findFirst({
       where: {
         OR: [

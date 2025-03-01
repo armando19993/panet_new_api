@@ -18,8 +18,6 @@ export class RechargeService {
     if (data.pasarela === 'Flow') {
       const dataVar = data
 
-      
-
       const rechargeAutomatic = await this.prisma.recharge.create({
         data: {
           userId: user.id,
