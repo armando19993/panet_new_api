@@ -26,6 +26,7 @@ export class UserService {
     });
 
     if (validate) {
+      console.log(validate)
       throw new BadRequestException("El nombre de usuario o el número de teléfono ya existen");
     }
 
