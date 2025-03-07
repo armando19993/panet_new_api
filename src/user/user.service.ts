@@ -97,8 +97,20 @@ export class UserService {
     return { data, message: 'Usuarios Con roles admin obtenmidos' }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id) {
+    const data = await this.prisma.user.findUnique({
+      where: {
+        id
+      },
+      include: {
+        Recharge: true,
+        Transaction: true,
+        wallets: true,
+        referrals: true
+      }
+    })
+
+    return { data, message: 'Cliente obtenido con exito' }
   }
 
   async update(id, updateUserDto) {

@@ -55,6 +55,7 @@ model User {
   expoPushToken       String?
   status              WalletStatus        @default(ACTIVO)
   wallets             Wallet[]            @relation("UserWallets")
+  percent_pay         Decimal             @default(0.00) @db.Decimal(10, 2)
   clientes            Client[]
   Recharge            Recharge[]
   WalletRequest       WalletRequest[]
@@ -168,7 +169,7 @@ model Wallet {
   userId           String
   country          Country              @relation("CountryWallets", fields: [countryId], references: [id])
   countryId        String
-  request          WalletRequest?        @relation(fields: [walletRequestId], references: [id])
+  request          WalletRequest?       @relation(fields: [walletRequestId], references: [id])
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @updatedAt
   transactions     WalletTransactions[] @relation("TransactionWallets")
