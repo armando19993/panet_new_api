@@ -99,26 +99,39 @@ export class UserService {
 
   async findOne(id) {
     const data = await this.prisma.user.findUnique({
-      where: {
-        id
-      },
+      where: { id },
       include: {
         Recharge: {
-          include: {
-            wallet: true
-          }
+          include: { wallet: true }
         },
         Transaction: {
-          include: {
-            wallet: true
-          }
+          include: { wallet: true }
         },
         wallets: true,
         referrals: true
       }
-    })
+    });
 
-    return { data, message: 'Cliente obtenido con exito' }
+    // Contar recargas por estado
+    const recargasPorEstado = {
+      CREADA: data.Recharge.filter(recharge => recharge.status === 'CREADA').length,
+      CANCELADA: data.Recharge.filter(recharge => recharge.status === 'CANCELADA').length,
+      COMPLETADA: data.Recharge.filter(recharge => recharge.status === 'COMPLETADA').length
+    };
+
+    // Contar transacciones por estado
+    const transaccionesPorEstado = {
+      CREADA: data.Transaction.filter(transaction => transaction.status === 'CREADA').length,
+      ANULADA: data.Transaction.filter(transaction => transaction.status === 'ANULADA').length,
+      COMPLETADA: data.Transaction.filter(transaction => transaction.status === 'COMPLETADA').length
+    };
+
+    return {
+      data,
+      recargasPorEstado,
+      transaccionesPorEstado,
+      message: 'Cliente obtenido con éxito'
+    };
   }
 
   async update(id, updateUserDto) {
