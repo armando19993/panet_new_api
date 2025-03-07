@@ -47,11 +47,23 @@ export class UserService {
     return { data, message: "Usuario creado con éxito" };
   }
 
+  async findAll(clients = false) {
+    let whereCondition = {};
 
-  async findAll() {
-    const data = await this.prisma.user.findMany({ include: { roles: true } })
+    if (clients) {
+      whereCondition = {
+        roles: {
+          none: {},
+        },
+      };
+    }
 
-    return { data, message: 'Usuarios Obtenidos con exito' }
+    const data = await this.prisma.user.findMany({
+      where: whereCondition,
+      include: { roles: true },
+    });
+
+    return { data, message: 'Usuarios obtenidos con éxito' };
   }
 
   async getUsersByRoles(rolesString) {
