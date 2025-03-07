@@ -103,8 +103,16 @@ export class UserService {
         id
       },
       include: {
-        Recharge: true,
-        Transaction: true,
+        Recharge: {
+          include: {
+            wallet: true
+          }
+        },
+        Transaction: {
+          include: {
+            wallet: true
+          }
+        },
         wallets: true,
         referrals: true
       }
