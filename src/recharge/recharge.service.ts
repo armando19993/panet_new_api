@@ -75,7 +75,7 @@ export class RechargeService {
         )
 
         const message = `El cliente, ${rechargeAutomatic.wallet.user.name} ha generado una recarga por flow, hazle seguimiento! `
-        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=584148383419&message=${encodeURIComponent(message)}`;
+        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
         await axios.get(whatsappUrl);
 
         return { data, url: `${data.url}?token=${data.token}` }
@@ -140,7 +140,7 @@ export class RechargeService {
           });
 
           const message = `El cliente, ${data.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `
-          const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=584148383419&message=${encodeURIComponent(message)}`;
+          const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
           await axios.get(whatsappUrl);
 
           return { data, message: "Recarga creada con exito!" };
