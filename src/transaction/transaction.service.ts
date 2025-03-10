@@ -361,7 +361,6 @@ export class TransactionService {
 
   async procesar(dataAprobar, file, user) {
     const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
-    console.log(user.id);
 
     // Buscamos la transacción actual (podrías obtenerla previamente para calcular el extra)
     const transaction = await this.prisma.transaction.findUnique({
@@ -420,14 +419,14 @@ export class TransactionService {
       await this.prisma.walletTransactions.create({
         data: {
           amount: data.montoDestino,
-          amount_new: parseFloat(wallet.balance.toString()) + parseFloat(data.montoDestino.toString()),
+          amount_new: parseFloat(wallet.balance.toString()) - parseFloat(data.montoDestino.toString()),
           amount_old: wallet.balance,
           wallet: {
             connect: {
               id: wallet.id,
             },
           },
-          description: "Recarga de Saldo REC-2025-" + data.publicId,
+          description: "Retiro por Operacion TRX-2025-" + data.publicId,
           type: "RETIRO"
         },
       });
