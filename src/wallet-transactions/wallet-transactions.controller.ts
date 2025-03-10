@@ -7,20 +7,24 @@ import {
   Param,
   Delete,
   Query,
+  Request,
+  UseGuards,
 } from "@nestjs/common";
 import { WalletTransactionsService } from "./wallet-transactions.service";
 import { CreateWalletTransactionDto } from "./dto/create-wallet-transaction.dto";
 import { UpdateWalletTransactionDto } from "./dto/update-wallet-transaction.dto";
+import { AuthGuard } from "src/auth/auth.guard";
 
 @Controller("wallet-transactions")
+@UseGuards(AuthGuard)
 export class WalletTransactionsController {
   constructor(
     private readonly walletTransactionsService: WalletTransactionsService
-  ) {}
+  ) { }
 
   @Post()
-  create(@Body() createWalletTransactionDto: CreateWalletTransactionDto) {
-    return this.walletTransactionsService.create(createWalletTransactionDto);
+  create(@Body() createWalletTransactionDto: CreateWalletTransactionDto, @Request() req) {
+    return this.walletTransactionsService.create(createWalletTransactionDto, req.user);
   }
 
   @Get()
