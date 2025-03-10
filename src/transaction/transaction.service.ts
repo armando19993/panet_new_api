@@ -163,6 +163,10 @@ export class TransactionService {
         }
       })
 
+      const message = `Tienes una operacion por despachar, por favor realizada en menos de 5 minutos. Departamento de Tecnologia! `
+      const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${randomUser.phone}&message=${encodeURIComponent(message)}`;
+      await axios.get(whatsappUrl);
+
       if (randomUser.expoPushToken) {
         this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
           screen: "DespachoPage",
@@ -171,7 +175,7 @@ export class TransactionService {
 
         const message = `La transaccion N° ${transaction.publicId} esta pendiente de despacho! `
         const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${randomUser.phone}&message=${encodeURIComponent(message)}`;
-  
+
         await axios.get(whatsappUrl);
       }
     }
