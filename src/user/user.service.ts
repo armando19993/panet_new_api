@@ -140,6 +140,42 @@ export class UserService {
     return { data, message: 'Usuario Actualizado con exito' }
   }
 
+  async sendMasivePush(query) {
+    const { countryId } = query;
+
+    let users = [];
+
+    if (countryId) {
+      const wallets = await this.prisma.wallet.findMany({
+        where: { countryId },
+        select: { userId: true },
+      });
+
+      const userIds = wallets.map(wallet => wallet.userId);
+
+      // Busca los usuarios que tengan expoPushToken y estén en la lista de userIds
+      users = await this.prisma.user.findMany({
+        where: {
+          id: { in: userIds },
+          expoPushToken: { not: null },
+        },
+      });
+    } else {
+      console.log("aqui se procesa")
+      users = await this.prisma.user.findMany({
+        where: { expoPushToken: { not: null } },
+      });
+    }
+
+    for (const user of users) {
+      if (user.expoPushToken) {
+        console.log(`Enviando notificación a ${user.expoPushToken}`);
+      }
+    }
+
+    return { data: users, message: 'Proceso ejecutado correctamente' }
+  }
+
   async updatePassword(user: any, password: any) {
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log(password)

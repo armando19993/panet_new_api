@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRole } from '@prisma/client';
+import { AuthGuard } from 'src/auth/auth.guard';
 
 @Controller('user')
 export class UserController {
@@ -14,33 +15,45 @@ export class UserController {
   }
 
   @Get()
+  @UseGuards(AuthGuard)
   findAll(@Query('clients') clients) {
     return this.userService.findAll(clients);
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   findOne(@Param('id') id: string) {
     return this.userService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard)
   update(@Param('id') id: string, @Body() updateUserDto) {
     return this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
   }
 
   @Get('/by-roles/shearch')
+  @UseGuards(AuthGuard)
   async getUsersByRoles(@Query('roles') roles) {
     return this.userService.getUsersByRoles(roles);
   }
 
   @Get('update/password')
+  @UseGuards(AuthGuard)
   async updatePassword(@Query('user') user, @Query('password') password) {
     console.log(user, password)
     return this.userService.updatePassword(user, password);
+  }
+
+  @Get('send/masive/push')
+  @UseGuards(AuthGuard)
+  async sendMasivePush(@Query() query) {
+    return this.userService.sendMasivePush(query)
   }
 }

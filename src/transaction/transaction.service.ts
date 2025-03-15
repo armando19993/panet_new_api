@@ -21,6 +21,10 @@ export class TransactionService {
     const destino = await this.prisma.country.findFirstOrThrow({ where: { id: createTransactionDto.destinoId } });
     const rate = await this.prisma.rate.findFirstOrThrow({ where: { id: createTransactionDto.rateId }, include: { origin: true, destination: true } });
 
+    if (rate.origin.id != origen.id && rate.destination.id != destino.id) {
+      throw new BadRequestException("La tasa no corresponde a los paises seleccionados, inicia nuevamente la operacion");
+    }
+
     // Validar balance del wallet
     const walletBalance = parseFloat(wallet.balance.toString());
     const transactionAmount = parseFloat(createTransactionDto.amount.toString());
@@ -36,6 +40,10 @@ export class TransactionService {
     const rateAmount = parseFloat(rate.amount.toString());
     const porcentajePasarela = parseFloat(((transactionAmount * 2) / 100).toFixed(3));
     const saldoCalculo = transactionAmount - porcentajePasarela
+
+    console.log('rateAmount: ' + rateAmount)
+    console.log('porcentajePasarela: ' + porcentajePasarela)
+    console.log('saldoCalculo: ' + saldoCalculo)
 
     let montoDestino = 0
 
@@ -55,6 +63,8 @@ export class TransactionService {
     if (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA") {
       montoDestino = saldoCalculo / rateAmount;
     }
+
+    console.log('montoDestino: ' + montoDestino)
 
     const tipoCalculo = rate.type_profit;
     const porcentajeCalculo = origen[tipoCalculo];
