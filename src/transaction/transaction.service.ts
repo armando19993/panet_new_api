@@ -38,7 +38,7 @@ export class TransactionService {
 
     // Cálculos principales
     const rateAmount = parseFloat(rate.amount.toString());
-    const porcentajePasarela = parseFloat(((transactionAmount * 2) / 100).toFixed(3));
+    const porcentajePasarela = parseFloat(((transactionAmount * 3) / 100).toFixed(3));
     const saldoCalculo = transactionAmount - porcentajePasarela
 
     console.log('rateAmount: ' + rateAmount)
