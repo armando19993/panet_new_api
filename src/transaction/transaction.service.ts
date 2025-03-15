@@ -64,6 +64,13 @@ export class TransactionService {
       montoDestino = saldoCalculo / rateAmount;
     }
 
+    // Aplicar regla de redondeo específica para montoDestino
+    const roundedValue = Math.round(montoDestino * 1000) / 1000; // Obtener 3 decimales primero
+    const lastDigit = Math.round((roundedValue * 1000) % 10); // Obtener último dígito
+    montoDestino = lastDigit >= 5 
+      ? Math.ceil(roundedValue * 100) / 100 
+      : Math.floor(roundedValue * 100) / 100;
+
     console.log('montoDestino: ' + montoDestino)
 
     const tipoCalculo = rate.type_profit;
