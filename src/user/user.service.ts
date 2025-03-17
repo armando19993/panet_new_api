@@ -4,11 +4,15 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import * as bcrypt from "bcryptjs"
 import axios from 'axios';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class UserService {
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private notification: NotificationService
+  ) { }
 
   async create(createUserDto) {
     // Limpiar y formatear los campos
@@ -141,7 +145,7 @@ export class UserService {
   }
 
   async sendMasivePush(query) {
-    const { countryId } = query;
+    const { countryId, title, body } = query;
 
     let users = [];
 
@@ -170,6 +174,7 @@ export class UserService {
     for (const user of users) {
       if (user.expoPushToken) {
         console.log(`Enviando notificación a ${user.expoPushToken}`);
+        await this.notification.sendPushNotification(user.expoPushToken, title, body);
       }
     }
 
