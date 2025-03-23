@@ -33,6 +33,29 @@ export class TransactionService {
       throw new BadRequestException("No cuentas con saldo para realizar esta transacción");
     }
 
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000); // Hace 10 minutos
+
+    const lastTransaction = await this.prisma.transaction.findFirst({
+      where: {
+        creadorId: createTransactionDto.creadorId,
+        walletId: createTransactionDto.walletId,
+        montoOrigen: transactionAmount,
+        origenId: createTransactionDto.origenId,
+        destinoId: createTransactionDto.destinoId,
+        instrumentId: createTransactionDto.instrumentId,
+        createdAt: {
+          gte: tenMinutesAgo,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (lastTransaction) {
+      throw new BadRequestException("Debes esperar al menos 10 minutos antes de realizar otra operación con los mismos datos.");
+    }
+
     // Restar el saldo del wallet de quien crea
     await this.prisma.wallet.update({ where: { id: wallet.id }, data: { balance: { decrement: createTransactionDto.amount } } })
 
@@ -67,8 +90,8 @@ export class TransactionService {
     // Aplicar regla de redondeo específica para montoDestino
     const roundedValue = Math.round(montoDestino * 1000) / 1000; // Obtener 3 decimales primero
     const lastDigit = Math.round((roundedValue * 1000) % 10); // Obtener último dígito
-    montoDestino = lastDigit >= 5 
-      ? Math.ceil(roundedValue * 100) / 100 
+    montoDestino = lastDigit >= 5
+      ? Math.ceil(roundedValue * 100) / 100
       : Math.floor(roundedValue * 100) / 100;
 
     console.log('montoDestino: ' + montoDestino)
