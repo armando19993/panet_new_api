@@ -53,7 +53,7 @@ export class TransactionService {
     });
 
     if (lastTransaction) {
-      throw new BadRequestException("Debes esperar al menos 10 minutos antes de realizar otra operación con los mismos datos.");
+      throw new BadRequestException("Operacion Duplicada: Debes esperar un minimo de 10 minutos para realizar otra operacion con los mismos datos!");
     }
 
     // Restar el saldo del wallet de quien crea
