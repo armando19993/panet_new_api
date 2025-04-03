@@ -45,7 +45,6 @@ export class UserController {
   }
 
   @Get('update/password')
-  @UseGuards(AuthGuard)
   async updatePassword(@Query('user') user, @Query('password') password) {
     console.log(user, password)
     return this.userService.updatePassword(user, password);
