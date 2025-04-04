@@ -609,7 +609,7 @@ export class TransactionService {
           {
             type: 'error',
             title: 'Información Importante',
-            description: 'Solo se encuentran funcionales bancos Interbank y BCP, los otros estan presentando intermitencias'
+            description: 'Solo tenemos operaciones superiores a 60 Soles.'
           }
         ]
       },
