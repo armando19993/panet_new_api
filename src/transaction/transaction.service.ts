@@ -597,13 +597,13 @@ export class TransactionService {
             description: 'Realiza un yape rapido y directo!',
             min: 60
           },
-          {
-            id: 153,
-            pasarela: 'Floid',
-            name: 'Transferencia Bancaria',
-            image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
-            description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
-          }
+          // {
+          //   id: 153,
+          //   pasarela: 'Floid',
+          //   name: 'Transferencia Bancaria',
+          //   image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
+          //   description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
+          // }
         ],
         alertas: [
           {
@@ -616,13 +616,13 @@ export class TransactionService {
       {
         countryCode: 'CL',
         methods: [
-          {
-            id: 0,
-            pasarela: 'Floid',
-            name: 'Transferencia Bancaria',
-            image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
-            description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.'
-          },
+          // {
+          //   id: 0,
+          //   pasarela: 'Floid',
+          //   name: 'Transferencia Bancaria',
+          //   image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
+          //   description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.'
+          // },
           {
             id: 15,
             pasarela: 'Flow',
