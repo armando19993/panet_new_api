@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { CreateInstrumentsClientDto } from "./dto/create-instruments-client.dto";
 import { UpdateInstrumentsClientDto } from "./dto/update-instruments-client.dto";
 import { PrismaService } from "src/prisma/prisma.servise";
+import { WalletStatus } from "@prisma/client";
 
 @Injectable()
 export class InstrumentsClientService {
@@ -20,6 +21,7 @@ export class InstrumentsClientService {
 
       const data = await this.prisma.instrumentsClient.create({
         data: {
+          accountNumberCCI: createInstrumentsClientDto.accountNumberCCI,
           document: createInstrumentsClientDto.document,
           holder: createInstrumentsClientDto.holder,
           accountNumber: createInstrumentsClientDto.accountNumber,
@@ -67,7 +69,8 @@ export class InstrumentsClientService {
     bankId?: string,
     countryId?: string,
     accountTypeId?: string,
-    useInstruments?: string
+    useInstruments?: string,
+    status?: WalletStatus
   ) {
     const filters: any = {};
 
@@ -77,6 +80,7 @@ export class InstrumentsClientService {
     if (countryId) filters.countryId = countryId;
     if (accountTypeId) filters.accountTypeId = accountTypeId;
     if (useInstruments) filters.useInstruments = useInstruments;
+    if (status) filters.status = status;
 
     const data = await this.prisma.instrumentsClient.findMany({
       where: filters,
@@ -103,7 +107,7 @@ export class InstrumentsClientService {
     return { data, message: 'Instrumento Actualizado con exito' }
   }
 
-  remove(id: number) {
+  remove(id) {
     return `This action removes a #${id} instrumentsClient`;
   }
 }

@@ -4,6 +4,7 @@ import axios from "axios";
 import * as bcrypt from "bcryptjs";
 import { NotificationService } from "src/notification/notification.service";
 import { PrismaService } from "src/prisma/prisma.servise";
+import { LoginDto } from "./dto/login.dto";
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,7 @@ export class AuthService {
     private notificationService: NotificationService
   ) { }
 
-  async login(data) {
+  async login(data: LoginDto) {
     let { user, password } = data;
 
     const val = await this.prisma.user.findUnique({

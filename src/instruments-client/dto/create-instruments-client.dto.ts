@@ -64,6 +64,11 @@ export class CreateInstrumentsClientDto {
   @IsOptional()
   profit: number
 
+  @IsOptional()
+  @IsString()
+  @IsOptional()
+  accountNumberCCI: string
+
   constructor(partial: Partial<CreateInstrumentsClientDto>) {
     Object.assign(this, partial);
   }

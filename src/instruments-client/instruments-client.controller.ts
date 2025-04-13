@@ -16,8 +16,8 @@ export class InstrumentsClientController {
 
   @Get()
   findAll(@Query() query) {
-    const { clientId, userId, bankId, countryId, accountTypeId, useInstruments } = query;
-    return this.instrumentsClientService.findAll(clientId, userId, bankId, countryId, accountTypeId, useInstruments);
+    const { clientId, userId, bankId, countryId, accountTypeId, useInstruments, status } = query;
+    return this.instrumentsClientService.findAll(clientId, userId, bankId, countryId, accountTypeId, useInstruments, status);
   }
 
   @Get(':id')
@@ -32,6 +32,6 @@ export class InstrumentsClientController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.instrumentsClientService.remove(+id);
+    return this.instrumentsClientService.remove(id);
   }
 }

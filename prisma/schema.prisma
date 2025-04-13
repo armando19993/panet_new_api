@@ -239,28 +239,30 @@ model Client {
 }
 
 model InstrumentsClient {
-  id             String          @id @default(uuid())
-  publicId       Int             @unique @default(autoincrement())
-  document       String?
-  profit         Decimal         @default(0.00) @db.Decimal(10, 2)
-  holder         String
-  accountNumber  String
-  accountTypeId  String?
-  accountType    AccountType?    @relation(fields: [accountTypeId], references: [id])
-  countryId      String
-  country        Country         @relation(fields: [countryId], references: [id])
-  bankId         String?
-  bank           Bank?           @relation(fields: [bankId], references: [id])
-  typeInstrument TypesInstrumens
-  useInstruments USE_INSTRUMENTS @default(CLIENT)
-  Client         Client?         @relation(fields: [clientId], references: [id])
-  clientId       String?
-  user           User?           @relation(fields: [userId], references: [id])
-  userId         String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  Recharge       Recharge[]
-  Transaction    Transaction[]   @relation("InstrumentTransaction")
+  id               String          @id @default(uuid())
+  publicId         Int             @unique @default(autoincrement())
+  document         String?
+  profit           Decimal         @default(0.00) @db.Decimal(10, 2)
+  holder           String
+  accountNumber    String
+  accountNumberCCI String?         @default("")
+  accountTypeId    String?
+  status           WalletStatus    @default(ACTIVO) 
+  accountType      AccountType?    @relation(fields: [accountTypeId], references: [id])
+  countryId        String
+  country          Country         @relation(fields: [countryId], references: [id])
+  bankId           String?
+  bank             Bank?           @relation(fields: [bankId], references: [id])
+  typeInstrument   TypesInstrumens
+  useInstruments   USE_INSTRUMENTS @default(CLIENT)
+  Client           Client?         @relation(fields: [clientId], references: [id])
+  clientId         String?
+  user             User?           @relation(fields: [userId], references: [id])
+  userId           String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  Recharge         Recharge[]
+  Transaction      Transaction[]   @relation("InstrumentTransaction")
 }
 
 model Recharge {
