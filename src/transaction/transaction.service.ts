@@ -4,6 +4,7 @@ import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import { NotificationService } from 'src/notification/notification.service';
 import axios from 'axios';
+import { time } from 'console';
 
 @Injectable()
 export class TransactionService {
@@ -587,7 +588,9 @@ export class TransactionService {
             name: 'Pago Efectivo',
             image: 'https://www.blaventech.com/wp-content/uploads/2021/11/pago-efectivo.png',
             description: 'Realiza tus pagos en efectivo en agentes y establecimientos autorizados.',
-            min: 100
+            min: 100,
+            fee: 0,
+            time: 'Inmediato'
           },
           {
             id: 152,
@@ -595,7 +598,9 @@ export class TransactionService {
             name: 'Yape',
             image: 'https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-original-577x577/s3/032021/yape.png?sbmszL8CD.TqS8SZ5YaqDfOHxLgBAJid&itok=FFFRSqls',
             description: 'Realiza un yape rapido y directo!',
-            min: 60
+            min: 60,
+            fee: 0,
+            time: 'Inmediato'
           },
           {
             id: 153,
@@ -603,6 +608,8 @@ export class TransactionService {
             name: 'Transferencia Bancaria',
             image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
             description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
+            fee: 0,
+            time: 'Inmediato'
           }
         ],
         alertas: [
@@ -621,14 +628,18 @@ export class TransactionService {
             pasarela: 'Floid',
             name: 'Transferencia Bancaria',
             image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
-            description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.'
+            description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
+            fee: 0,
+            time: 'Inmediato'
           },
           {
             id: 15,
             pasarela: 'Flow',
             name: 'Match',
             image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
-            description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.'
+            description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
+            fee: 0,
+            time: 'Inmediato'
           }
         ]
       }
