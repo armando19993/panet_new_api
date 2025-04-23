@@ -589,7 +589,7 @@ export class TransactionService {
             image: 'https://www.blaventech.com/wp-content/uploads/2021/11/pago-efectivo.png',
             description: 'Realiza tus pagos en efectivo en agentes y establecimientos autorizados.',
             min: 100,
-            fee: 0,
+            fee: 5.5,
             time: 'Inmediato'
           },
           {
@@ -599,7 +599,7 @@ export class TransactionService {
             image: 'https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-original-577x577/s3/032021/yape.png?sbmszL8CD.TqS8SZ5YaqDfOHxLgBAJid&itok=FFFRSqls',
             description: 'Realiza un yape rapido y directo!',
             min: 60,
-            fee: 0,
+            fee: 4.5,
             time: 'Inmediato'
           },
           {
@@ -608,7 +608,7 @@ export class TransactionService {
             name: 'Transferencia Bancaria',
             image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
             description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
-            fee: 0,
+            fee: 2.5,
             time: 'Inmediato'
           }
         ],
@@ -629,7 +629,7 @@ export class TransactionService {
             name: 'Transferencia Bancaria',
             image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
             description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
-            fee: 0,
+            fee: 2.5,
             time: 'Inmediato'
           },
           {
@@ -638,7 +638,7 @@ export class TransactionService {
             name: 'Match',
             image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
             description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
-            fee: 0,
+            fee: 3,
             time: 'Inmediato'
           }
         ]
