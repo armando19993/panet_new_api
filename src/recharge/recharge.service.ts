@@ -260,6 +260,7 @@ export class RechargeService {
     let data = null;
 
     if (createRechargeDto.type === "AUTOMATIZADO") {
+      throw new BadRequestException("No se puede crear una recarga automática manualmente");
     } else {
       const fechaComprobante = new Date(createRechargeDto.fecha_comprobante)
       const validate = await this.prisma.recharge.findFirst({
@@ -277,8 +278,6 @@ export class RechargeService {
       try {
         data = await this.prisma.recharge.create({
           data: {
-            userId: user.id,
-            walletId: createRechargeDto.walletId,
             amount: createRechargeDto.amount,
             type: "MANUAL",
             status: "CREADA",
@@ -288,10 +287,18 @@ export class RechargeService {
             amount_total: createRechargeDto.amount_total || null,
             comentario: createRechargeDto.comentario || null,
             nro_referencia: createRechargeDto.nro_referencia || null,
-            instrumentId: createRechargeDto.instrumentId || null,
             fecha_comprobante: createRechargeDto.fecha_comprobante
               ? new Date(createRechargeDto.fecha_comprobante)
               : null,
+            user: {
+              connect: { id: user.id }
+            },
+            wallet: {
+              connect: { id: createRechargeDto.walletId }
+            },
+            instrument: createRechargeDto.instrumentId ? {
+              connect: { id: createRechargeDto.instrumentId }
+            } : undefined
           },
           include: {
             user: true
