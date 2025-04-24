@@ -27,6 +27,8 @@ export class RechargeService {
           status: "CREADA",
           comprobante: dataVar.comprobante || null,
           comentario: 'Flow',
+          amount_comision: dataVar.amount_comision || null,
+          amount_total: dataVar.amount_total || null,
           nro_referencia: "",
           fecha_comprobante: new Date(),
         },
@@ -74,9 +76,9 @@ export class RechargeService {
           `Estimado cliente tu recarga REC-2025-${rechargeAutomatic.publicId}, ha sido creada con exito, procede por favor a realizar la misma, te notificaremos cuando tu saldo este disponible.`
         )
 
-        // const message = `El cliente, ${rechargeAutomatic.wallet.user.name} ha generado una recarga por flow, hazle seguimiento! `
-        // const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
-        // await axios.get(whatsappUrl);
+        const message = `El cliente, ${rechargeAutomatic.wallet.user.name} ha generado una recarga por flow, hazle seguimiento! `
+        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
+        await axios.get(whatsappUrl);
 
         return { data, url: `${data.url}?token=${data.token}` }
       } catch (error) {
@@ -139,9 +141,9 @@ export class RechargeService {
             }
           });
 
-          // const message = `El cliente, ${data.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `
-          // const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
-          // await axios.get(whatsappUrl);
+          const message = `El cliente, ${data.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `
+          const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
+          await axios.get(whatsappUrl);
 
           return { data, message: "Recarga creada con exito!" };
         } catch (error) {
@@ -259,7 +261,6 @@ export class RechargeService {
 
     if (createRechargeDto.type === "AUTOMATIZADO") {
     } else {
-
       const fechaComprobante = new Date(createRechargeDto.fecha_comprobante)
       const validate = await this.prisma.recharge.findFirst({
         where: {
@@ -282,6 +283,9 @@ export class RechargeService {
             type: "MANUAL",
             status: "CREADA",
             comprobante: fileUrl || null,
+            pasarela: createRechargeDto.pasarela || null,
+            amount_comision: createRechargeDto.amount_comision || null,
+            amount_total: createRechargeDto.amount_total || null,
             comentario: createRechargeDto.comentario || null,
             nro_referencia: createRechargeDto.nro_referencia || null,
             instrumentId: createRechargeDto.instrumentId || null,

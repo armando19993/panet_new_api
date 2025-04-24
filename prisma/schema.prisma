@@ -247,7 +247,7 @@ model InstrumentsClient {
   accountNumber    String
   accountNumberCCI String?         @default("")
   accountTypeId    String?
-  status           WalletStatus    @default(ACTIVO) 
+  status           WalletStatus    @default(ACTIVO)
   accountType      AccountType?    @relation(fields: [accountTypeId], references: [id])
   countryId        String
   country          Country         @relation(fields: [countryId], references: [id])
@@ -269,6 +269,9 @@ model Recharge {
   id                  String                @id @default(uuid())
   publicId            Int                   @unique @default(autoincrement())
   amount              Decimal               @default(0.00) @db.Decimal(10, 2)
+  amount_comision     Decimal               @default(0.00) @db.Decimal(10, 2)
+  amount_total        Decimal               @default(0.00) @db.Decimal(10, 2)
+  pasarela            String?                @default("Manual")
   wallet              Wallet                @relation(fields: [walletId], references: [id])
   walletId            String
   user                User                  @relation(fields: [userId], references: [id])
