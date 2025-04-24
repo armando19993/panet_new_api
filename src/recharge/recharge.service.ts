@@ -283,8 +283,8 @@ export class RechargeService {
             status: "CREADA",
             comprobante: fileUrl || null,
             pasarela: createRechargeDto.pasarela || null,
-            amount_comision: createRechargeDto.amount_comision || null,
-            amount_total: createRechargeDto.amount_total || null,
+            amount_comision: createRechargeDto.amount_comision || 0,
+            amount_total: createRechargeDto.amount_total || 0,
             comentario: createRechargeDto.comentario || null,
             nro_referencia: createRechargeDto.nro_referencia || null,
             fecha_comprobante: createRechargeDto.fecha_comprobante
@@ -646,15 +646,15 @@ export class RechargeService {
       },
       data: {
         balance: {
-          increment: data.amount,
+          increment: data.amount_total,
         },
       },
     });
 
     await this.prisma.walletTransactions.create({
       data: {
-        amount: data.amount,
-        amount_new: parseFloat(data.wallet.balance.toString()) + parseFloat(data.amount.toString()),
+        amount: data.amount_total,
+        amount_new: parseFloat(data.wallet.balance.toString()) + parseFloat(data.amount_total.toString()),
         amount_old: data.wallet.balance,
         wallet: {
           connect: {
