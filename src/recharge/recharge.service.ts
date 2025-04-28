@@ -1069,7 +1069,7 @@ export class RechargeService {
       `Estimado cliente tu recarga en nuestra app PANET se ecuentra en estado ${status}`
     )
 
-    if(response.status === 2){
+    if (response.status === 2) {
       await this.prisma.wallet.update({
         where: { id: recharge.walletId },
         data: {
@@ -1078,7 +1078,7 @@ export class RechargeService {
           },
         },
       });
-  
+
       await this.prisma.walletTransactions.create({
         data: {
           amount: recharge.amount,
