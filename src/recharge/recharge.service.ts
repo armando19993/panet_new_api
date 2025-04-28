@@ -1069,29 +1069,31 @@ export class RechargeService {
       `Estimado cliente tu recarga en nuestra app PANET se ecuentra en estado ${status}`
     )
 
-    await this.prisma.wallet.update({
-      where: { id: recharge.walletId },
-      data: {
-        balance: {
-          increment: recharge.amount,
-        },
-      },
-    });
-
-    await this.prisma.walletTransactions.create({
-      data: {
-        amount: recharge.amount,
-        amount_new: parseFloat(recharge.wallet.balance.toString()) + parseFloat(recharge.amount.toString()),
-        amount_old: recharge.wallet.balance,
-        wallet: {
-          connect: {
-            id: recharge.walletId,
+    if(response.status === 2){
+      await this.prisma.wallet.update({
+        where: { id: recharge.walletId },
+        data: {
+          balance: {
+            increment: recharge.amount,
           },
         },
-        description: "Deposito por Recarga: REC-2025-" + recharge.publicId,
-        type: "DEPOSITO"
-      },
-    })
+      });
+  
+      await this.prisma.walletTransactions.create({
+        data: {
+          amount: recharge.amount,
+          amount_new: parseFloat(recharge.wallet.balance.toString()) + parseFloat(recharge.amount.toString()),
+          amount_old: recharge.wallet.balance,
+          wallet: {
+            connect: {
+              id: recharge.walletId,
+            },
+          },
+          description: "Deposito por Recarga: REC-2025-" + recharge.publicId,
+          type: "DEPOSITO"
+        },
+      })
+    }
 
     return { data: recharge, message: 'Recarga Actualizada con exito' }
   }
