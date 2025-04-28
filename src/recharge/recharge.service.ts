@@ -20,8 +20,12 @@ export class RechargeService {
 
       const rechargeAutomatic = await this.prisma.recharge.create({
         data: {
-          userId: user.id,
-          walletId: dataVar.walletId,
+          user: {
+            connect: { id: user.id }
+          },
+          wallet: {
+            connect: { id: dataVar.walletId }
+          },
           amount: parseFloat(dataVar.amount),
           type: "AUTOMATIZADO",
           status: "CREADA",
@@ -122,8 +126,12 @@ export class RechargeService {
         try {
           data = await this.prisma.recharge.create({
             data: {
-              userId: user.id,
-              walletId: data.walletId,
+              user: {
+                connect: { id: user.id }
+              },
+              wallet: {
+                connect: { id: data.walletId }
+              },
               amount: data.amount,
               type: "AUTOMATIZADO",
               status: "CREADA",
