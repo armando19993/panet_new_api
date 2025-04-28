@@ -103,9 +103,13 @@ export class RechargeService {
 
         if (data.countryCode == "PE") {
           payload.currency = "PEN"
-          payload.consumer_id_type = wallet.consumer_id_type.toLowerCase()
+          if (wallet.consumer_id_type) {
+            payload.consumer_id_type = wallet.consumer_id_type.toLowerCase()
+          }
         }
-        payload.consumer_id = wallet.consumer_id
+        if (wallet.consumer_id) {
+          payload.consumer_id = wallet.consumer_id
+        }
 
         console.log(payload)
 
