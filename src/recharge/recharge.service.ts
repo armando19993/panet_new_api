@@ -35,6 +35,7 @@ export class RechargeService {
           amount_total: dataVar.amount_total || null,
           nro_referencia: "",
           fecha_comprobante: new Date(),
+          pasarela: 'Flow'
         },
         include: {
           wallet: {
@@ -84,7 +85,7 @@ export class RechargeService {
         const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
         await axios.get(whatsappUrl);
 
-        return { data, url: `${data.url}?token=${data.token}` }
+        return { data, rechargeAutomatic, url: `${data.url}?token=${data.token}` }
       } catch (error) {
         console.log(error)
         return { data: null }
@@ -147,6 +148,7 @@ export class RechargeService {
               amount_total: data.amount_total || null,
               nro_referencia: token,
               fecha_comprobante: new Date(),
+              pasarela: 'Floid'
             },
             include: {
               wallet: {
