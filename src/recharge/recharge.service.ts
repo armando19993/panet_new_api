@@ -1074,15 +1074,15 @@ export class RechargeService {
         where: { id: recharge.walletId },
         data: {
           balance: {
-            increment: recharge.amount,
+            increment: recharge.amount_total,
           },
         },
       });
 
       await this.prisma.walletTransactions.create({
         data: {
-          amount: recharge.amount,
-          amount_new: parseFloat(recharge.wallet.balance.toString()) + parseFloat(recharge.amount.toString()),
+          amount: recharge.amount_total,
+          amount_new: parseFloat(recharge.wallet.balance.toString()) + parseFloat(recharge.amount_total.toString()),
           amount_old: recharge.wallet.balance,
           wallet: {
             connect: {
