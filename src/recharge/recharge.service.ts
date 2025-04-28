@@ -121,6 +121,8 @@ export class RechargeService {
           }
         );
 
+        console.log(response.data)
+
         const token = response.data.payment_token;
 
         try {
@@ -137,6 +139,8 @@ export class RechargeService {
               status: "CREADA",
               comprobante: data.comprobante || null,
               comentario: data.comentario || null,
+              amount_comision: data.amount_comision || null,
+              amount_total: data.amount_total || null,
               nro_referencia: token,
               fecha_comprobante: new Date(),
             },
