@@ -3,6 +3,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import { NotificationService } from 'src/notification/notification.service';
+import { WhatsappService } from 'src/whatsapp/whatsapp.service';
 import axios from 'axios';
 import { time } from 'console';
 
@@ -11,7 +12,8 @@ export class TransactionService {
 
   constructor(
     private prisma: PrismaService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private whatsappService: WhatsappService
   ) { }
 
   async create(createTransactionDto: CreateTransactionDto) {
@@ -193,7 +195,7 @@ export class TransactionService {
       const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
       const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
 
-      await axios.get(whatsappUrl);
+      await this.whatsappService.sendMessageSafely(whatsappUrl);
     } else {
       await this.prisma.colaEspera.create({
         data: {
@@ -206,7 +208,7 @@ export class TransactionService {
 
       const message = `Tienes una operacion por despachar, por favor realizada en menos de 5 minutos. Departamento de Tecnologia! `
       const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${randomUser.phone}&message=${encodeURIComponent(message)}`;
-      await axios.get(whatsappUrl);
+      await this.whatsappService.sendMessageSafely(whatsappUrl);
 
       if (randomUser.expoPushToken) {
         this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
@@ -217,7 +219,7 @@ export class TransactionService {
         const message = `La transaccion N° ${transaction.publicId} esta pendiente de despacho! `
         const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${randomUser.phone}&message=${encodeURIComponent(message)}`;
 
-        await axios.get(whatsappUrl);
+        await this.whatsappService.sendMessageSafely(whatsappUrl);
       }
     }
 
@@ -475,7 +477,7 @@ export class TransactionService {
       if (data.cliente) {
         let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se ha procesada con exito!";
         const url = `https://api-whatsapp.paneteirl.store/send-message?number=${data.cliente.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
-        await axios.get(url);
+        await this.whatsappService.sendMessageSafely(url);
       }
 
       this.notification.sendPushNotification(
@@ -529,40 +531,45 @@ export class TransactionService {
   }
 
   async notificar(data, file) {
-    const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
+    try {
+      const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
 
-    const transaction = await this.prisma.transaction.findFirst({
-      where: {
-        id: data.transactionId
-      },
-      include: {
-        creador: {
-          select: {
-            phone: true
-          }
+      const transaction = await this.prisma.transaction.findFirst({
+        where: {
+          id: data.transactionId
         },
-        cliente: {
-          select: {
-            phone: true
+        include: {
+          creador: {
+            select: {
+              phone: true
+            }
+          },
+          cliente: {
+            select: {
+              phone: true
+            }
           }
         }
+      })
+
+      let phone = null
+      if (transaction.cliente.phone) {
+        phone = transaction.cliente.phone
       }
-    })
+      else {
+        phone = transaction.creador.phone
+      }
 
-    let phone = null
-    if (transaction.cliente.phone) {
-      phone = transaction.cliente.phone
+      let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se encuentra en proceso!"
+      const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`
+
+      await this.whatsappService.sendMessageSafely(url);
+      return { success: true, message: 'Notificación enviada con éxito' };
+    } catch (error) {
+      console.error('Error al enviar notificación de WhatsApp:', error);
+      return { success: false, message: 'No se pudo enviar la notificación, pero la operación continuará' };
     }
-    else {
-      phone = transaction.creador.phone
-    }
-
-    let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se encuentra en proceso!"
-    const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`
-
-    await axios.get(url);
   }
-
 
   async transferir(data) {
     const dataa = await this.prisma.colaEspera.update({

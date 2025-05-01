@@ -54,6 +54,7 @@ model User {
   updatedAt           DateTime            @updatedAt
   expoPushToken       String?
   status              WalletStatus        @default(ACTIVO)
+  identity_validate   Boolean             @default(false)
   wallets             Wallet[]            @relation("UserWallets")
   percent_pay         Decimal             @default(0.00) @db.Decimal(10, 2)
   clientes            Client[]
@@ -271,7 +272,7 @@ model Recharge {
   amount              Decimal               @default(0.00) @db.Decimal(10, 2)
   amount_comision     Decimal               @default(0.00) @db.Decimal(10, 2)
   amount_total        Decimal               @default(0.00) @db.Decimal(10, 2)
-  pasarela            String?                @default("Manual")
+  pasarela            String?               @default("Manual")
   wallet              Wallet                @relation(fields: [walletId], references: [id])
   walletId            String
   user                User                  @relation(fields: [userId], references: [id])

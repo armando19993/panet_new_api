@@ -3,6 +3,7 @@ import { TransactionService } from './transaction.service';
 import { TransactionController } from './transaction.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { NotificationService } from 'src/notification/notification.service';
+import { WhatsappModule } from 'src/whatsapp/whatsapp.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -10,6 +11,7 @@ import { extname } from 'path';
 @Module({
   imports: [
     PrismaModule,
+    WhatsappModule,
     MulterModule.register({
       storage: diskStorage({
         destination: "./uploads",
