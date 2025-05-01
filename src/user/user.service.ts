@@ -5,13 +5,15 @@ import { PrismaService } from 'src/prisma/prisma.servise';
 import * as bcrypt from "bcryptjs"
 import axios from 'axios';
 import { NotificationService } from 'src/notification/notification.service';
+import { WhatsappService } from 'src/whatsapp/whatsapp.service';
 
 @Injectable()
 export class UserService {
 
   constructor(
     private prisma: PrismaService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private whatsappService: WhatsappService
   ) { }
 
   async create(createUserDto) {
@@ -190,16 +192,18 @@ export class UserService {
 
     const data = await this.prisma.user.update({ where: { user }, data: { password: hashedPassword } })
 
-    const message = `
+    try {
+      const message = `
         Hola 👋, soy PanaMoney, tu asistente de PANET.
         Te traigo un mensaje importante:
         Tu contraseña ha sido restablecida exitosamente.
         Si no has realizado esta acción, por favor, comunícate con nosotros lo antes posible.
         ¡Gracias por confiar en nosotros!
-    `;
-    const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${validate.phone}&message=${encodeURIComponent(message)}`;
-
-    await axios.get(whatsappUrl);
+      `;
+      await this.whatsappService.sendTextMessage(validate.phone, message);
+    } catch (error) {
+      console.error('Error al enviar mensaje de WhatsApp:', error);
+    }
 
     return { data, message: 'Contraseña actualizada con exito' }
   }

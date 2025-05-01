@@ -3,6 +3,7 @@ import { PrismaService } from "src/prisma/prisma.servise";
 import axios from "axios";
 import { NotificationService } from "src/notification/notification.service";
 import { FlowApiService } from "src/flow-api/flow-api.service";
+import { WhatsappService } from "src/whatsapp/whatsapp.service";
 import { StatusRecharge, StatusTransactionsTemporal, TypeRecharge } from "@prisma/client";
 import { validate } from "class-validator";
 
@@ -11,8 +12,24 @@ export class RechargeService {
   constructor(
     private prisma: PrismaService,
     private notification: NotificationService,
-    private flowApiService: FlowApiService
+    private flowApiService: FlowApiService,
+    private whatsappService: WhatsappService
   ) { }
+
+  // Método utilitario para enviar notificaciones de WhatsApp de manera segura
+  private async sendWhatsAppNotification(phone: string, message: string, imageUrl?: string): Promise<boolean> {
+    try {
+      if (imageUrl) {
+        return await this.whatsappService.sendImageMessage(phone, message, imageUrl);
+      } else {
+        return await this.whatsappService.sendTextMessage(phone, message);
+      }
+    } catch (error) {
+      console.error('Error al enviar notificación de WhatsApp:', error);
+      // No propagamos el error para que no afecte el flujo principal
+      return false;
+    }
+  }
 
   async createAutomatic(data, user) {
     if (data.pasarela === 'Flow') {
@@ -81,9 +98,7 @@ export class RechargeService {
           `Estimado cliente tu recarga REC-2025-${rechargeAutomatic.publicId}, ha sido creada con exito, procede por favor a realizar la misma, te notificaremos cuando tu saldo este disponible.`
         )
 
-        const message = `El cliente, ${rechargeAutomatic.wallet.user.name} ha generado una recarga por flow, hazle seguimiento! `
-        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
-        await axios.get(whatsappUrl);
+        await this.sendWhatsAppNotification('573207510120', `El cliente, ${rechargeAutomatic.wallet.user.name} ha generado una recarga por flow, hazle seguimiento! `);
 
         return { data, rechargeAutomatic, url: `${data.url}?token=${data.token}` }
       } catch (error) {
@@ -159,9 +174,7 @@ export class RechargeService {
             }
           });
 
-          const message = `El cliente, ${data.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `
-          const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
-          await axios.get(whatsappUrl);
+          await this.sendWhatsAppNotification(data.wallet.user.phone, `El cliente, ${data.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `);
 
           return { data, message: "Recarga creada con exito!" };
         } catch (error) {
@@ -260,9 +273,7 @@ export class RechargeService {
 
     const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-    const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
-
-    await axios.get(whatsappUrl);
+    await this.sendWhatsAppNotification(instrument.user.phone, message, fileUrl);
 
     this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
     return {
@@ -347,12 +358,8 @@ export class RechargeService {
         const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
         const message2 = `*PANET APP:*\n\nHola, ${user.name}}, has creado la recarga:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\n *Comentario:* ${data.comentario}, la misma se encuentra en revision espera nuestra comunicacion. Cualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-
-        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${instrument.user.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
-        const whatsappUrl2 = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message2)}&imageUrl=${fileUrl}`;
-
-        await axios.get(whatsappUrl);
-        await axios.get(whatsappUrl2);
+        await this.sendWhatsAppNotification(instrument.user.phone, message, fileUrl);
+        await this.sendWhatsAppNotification(data.user.phone, message2, fileUrl);
 
         this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
         this.notification.sendPushNotification(data.user.expoPushToken, 'Nueva Recarga Pendiente', `Tienes una nueva recarga pendiente de aprobacion: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
@@ -486,9 +493,7 @@ export class RechargeService {
 
       const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data?.comentario ? data.comentario : '*Sin Comentario*'} ha sido rechazada por el siguiente motivo *${updateRechargeDto.comentario}*\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-      const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message)}`;
-      await axios.get(whatsappUrl);
-
+      await this.sendWhatsAppNotification(data.user.phone, message);
 
       this.notification.sendPushNotification(data.user.expoPushToken, 'Estado de Recarga Actualizado', `Tu recarga: REC-2025-${data.publicId} ha cambiado a estado ${updateRechargeDto.status}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
 
@@ -639,9 +644,7 @@ export class RechargeService {
 
       if (duenos.length === 0) {
         const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
-        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
-
-        await axios.get(whatsappUrl);
+        await this.sendWhatsAppNotification('573207510120', message);
       }
       else {
         const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
@@ -810,8 +813,7 @@ export class RechargeService {
 
     const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data.comentario} ha sido APROBADA con exito por un monto de ${data.amount} ${data.wallet.country.currency}, ya el saldo se encuentra disponible para su uso.\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-    const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${data.user.phone}&message=${encodeURIComponent(message)}`;
-    await axios.get(whatsappUrl);
+    await this.sendWhatsAppNotification(data.user.phone, message);
 
     return { data, message: 'Recarga Cancelada con exito' }
   }
@@ -819,7 +821,7 @@ export class RechargeService {
   async updateAutomatic(data) {
     const recharge = await this.prisma.recharge.findFirst({
       where: { id: data.rechargeId },
-      include: { wallet: { include: { country: true } } },
+      include: { wallet: { include: { country: true, user: true } } },
     });
 
     if (!recharge) {
@@ -881,6 +883,8 @@ export class RechargeService {
             pasarela_response: JSON.stringify(response.data),
           },
         });
+
+        await this.sendWhatsAppNotification('573207510120', `El cliente, ${recharge.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `);
 
         return updatedRecharge;
       } else {
@@ -1065,7 +1069,7 @@ export class RechargeService {
       }
     })
 
-    await this.notification.sendPushNotification(
+    this.notification.sendPushNotification(
       recharge.wallet.user.expoPushToken,
       `Cambio de Estado en tu recarga REC-2025-${recharge.publicId}`,
       `Estimado cliente tu recarga en nuestra app PANET se ecuentra en estado ${status}`

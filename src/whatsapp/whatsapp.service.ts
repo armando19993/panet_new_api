@@ -14,11 +14,14 @@ export class WhatsappService {
    */
   async sendMessageSafely(url: string): Promise<boolean> {
     try {
-      await axios.get(url);
+      // Establecer un timeout para la solicitud para evitar que se quede colgada
+      const response = await axios.get(url, {
+        timeout: 5000, // 5 segundos de timeout
+      });
       return true;
     } catch (error) {
-      this.logger.error(`Error al enviar mensaje de WhatsApp: ${error.message}`, error.stack);
-      // No propagamos el error, simplemente retornamos false
+      // Registrar el error pero nunca propagarlo
+      this.logger.error(`Error al enviar mensaje de WhatsApp: ${error.message || 'Error desconocido'}`, error?.stack);
       return false;
     }
   }
@@ -31,8 +34,13 @@ export class WhatsappService {
    * @returns true si el mensaje se envió correctamente, false si hubo un error
    */
   async sendTextMessage(phone: string, message: string): Promise<boolean> {
-    const url = `https://api-whatsapp.paneteirl.store/send-message/text?number=${phone}&message=${encodeURIComponent(message)}`;
-    return this.sendMessageSafely(url);
+    try {
+      const url = `https://api-whatsapp.paneteirl.store/send-message/text?number=${phone}&message=${encodeURIComponent(message)}`;
+      return await this.sendMessageSafely(url);
+    } catch (error) {
+      this.logger.error(`Error al preparar mensaje de texto: ${error.message || 'Error desconocido'}`, error?.stack);
+      return false;
+    }
   }
 
   /**
@@ -44,7 +52,12 @@ export class WhatsappService {
    * @returns true si el mensaje se envió correctamente, false si hubo un error
    */
   async sendImageMessage(phone: string, message: string, imageUrl: string): Promise<boolean> {
-    const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}&imageUrl=${imageUrl}`;
-    return this.sendMessageSafely(url);
+    try {
+      const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}&imageUrl=${imageUrl}`;
+      return await this.sendMessageSafely(url);
+    } catch (error) {
+      this.logger.error(`Error al preparar mensaje con imagen: ${error.message || 'Error desconocido'}`, error?.stack);
+      return false;
+    }
   }
 }

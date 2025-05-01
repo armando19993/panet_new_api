@@ -192,10 +192,12 @@ export class TransactionService {
     const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
 
     if (duenos.length === 0) {
-      const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
-      const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=573207510120&message=${encodeURIComponent(message)}`;
-
-      await this.whatsappService.sendMessageSafely(whatsappUrl);
+      try {
+        const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
+        await this.whatsappService.sendTextMessage('573207510120', message);
+      } catch (error) {
+        console.error('Error al enviar notificación de WhatsApp:', error);
+      }
     } else {
       await this.prisma.colaEspera.create({
         data: {
@@ -206,28 +208,41 @@ export class TransactionService {
         }
       })
 
-      const message = `Tienes una operacion por despachar, por favor realizada en menos de 5 minutos. Departamento de Tecnologia! `
-      const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${randomUser.phone}&message=${encodeURIComponent(message)}`;
-      await this.whatsappService.sendMessageSafely(whatsappUrl);
+      try {
+        const message = `Tienes una operacion por despachar, por favor realizada en menos de 5 minutos. Departamento de Tecnologia! `
+        await this.whatsappService.sendTextMessage(randomUser.phone, message);
+      } catch (error) {
+        console.error('Error al enviar notificación de WhatsApp:', error);
+      }
 
       if (randomUser.expoPushToken) {
-        this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
-          screen: "DespachoPage",
-          params: { transactionId: transaction.id }
-        })
+        try {
+          this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
+            screen: "DespachoPage",
+            params: { transactionId: transaction.id }
+          });
+        } catch (error) {
+          console.error('Error al enviar notificación push:', error);
+        }
 
-        const message = `La transaccion N° ${transaction.publicId} esta pendiente de despacho! `
-        const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${randomUser.phone}&message=${encodeURIComponent(message)}`;
-
-        await this.whatsappService.sendMessageSafely(whatsappUrl);
+        try {
+          const message = `La transaccion N° ${transaction.publicId} esta pendiente de despacho! `
+          await this.whatsappService.sendTextMessage(randomUser.phone, message);
+        } catch (error) {
+          console.error('Error al enviar notificación de WhatsApp:', error);
+        }
       }
     }
 
-    await this.notification.sendPushNotification(
-      wallet.user.expoPushToken,
-      `Estimado cliente tu Operacion TRX-2025-${transaction.publicId}`,
-      `Hemos creado tu operacion exitosamente en nuestro sistema, en los proximos minutos, tendras actualizaciones de estado de la misma, recuerda el tiempo para una operacion es de 1 a 30 minutos`
-    )
+    try {
+      await this.notification.sendPushNotification(
+        wallet.user.expoPushToken,
+        `Estimado cliente tu Operacion TRX-2025-${transaction.publicId}`,
+        `Hemos creado tu operacion exitosamente en nuestro sistema, en los proximos minutos, tendras actualizaciones de estado de la misma, recuerda el tiempo para una operacion es de 1 a 30 minutos`
+      )
+    } catch (error) {
+      console.error('Error al enviar notificación push:', error);
+    }
 
     if (porcentajeIntermediario > 0) {
       const sumGI = await this.prisma.wallet.upsert({
@@ -475,33 +490,30 @@ export class TransactionService {
       });
 
       if (data.cliente) {
-        let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se ha procesada con exito!";
-        const url = `https://api-whatsapp.paneteirl.store/send-message?number=${data.cliente.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
-        await this.whatsappService.sendMessageSafely(url);
+        try {
+          let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se ha procesada con exito!";
+          const url = `https://api-whatsapp.paneteirl.store/send-message?number=${data.cliente.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
+          await this.whatsappService.sendMessageSafely(url);
+        } catch (error) {
+          // Simplemente registramos el error pero no lo propagamos
+          console.error('Error al enviar notificación de WhatsApp:', error);
+        }
       }
 
-      this.notification.sendPushNotification(
-        data.creador.expoPushToken,
-        `Transaccion TRX-2025-${data.publicId} Completada`,
-        'Su transaccion se ha completado correctamente',
-        {
-          screen: "ReciboEnvio",
-          params: { transaction: data.id }
-        }
-      );
-
-      await this.prisma.colaEspera.update({
-        where: {
-          transactionId_userId_type: {
-            transactionId: data.id,
-            type: 'TRANSACCION',
-            userId: user.id
+      try {
+        this.notification.sendPushNotification(
+          data.creador.expoPushToken,
+          `Transaccion TRX-2025-${data.publicId} Completada`,
+          'Su transaccion se ha completado correctamente',
+          {
+            screen: "ReciboEnvio",
+            params: { transaction: data.id }
           }
-        },
-        data: {
-          status: 'CERRADA'
-        }
-      });
+        );
+      } catch (error) {
+        // Simplemente registramos el error pero no lo propagamos
+        console.error('Error al enviar notificación push:', error);
+      }
     } else {
       const dataRollback = await this.prisma.transaction.update({
         where: { id: dataAprobar.transactionId },
@@ -514,6 +526,18 @@ export class TransactionService {
       throw new BadRequestException("No cuentas con el saldo disponible para ejecutar esta transaccion");
     }
 
+    await this.prisma.colaEspera.update({
+      where: {
+        transactionId_userId_type: {
+          transactionId: data.id,
+          type: 'TRANSACCION',
+          userId: user.id
+        }
+      },
+      data: {
+        status: 'CERRADA'
+      }
+    });
     return { data, message: 'Transaccion Ejecutada con éxito' }
   }
 
@@ -550,24 +574,46 @@ export class TransactionService {
             }
           }
         }
-      })
+      });
 
-      let phone = null
-      if (transaction.cliente.phone) {
-        phone = transaction.cliente.phone
-      }
-      else {
-        phone = transaction.creador.phone
+      // Si no se encuentra la transacción, retornamos éxito para no bloquear el flujo
+      if (!transaction) {
+        console.warn(`No se encontró la transacción con ID: ${data.transactionId}`);
+        return { success: true, message: 'Operación completada, pero no se pudo enviar la notificación' };
       }
 
-      let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se encuentra en proceso!"
-      const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`
+      let phone = null;
+      if (transaction.cliente?.phone) {
+        phone = transaction.cliente.phone;
+      }
+      else if (transaction.creador?.phone) {
+        phone = transaction.creador.phone;
+      }
 
-      await this.whatsappService.sendMessageSafely(url);
-      return { success: true, message: 'Notificación enviada con éxito' };
+      // Si no hay teléfono, retornamos éxito para no bloquear el flujo
+      if (!phone) {
+        console.warn(`No se encontró un número de teléfono para la transacción con ID: ${data.transactionId}`);
+        return { success: true, message: 'Operación completada, pero no se pudo enviar la notificación' };
+      }
+
+      let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se encuentra en proceso!";
+      
+      // Usamos el método específico para enviar mensajes con imágenes
+      const result = await this.whatsappService.sendImageMessage(phone, message, fileUrl);
+      
+      return { 
+        success: true, 
+        message: result 
+          ? 'Notificación enviada con éxito' 
+          : 'Operación completada, pero hubo un problema al enviar la notificación'
+      };
     } catch (error) {
+      // Registramos el error pero no lo propagamos
       console.error('Error al enviar notificación de WhatsApp:', error);
-      return { success: false, message: 'No se pudo enviar la notificación, pero la operación continuará' };
+      return { 
+        success: true, 
+        message: 'Operación completada, pero no se pudo enviar la notificación' 
+      };
     }
   }
 

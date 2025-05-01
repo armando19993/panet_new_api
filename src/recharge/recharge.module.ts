@@ -7,11 +7,13 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { NotificationService } from "src/notification/notification.service";
 import { FlowApiModule } from "src/flow-api/flow-api.module";
+import { WhatsappModule } from "src/whatsapp/whatsapp.module";
 
 @Module({
   imports: [
     FlowApiModule,
     PrismaModule,
+    WhatsappModule,
     MulterModule.register({
       storage: diskStorage({
         destination: "./uploads", // Ruta donde se guardarán los archivos
