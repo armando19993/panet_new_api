@@ -152,6 +152,8 @@ export class UserService {
     if (!user) {
       throw new BadRequestException('Usuario no encontrado');
     }
+
+    await this.notification.sendPushNotification(user.expoPushToken, 'Identidad validada', 'Tu identidad ha sido validada correctamente');
     
     const data = await this.prisma.user.update({
       where: { id },

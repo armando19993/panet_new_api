@@ -123,7 +123,7 @@ export class WalletRequestService {
         data: { identity_validate: true }
       });
 
-      await this.notifications.sendPushNotification(data.user.expoPushToken, 'Identidad validada', 'Tu identidad ha sido validada correctamente');
+      await this.notifications.sendPushNotification(data.user.expoPushToken, 'Wallet Aprobado', 'Tu wallet ha sido aprobada correctamente');
 
       await this.prisma.wallet.create({
         data: {
