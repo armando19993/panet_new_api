@@ -146,6 +146,21 @@ export class UserService {
     return { data, message: 'Usuario Actualizado con exito' }
   }
 
+  async validateIdentity(id) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
+    
+    const data = await this.prisma.user.update({
+      where: { id },
+      data: { identity_validate: true }
+    });
+    
+    return { data, message: 'Identidad del usuario validada exitosamente' };
+  }
+
   async sendMasivePush(query) {
     const { countryId, title, body } = query;
 

@@ -117,6 +117,12 @@ export class WalletRequestService {
         }
       })
 
+      // Validate user identity when wallet request is approved
+      await this.prisma.user.update({
+        where: { id: data.userId },
+        data: { identity_validate: true }
+      });
+
       await this.prisma.wallet.create({
         data: {
           consumer_id_type: data.consumer_id_type,

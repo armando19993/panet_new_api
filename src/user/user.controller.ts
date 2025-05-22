@@ -55,4 +55,10 @@ export class UserController {
   async sendMasivePush(@Query() query) {
     return this.userService.sendMasivePush(query)
   }
+
+  @Patch(':id/validate-identity')
+  @UseGuards(AuthGuard)
+  async validateIdentity(@Param('id') id: string) {
+    return this.userService.validateIdentity(id);
+  }
 }
