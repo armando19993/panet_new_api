@@ -4,6 +4,7 @@ import axios from "axios";
 import * as bcrypt from "bcryptjs";
 import { NotificationService } from "src/notification/notification.service";
 import { PrismaService } from "src/prisma/prisma.servise";
+import { WhatsappService } from "src/whatsapp/whatsapp.service";
 import { LoginDto } from "./dto/login.dto";
 
 @Injectable()
@@ -11,7 +12,8 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private whatsappService: WhatsappService
   ) { }
 
   async login(data: LoginDto) {
@@ -68,11 +70,13 @@ export class AuthService {
         Aquí está tu código para restablecer tu contraseña:
         Código: *${otp}*
     `;
-    const whatsappUrl = `https://api-whatsapp.paneteirl.store/send-message/text?number=${getUser.phone}&message=${encodeURIComponent(message)}`;
 
-    console.log(whatsappUrl)
-    await axios.get(whatsappUrl);
-
-    return { data: getUser, message: 'Codigo enviado correctamente' }
+    try {
+      await this.whatsappService.sendTextMessage(getUser.phone, message);
+      return { data: getUser, message: 'Codigo enviado correctamente' }
+    } catch (error) {
+      console.error('Error al enviar mensaje de WhatsApp:', error);
+      return { data: getUser, message: 'Código generado, pero hubo un problema al enviarlo por WhatsApp' }
+    }
   }
 }
