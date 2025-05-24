@@ -297,8 +297,6 @@ export class TransactionService {
   }
 
   async findAll(query, user) {
-    console.log(user);
-
     const { creadorId, origenId, destinoId, clienteId, instrumentId, status } = query;
     const filters: any = {};
 

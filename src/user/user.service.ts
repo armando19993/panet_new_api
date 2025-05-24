@@ -17,6 +17,7 @@ export class UserService {
   ) { }
 
   async create(createUserDto) {
+    console.log(createUserDto)
     // Limpiar y formatear los campos
     createUserDto.user = createUserDto.user.trim().toUpperCase();
     createUserDto.phone = createUserDto.phone.trim();
@@ -148,18 +149,18 @@ export class UserService {
 
   async validateIdentity(id) {
     const user = await this.prisma.user.findUnique({ where: { id } });
-    
+
     if (!user) {
       throw new BadRequestException('Usuario no encontrado');
     }
 
     await this.notification.sendPushNotification(user.expoPushToken, 'Identidad validada', 'Tu identidad ha sido validada correctamente');
-    
+
     const data = await this.prisma.user.update({
       where: { id },
       data: { identity_validate: true }
     });
-    
+
     return { data, message: 'Identidad del usuario validada exitosamente' };
   }
 
