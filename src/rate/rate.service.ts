@@ -87,7 +87,7 @@ export class RateService {
 
             calculo = generar;
 
-            console.log(`Cálculo para destino diferente a COLOMBIA: rate_wholesale=${rateWholesale}, especial_profit=${especialProfit}, resultado=${calculo}`);
+            console.log(`Cálculo para origen Venezuela y destino ${destination.name}: rate_wholesale=${rateWholesale}, especial_profit=${especialProfit}, resultado=${calculo}`);
           }
 
           // Venezuela a Colombia
