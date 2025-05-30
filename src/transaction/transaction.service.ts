@@ -197,7 +197,7 @@ export class TransactionService {
     if (duenos.length === 0) {
       try {
         const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
-        await this.whatsappService.sendTextMessage('573207510120', message);
+        await this.whatsappService.sendTextMessage('584148383419', message);
       } catch (error) {
         console.error('Error al enviar notificación de WhatsApp:', error);
       }
