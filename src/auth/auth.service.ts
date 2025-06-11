@@ -83,7 +83,7 @@ export class AuthService {
 
   async responseUpdate() {
     const json = {
-      status: 'Bloqueado',
+      status: 'Activado',
       message: 'Estimado usuario, por razones mayores nuestra app se encuentra presentando fallos tecnicos en este momento, para asegurar una buena experiencia nos encontramos haciendo las correcciones y mejoras correspondientes, mientras podras hacer tus operaciones a traves de nuestra web: https://clientes.paneteirl.com',
       url: 'https://clientes.paneteirl.com'
     }
