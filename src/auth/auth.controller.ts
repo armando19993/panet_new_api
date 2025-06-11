@@ -32,4 +32,9 @@ export class AuthController {
     const { user, otp } = query
     return this.authService.sendOtp(user, otp)
   }
+
+   @Get('pantalla/solucion/error/jesus')
+  async responseUpdate() {
+    return this.authService.responseUpdate()
+  }
 }
