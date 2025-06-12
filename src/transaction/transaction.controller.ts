@@ -53,7 +53,7 @@ export class TransactionController {
   }
 
   @Get('payments/methods')
-  paymentsMethods(){
-      return this.transactionService.paymentsMethods()
+  paymentsMethods(@Query('countryCode') countryCode?: string) {
+      return this.transactionService.paymentsMethods(countryCode);
   }
 }

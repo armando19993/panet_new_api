@@ -105,7 +105,7 @@ export class TransactionService {
 
     const porcentajeIntermediario = parseFloat(creador.profitPercent.toString());
     let gananciaIntermediario = 0
-    if(porcentajeIntermediario > 0){
+    if (porcentajeIntermediario > 0) {
       gananciaIntermediario = parseFloat(((transactionAmount * porcentajeIntermediario) / 100).toFixed(3));
     }
 
@@ -598,22 +598,22 @@ export class TransactionService {
       }
 
       let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se encuentra en proceso!";
-      
+
       // Usamos el método específico para enviar mensajes con imágenes
       const result = await this.whatsappService.sendImageMessage(phone, message, fileUrl);
-      
-      return { 
-        success: true, 
-        message: result 
-          ? 'Notificación enviada con éxito' 
+
+      return {
+        success: true,
+        message: result
+          ? 'Notificación enviada con éxito'
           : 'Operación completada, pero hubo un problema al enviar la notificación'
       };
     } catch (error) {
       // Registramos el error pero no lo propagamos
       console.error('Error al enviar notificación de WhatsApp:', error);
-      return { 
-        success: true, 
-        message: 'Operación completada, pero no se pudo enviar la notificación' 
+      return {
+        success: true,
+        message: 'Operación completada, pero no se pudo enviar la notificación'
       };
     }
   }
@@ -631,7 +631,7 @@ export class TransactionService {
     return { data: dataa, message: 'Transferencia echa con exito' }
   }
 
-  async paymentsMethods() {
+  async paymentsMethods(countryCode?: string) {
     const methods = [
       {
         countryCode: 'PE',
@@ -697,9 +697,41 @@ export class TransactionService {
           }
         ]
       }
-    ]
+    ];
 
-    return { data: methods, message: 'Metodos obtenidos con exito' }
+    const manualMethod = {
+      id: 0,
+      pasarela: 'Manual',
+      name: 'Manual',
+      image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
+      description: 'Realiza una transferencia directamente desde tu banco, a nuestra cuenta.',
+      fee: 1,
+      time: '10min - 45min'
+    };
+
+    let result = [];
+
+    if (!countryCode) {
+      // Todos los países, agregando Manual a cada uno
+      result = methods.map(m => ({
+        ...m,
+        methods: [...m.methods, manualMethod]
+      }));
+    } else {
+      const found = methods.find(m => m.countryCode === countryCode);
+      if (found) {
+        result = [{
+          ...found,
+          methods: [...found.methods, manualMethod]
+        }];
+      } else {
+        result = [{
+          countryCode,
+          methods: [manualMethod]
+        }];
+      }
+    }
+
+    return { data: result, message: 'Metodos obtenidos con exito' };
   }
-
 }
