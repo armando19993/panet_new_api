@@ -700,7 +700,7 @@ export class TransactionService {
     ];
 
     const manualMethod = {
-      id: 0,
+      id: 'Manual',
       pasarela: 'Manual',
       name: 'Manual',
       image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
