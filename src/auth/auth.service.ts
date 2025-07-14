@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import axios from "axios";
 import * as bcrypt from "bcryptjs";
@@ -89,5 +89,48 @@ export class AuthService {
     }
 
     return json
+  }
+
+
+  async getProfile(id: string) {
+    const usuario = await this.prisma.user.findUnique({
+      where: {
+        id: id
+      },
+      include: {
+        wallets: {
+          where: {
+            type: 'RECARGA'
+          },
+          include: {
+            country: true
+          }
+        }
+      }
+    });
+
+    if (!usuario) {
+      throw new NotFoundException("Usuario no encontrado");
+    }
+
+    return usuario;
+  }
+
+  async updatePinPanetPay(data: any) {
+    const { id, pin } = data;
+
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { id },
+        data: {
+          pin_panet_pay: pin
+        }
+      })
+
+      return { data: updatedUser, message: 'Pin actualizado correctamente' }
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
+
   }
 }

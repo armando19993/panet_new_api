@@ -24,7 +24,7 @@ export class AuthController {
   @Get("profile")
   @UseGuards(AuthGuard)
   profile(@Request() req) {
-    return req.user;
+    return this.authService.getProfile(req.user.id)
   }
 
   @Get("send-otp")
@@ -33,8 +33,13 @@ export class AuthController {
     return this.authService.sendOtp(user, otp)
   }
 
-   @Get('pantalla/solucion/error/jesus')
+  @Get('pantalla/solucion/error/jesus')
   async responseUpdate() {
     return this.authService.responseUpdate()
+  }
+
+  @Post('update/pin/panet-pay')
+  updatePinPanetPay(@Body() data: any) {
+    return this.authService.updatePinPanetPay(data)
   }
 }

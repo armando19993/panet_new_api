@@ -19,6 +19,8 @@ import { TransactionModule } from './transaction/transaction.module';
 import { NotificationService } from './notification/notification.service';
 import { FlowApiModule } from "./flow-api/flow-api.module";
 import { WalletRequestModule } from './wallet-request/wallet-request.module';
+import { TransactionsPanetPayModule } from './transactions-panet-pay/transactions-panet-pay.module';
+import { RequestPaymentsPanetPayModule } from './request-payments-panet-pay/request-payments-panet-pay.module';
 
 @Module({
   imports: [
@@ -42,7 +44,9 @@ import { WalletRequestModule } from './wallet-request/wallet-request.module';
     ColaEsperaModule, 
     TransactionModule,
     FlowApiModule,
-    WalletRequestModule
+    WalletRequestModule,
+    TransactionsPanetPayModule,
+    RequestPaymentsPanetPayModule,
   ],
   controllers: [],
   providers: [NotificationService],

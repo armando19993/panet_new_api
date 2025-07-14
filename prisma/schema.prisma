@@ -39,31 +39,39 @@ model Permissions {
 }
 
 model User {
-  id                  String              @id @default(uuid())
-  publicId            Int                 @unique @default(autoincrement())
-  name                String
-  user                String              @unique
-  password            String
-  phone               String?
-  roles               UserRole[] // Relación con la tabla intermedia
-  referredBy          String?
-  referrer            User?               @relation("UserReferrals", fields: [referredBy], references: [id])
-  referrals           User[]              @relation("UserReferrals")
-  profitPercent       Decimal             @default(0.00) @db.Decimal(10, 2)
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  expoPushToken       String?
-  status              WalletStatus        @default(ACTIVO)
-  identity_validate   Boolean             @default(false)
-  wallets             Wallet[]            @relation("UserWallets")
-  percent_pay         Decimal             @default(0.00) @db.Decimal(10, 2)
-  clientes            Client[]
-  Recharge            Recharge[]
-  WalletRequest       WalletRequest[]
-  ColaEspera          ColaEspera[]
-  InstrumentsClient   InstrumentsClient[]
-  Transaction         Transaction[]       @relation("ClienteTransaction")
-  TransactionDespacho Transaction[]       @relation("DespachadorTransaction")
+  id                       String                 @id @default(uuid())
+  publicId                 Int                    @unique @default(autoincrement())
+  name                     String
+  user                     String                 @unique
+  password                 String
+  phone                    String?
+  roles                    UserRole[]
+  referredBy               String?
+  referrer                 User?                  @relation("UserReferrals", fields: [referredBy], references: [id])
+  referrals                User[]                 @relation("UserReferrals")
+  profitPercent            Decimal                @default(0.00) @db.Decimal(10, 2)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  expoPushToken            String?
+  status                   WalletStatus           @default(ACTIVO)
+  identity_validate        Boolean                @default(false)
+  pin_panet_pay            Int?
+  wallets                  Wallet[]               @relation("UserWallets")
+  percent_pay              Decimal                @default(0.00) @db.Decimal(10, 2)
+  clientes                 Client[]
+  Recharge                 Recharge[]
+  WalletRequest            WalletRequest[]
+  ColaEspera               ColaEspera[]
+  InstrumentsClient        InstrumentsClient[]
+  Transaction              Transaction[]          @relation("ClienteTransaction")
+  TransactionDespacho      Transaction[]          @relation("DespachadorTransaction")
+  TransactionsOrigins      TransactionsPanetPay[] @relation("TransactionsPanetPayOrigin")
+  TransactionsDestinations TransactionsPanetPay[] @relation("TransactionsPanetPayDestination")
+
+  // Relaciones con RequestPaymentsPanetPay
+  TransactionsPanetPay    TransactionsPanetPay[]
+  PaymentRequestsSent     RequestPaymentsPanetPay[] @relation("PaymentRequestsSent")
+  PaymentRequestsReceived RequestPaymentsPanetPay[] @relation("PaymentRequestsReceived")
 }
 
 model UserRole {
@@ -79,32 +87,34 @@ model UserRole {
 }
 
 model Country {
-  id                  String              @id @default(uuid())
-  publicId            Int                 @unique @default(autoincrement())
-  name                String
-  abbreviation        String
-  currency            String
-  profit              Decimal             @default(0.00) @db.Decimal(10, 2)
-  ven_profit          Decimal             @default(0.00) @db.Decimal(10, 2)
-  especial_profit     Decimal             @default(0.00) @db.Decimal(10, 2)
-  rate_purchase       Decimal             @default(0.00) @db.Decimal(10, 2)
-  rate_sales          Decimal             @default(0.00) @db.Decimal(10, 2)
-  rate_wholesale      Decimal             @default(0.00) @db.Decimal(10, 2)
-  status              Int                 @default(1)
-  code                String
-  amount              Int                 @default(0)
-  wallets             Wallet[]            @relation("CountryWallets")
-  banks               Bank[]
-  accountTypes        AccountType[]
-  typesDocuments      TypesDocuments[]    @relation("CountryTypesDocuments")
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  InstrumentsClient   InstrumentsClient[]
-  WalletRequest       WalletRequest[]
-  RateOrigin          Rate[]              @relation("Origin")
-  RateDestinarion     Rate[]              @relation("Destination")
-  TransactionsOrigen  Transaction[]       @relation("OrigenTransaction")
-  TransactionsDestino Transaction[]       @relation("DestinoTransaction")
+  id                      String                    @id @default(uuid())
+  publicId                Int                       @unique @default(autoincrement())
+  name                    String
+  abbreviation            String
+  currency                String
+  profit                  Decimal                   @default(0.00) @db.Decimal(10, 2)
+  ven_profit              Decimal                   @default(0.00) @db.Decimal(10, 2)
+  especial_profit         Decimal                   @default(0.00) @db.Decimal(10, 2)
+  rate_purchase           Decimal                   @default(0.00) @db.Decimal(10, 2)
+  rate_sales              Decimal                   @default(0.00) @db.Decimal(10, 2)
+  rate_wholesale          Decimal                   @default(0.00) @db.Decimal(10, 2)
+  status                  Int                       @default(1)
+  code                    String
+  amount                  Int                       @default(0)
+  wallets                 Wallet[]                  @relation("CountryWallets")
+  banks                   Bank[]
+  accountTypes            AccountType[]
+  typesDocuments          TypesDocuments[]          @relation("CountryTypesDocuments")
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  InstrumentsClient       InstrumentsClient[]
+  WalletRequest           WalletRequest[]
+  RateOrigin              Rate[]                    @relation("Origin")
+  RateDestinarion         Rate[]                    @relation("Destination")
+  TransactionsOrigen      Transaction[]             @relation("OrigenTransaction")
+  TransactionsDestino     Transaction[]             @relation("DestinoTransaction")
+  TransactionsPanetPay    TransactionsPanetPay[]
+  RequestPaymentsPanetPay RequestPaymentsPanetPay[]
 }
 
 model Bank {
@@ -179,6 +189,10 @@ model Wallet {
   Recharge         Recharge[]
   Transaction      Transaction[]        @relation("WalletTransaction")
   walletRequestId  String?
+
+  // Nuevas relaciones agregadas
+  sentTransactions     TransactionsPanetPay[] @relation("WalletSenderTransactions")
+  receivedTransactions TransactionsPanetPay[] @relation("WalletReceiverTransactions")
 
   @@unique([userId, countryId, type])
 }
@@ -378,6 +392,55 @@ model TransactionTemporal {
   createdAt    DateTime                   @default(now())
   updatedAt    DateTime                   @updatedAt
   rechargeId   String
+}
+
+model TransactionsPanetPay {
+  id                String   @id @default(uuid())
+  publicId          Int      @unique @default(autoincrement())
+  userOrigin        User     @relation("TransactionsPanetPayOrigin", fields: [userOriginId], references: [id])
+  userDestination   User     @relation("TransactionsPanetPayDestination", fields: [userDestinationId], references: [id])
+  amount            Decimal  @db.Decimal(10, 2)
+  countryId         String
+  country           Country  @relation(fields: [countryId], references: [id])
+  currency          String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  userOriginId      String
+  userDestinationId String
+  sender            User?    @relation(fields: [senderId], references: [id])
+  senderId          String?
+
+  // Nuevos campos agregados
+  walletSender            Wallet?                   @relation("WalletSenderTransactions", fields: [walletSenderId], references: [id])
+  walletReceiver          Wallet                    @relation("WalletReceiverTransactions", fields: [walletReceiverId], references: [id])
+  walletSenderId          String?
+  walletReceiverId        String
+  RequestPaymentsPanetPay RequestPaymentsPanetPay[]
+}
+
+model RequestPaymentsPanetPay {
+  id              String               @id @default(uuid())
+  publicId        Int                  @unique @default(autoincrement())
+  requester       User                 @relation(fields: [requesterId], references: [id], name: "PaymentRequestsSent")
+  requestedUser   User                 @relation(fields: [requestedUserId], references: [id], name: "PaymentRequestsReceived")
+  amount          Decimal              @db.Decimal(10, 2)
+  country         Country              @relation(fields: [countryId], references: [id])
+  currency        String
+  status          String               @default("PENDING")
+  description     String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  requesterId     String
+  requestedUserId String
+  countryId       String
+
+  // Relación con la transacción asociada (opcional)
+  transaction   TransactionsPanetPay? @relation(fields: [transactionId], references: [id])
+  transactionId String?
+
+  @@index([requesterId])
+  @@index([requestedUserId])
+  @@index([createdAt])
 }
 
 enum WalletType {
