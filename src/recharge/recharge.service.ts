@@ -794,13 +794,10 @@ export class RechargeService {
     })
 
     try {
-      await this.prisma.colaEspera.update({
+      await this.prisma.colaEspera.updateMany({
         where: {
-          rechargeId_userId_type: {
-            rechargeId: data.id,
-            userId: data.instrument.user.id,
-            type: 'RECARGA',
-          },
+          rechargeId: data.id,
+          type: 'RECARGA'
         },
         data: {
           status: 'CERRADA'
