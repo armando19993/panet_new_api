@@ -8,5 +8,6 @@ import { NotificationService } from 'src/notification/notification.service';
   imports: [PrismaModule],
   controllers: [TransactionsPanetPayController],
   providers: [TransactionsPanetPayService, NotificationService],
+  exports: [TransactionsPanetPayService],
 })
 export class TransactionsPanetPayModule {}

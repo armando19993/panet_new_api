@@ -1,12 +1,16 @@
-import { IsDecimal, IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsDecimal, IsNotEmpty, IsString, IsOptional, IsEnum, IsNumber } from 'class-validator';
 
 export class CreateRequestPaymentsPanetPayDto {
+  @IsNotEmpty()
+  @IsString()
+  requesterId: string;
+
   @IsNotEmpty()
   @IsString()
   requestedUserId: string;
 
   @IsNotEmpty()
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber()
   amount: number;
 
   @IsNotEmpty()

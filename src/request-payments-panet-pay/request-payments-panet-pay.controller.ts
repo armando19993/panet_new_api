@@ -12,23 +12,23 @@ export class RequestPaymentsPanetPayController {
     return this.requestPaymentsPanetPayService.create(createRequestPaymentsPanetPayDto);
   }
 
-  @Get()
-  findAll() {
-    return this.requestPaymentsPanetPayService.findAll();
+  @Get(':userId')
+  findAll(@Param('userId') userId: string) {
+    return this.requestPaymentsPanetPayService.findAll(userId);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.requestPaymentsPanetPayService.findOne(+id);
+    return this.requestPaymentsPanetPayService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateRequestPaymentsPanetPayDto: UpdateRequestPaymentsPanetPayDto) {
-    return this.requestPaymentsPanetPayService.update(+id, updateRequestPaymentsPanetPayDto);
+    return this.requestPaymentsPanetPayService.update(id, updateRequestPaymentsPanetPayDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.requestPaymentsPanetPayService.remove(+id);
+    return this.requestPaymentsPanetPayService.remove(id);
   }
 }
