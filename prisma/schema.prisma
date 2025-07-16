@@ -56,6 +56,8 @@ model User {
   status                   WalletStatus           @default(ACTIVO)
   identity_validate        Boolean                @default(false)
   pin_panet_pay            Int?
+  status_panet_pay         Boolean                @default(true)
+  bloqueo_panet_pay        DateTime?              @db.Date()
   wallets                  Wallet[]               @relation("UserWallets")
   percent_pay              Decimal                @default(0.00) @db.Decimal(10, 2)
   clientes                 Client[]

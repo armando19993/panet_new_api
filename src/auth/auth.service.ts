@@ -133,4 +133,24 @@ export class AuthService {
     }
 
   }
+
+  async updateStatusPanetPay(data: any) {
+    const { id, status } = data;
+
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { id },
+        data: {
+          status_panet_pay: status,
+          bloqueo_panet_pay: status
+            ? null
+            : new Date(new Date().getTime() + 48 * 60 * 60 * 1000),
+        }
+      })
+
+      return { data: updatedUser, message: 'Status actualizado correctamente' }
+    } catch (error) {
+      throw new BadRequestException(error.message)
+    }
+  }
 }

@@ -42,4 +42,9 @@ export class AuthController {
   updatePinPanetPay(@Body() data: any) {
     return this.authService.updatePinPanetPay(data)
   }
+
+  @Post('update/status/panet-pay')
+  updateStatusPanetPay(@Body() data: any) {
+    return this.authService.updateStatusPanetPay(data)
+  }
 }
