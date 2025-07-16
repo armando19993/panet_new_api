@@ -4,6 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRole } from '@prisma/client';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { UpdatePinDto } from './dto/update-pin.dto';
 
 @Controller('user')
 export class UserController {
@@ -60,5 +61,11 @@ export class UserController {
   @UseGuards(AuthGuard)
   async validateIdentity(@Param('id') id: string) {
     return this.userService.validateIdentity(id);
+  }
+
+  @Patch('update/pin/:id')
+  @UseGuards(AuthGuard)
+  async updatePin(@Param('id') id: string, @Body() updatePinDto: UpdatePinDto) {
+    return this.userService.updatePin(id, updatePinDto);
   }
 }

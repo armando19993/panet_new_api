@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdatePinDto } from './dto/update-pin.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import * as bcrypt from "bcryptjs"
 import axios from 'axios';
@@ -162,6 +163,34 @@ export class UserService {
     });
 
     return { data, message: 'Identidad del usuario validada exitosamente' };
+  }
+
+  async updatePin(id: string, updatePinDto: UpdatePinDto) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (!user.pin_panet_pay) {
+      throw new BadRequestException('El usuario no tiene un PIN configurado.');
+    }
+
+    if (parseInt(updatePinDto.pin_panet_pay_old) !== user.pin_panet_pay) {
+      throw new BadRequestException('El PIN anterior es incorrecto.');
+    }
+
+    const blockDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas a partir de ahora
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: {
+        pin_panet_pay: parseInt(updatePinDto.pin_panet_pay),
+        bloqueo_panet_pay: blockDate,
+      },
+    });
+
+    return { data: updatedUser, message: 'PIN actualizado y Panet Pay bloqueado por 24 horas.' };
   }
 
   async sendMasivePush(query) {
