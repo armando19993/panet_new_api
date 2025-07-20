@@ -21,6 +21,7 @@ import { FlowApiModule } from "./flow-api/flow-api.module";
 import { WalletRequestModule } from './wallet-request/wallet-request.module';
 import { TransactionsPanetPayModule } from './transactions-panet-pay/transactions-panet-pay.module';
 import { RequestPaymentsPanetPayModule } from './request-payments-panet-pay/request-payments-panet-pay.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { RequestPaymentsPanetPayModule } from './request-payments-panet-pay/requ
     WalletRequestModule,
     TransactionsPanetPayModule,
     RequestPaymentsPanetPayModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [NotificationService],
