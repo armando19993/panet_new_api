@@ -15,7 +15,7 @@ import { UpdateClientDto } from "./dto/update-client.dto";
 import { AuthGuard } from "src/auth/auth.guard";
 
 @Controller("client")
-@UseGuards(AuthGuard)
+//@UseGuards(AuthGuard)
 export class ClientController {
   constructor(private readonly clientService: ClientService) {}
 
