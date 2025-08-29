@@ -304,16 +304,27 @@ export class RechargeService {
       }
 
       const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
+      // Sanitizar montos: convertir a número y manejar valores no numéricos
+      const parsedAmount = Number(createRechargeDto.amount);
+      if (!Number.isFinite(parsedAmount)) {
+        throw new BadRequestException('Monto inválido');
+      }
+
+      const parsedComision = Number(createRechargeDto.amount_comision);
+      const safeComision = Number.isFinite(parsedComision) ? parsedComision : 0;
+
+      const parsedTotal = Number(createRechargeDto.amount_total);
+      const safeTotal = Number.isFinite(parsedTotal) ? parsedTotal : 0;
       try {
         data = await this.prisma.recharge.create({
           data: {
-            amount: createRechargeDto.amount,
+            amount: parsedAmount,
             type: "MANUAL",
             status: "CREADA",
             comprobante: fileUrl || null,
             pasarela: createRechargeDto.pasarela || null,
-            amount_comision: createRechargeDto.amount_comision || 0,
-            amount_total: createRechargeDto.amount_total || 0,
+            amount_comision: safeComision,
+            amount_total: safeTotal,
             comentario: createRechargeDto.comentario || null,
             nro_referencia: createRechargeDto.nro_referencia || null,
             fecha_comprobante: createRechargeDto.fecha_comprobante
