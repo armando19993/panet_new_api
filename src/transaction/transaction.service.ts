@@ -705,7 +705,7 @@ export class TransactionService {
       name: 'Manual',
       image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
       description: 'Realiza una transferencia directamente desde tu banco, a nuestra cuenta.',
-      fee: 1,
+      fee: 0,
       time: '10min - 45min'
     };
 
