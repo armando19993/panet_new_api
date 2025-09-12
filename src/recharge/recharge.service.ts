@@ -934,11 +934,14 @@ export class RechargeService {
       include: { wallet: true, TransactionTemporal: true }
     })
 
+    console.log(data)
+
     if (updateRecharge.status === 'COMPLETADA') {
       let newAmount =
         parseFloat(data.wallet.balance.toString()) +
         parseFloat(data.amount.toString());
-
+      console.log(newAmount)
+      console.log("recarga completada")
       await this.prisma.wallet.update({
         where: { id: data.wallet.id },
         data: {
