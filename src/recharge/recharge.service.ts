@@ -674,6 +674,8 @@ export class RechargeService {
     console.log("Informacion de la recarga")
     console.log(data)
 
+    console.log(data.amount_total)
+
     // sumar saldo al wallet de usuario que recarga
     await this.prisma.wallet.update({
       where: {
