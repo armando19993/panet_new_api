@@ -675,6 +675,10 @@ export class RechargeService {
     console.log(data)
 
     console.log(data.amount_total)
+    let saldo = data.amount_total
+    if(data.pasarela === "Manual"){
+      saldo = data.amount
+    }
 
     // sumar saldo al wallet de usuario que recarga
     await this.prisma.wallet.update({
@@ -683,15 +687,15 @@ export class RechargeService {
       },
       data: {
         balance: {
-          increment: data.amount_total,
+          increment: saldo,
         },
       },
     });
 
     await this.prisma.walletTransactions.create({
       data: {
-        amount: data.amount_total,
-        amount_new: parseFloat(data.wallet.balance.toString()) + parseFloat(data.amount_total.toString()),
+        amount: saldo,
+        amount_new: parseFloat(data.wallet.balance.toString()) + parseFloat(saldo.toString()),
         amount_old: data.wallet.balance,
         wallet: {
           connect: {
