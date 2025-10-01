@@ -112,6 +112,78 @@ export class RateService {
           }
         }
 
+        if(origin.name ===  "VENEZUELA" && destination.name === "ECUADOR"){
+          console.log(origin)
+          console.log(destination)
+          const rateWholesale = parseFloat(origin.rate_sales?.toString() || "0") * parseFloat(destination.rate_purchase?.toString() || "0")
+          console.log("tasa al mayor", rateWholesale)
+          const especialProfit = parseFloat(destination.especial_profit?.toString() || "0");
+          console.log("especial_profit", especialProfit)
+
+          if (isNaN(rateWholesale) || isNaN(especialProfit)) {
+            console.warn(
+              `Campos no válidos para cálculo de destino diferente a COLOMBIA. rate_wholesale: ${destination.rate_wholesale}, especial_profit: ${destination.especial_profit}`
+            );
+            return;
+          }
+
+          const punto = rateWholesale / 100;
+          const porcentaje = punto * especialProfit;
+          const generar = rateWholesale + porcentaje;
+
+          calculo = generar;
+
+          console.log(`Cálculo para origen Venezuela y destino ${destination.name}: rate_wholesale=${rateWholesale}, especial_profit=${especialProfit}, resultado=${calculo}`);
+        }
+
+        if(origin.name ===  "VENEZUELA" && destination.name === "ESTADOS UNIDOS"){
+          console.log(origin)
+          console.log(destination)
+          const rateWholesale = parseFloat(origin.rate_sales?.toString() || "0") * parseFloat(destination.rate_purchase?.toString() || "0")
+          console.log("tasa al mayor", rateWholesale)
+          const especialProfit = parseFloat(destination.especial_profit?.toString() || "0");
+          console.log("especial_profit", especialProfit)
+
+          if (isNaN(rateWholesale) || isNaN(especialProfit)) {
+            console.warn(
+              `Campos no válidos para cálculo de destino diferente a COLOMBIA. rate_wholesale: ${destination.rate_wholesale}, especial_profit: ${destination.especial_profit}`
+            );
+            return;
+          }
+
+          const punto = rateWholesale / 100;
+          const porcentaje = punto * especialProfit;
+          const generar = rateWholesale + porcentaje;
+
+          calculo = generar;
+
+          console.log(`Cálculo para origen Venezuela y destino ${destination.name}: rate_wholesale=${rateWholesale}, especial_profit=${especialProfit}, resultado=${calculo}`);
+        }
+
+        if(origin.name ===  "VENEZUELA" && destination.name === "USDT"){
+          console.log(origin)
+          console.log(destination)
+          const rateWholesale = parseFloat(origin.rate_sales?.toString() || "0") * parseFloat(destination.rate_purchase?.toString() || "0")
+          console.log("tasa al mayor", rateWholesale)
+          const especialProfit = parseFloat(destination.especial_profit?.toString() || "0");
+          console.log("especial_profit", especialProfit)
+
+          if (isNaN(rateWholesale) || isNaN(especialProfit)) {
+            console.warn(
+              `Campos no válidos para cálculo de destino diferente a COLOMBIA. rate_wholesale: ${destination.rate_wholesale}, especial_profit: ${destination.especial_profit}`
+            );
+            return;
+          }
+
+          const punto = rateWholesale / 100;
+          const porcentaje = punto * especialProfit;
+          const generar = rateWholesale + porcentaje;
+
+          calculo = generar;
+
+          console.log(`Cálculo para origen Venezuela y destino ${destination.name}: rate_wholesale=${rateWholesale}, especial_profit=${especialProfit}, resultado=${calculo}`);
+        }
+
         if (origin.name === "COLOMBIA") {
           // De Colombia a Venezuela
           if (destination.name === "VENEZUELA") {

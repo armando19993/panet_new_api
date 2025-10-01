@@ -1,0 +1,15 @@
+meta {
+  name: Actualizar Tasas
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{SERVER}}/rates
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

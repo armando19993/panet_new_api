@@ -17,7 +17,7 @@ export class NotificationService {
     async sendPushNotification(expoPushToken: string, title: string, body: string, data: PushNotificationData = {}) {
         // Verifica si el token de notificación push de Expo es válido
         if (!Expo.isExpoPushToken(expoPushToken)) {
-            this.logger.error(`Token de notificación push de Expo inválido: ${expoPushToken}`);
+            ///this.logger.error(`Token de notificación push de Expo inválido: ${expoPushToken}`);
             return;
         }
 
@@ -35,10 +35,10 @@ export class NotificationService {
         try {
             // Envía la notificación push a Expo
             const [ticket] = await this.expo.sendPushNotificationsAsync([message]);
-            this.logger.log(`Notificación push enviada exitosamente a ${expoPushToken}`, ticket);
+            ////this.logger.log(`Notificación push enviada exitosamente a ${expoPushToken}`, ticket);
             return ticket;
         } catch (error) {
-            this.logger.error(`Error al enviar la notificación push a ${expoPushToken}`, error.stack);
+            ////this.logger.error(`Error al enviar la notificación push a ${expoPushToken}`, error.stack);
             throw error;
         }
     }
