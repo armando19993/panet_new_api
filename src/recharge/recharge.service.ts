@@ -696,9 +696,9 @@ export class RechargeService {
         }
 
         try {
-          const response = await axios.post('https://bdvconciliacion.banvenez.com/api/vuelto', jsonBDV, {
+          const response = await axios.post(process.env.BANVENEZ_API_URL, jsonBDV, {
             headers: {
-              'x-api-key': '3EF9419C330BACBF1BC9713FC040B185',
+              'x-api-key': process.env.BANVENEZ_API_KEY,
               'Content-Type': 'application/json'
             }
           });

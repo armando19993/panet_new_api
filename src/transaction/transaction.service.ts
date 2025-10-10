@@ -181,7 +181,7 @@ export class TransactionService {
         wallet: true,
         cliente: true,
         instrument: {
-          include:{
+          include: {
             bank: true
           }
         },
@@ -291,7 +291,7 @@ export class TransactionService {
       }
     })
 
-    if(transaction.instrument.typeInstrument === 'PAGO_MOVIL'){
+    if (transaction.instrument.typeInstrument === 'PAGO_MOVIL') {
       // Generar número de referencia de 6 dígitos
       let numeroReferencia = transaction.publicId.toString();
       if (numeroReferencia.length < 6) {
@@ -314,9 +314,9 @@ export class TransactionService {
 
       // Realizar llamada a API de Banvenez
       try {
-        const response = await axios.post('https://bdvconciliacion.banvenez.com/api/vuelto', jsonBDV, {
+        const response = await axios.post(process.env.BANVENEZ_API_URL, jsonBDV, {
           headers: {
-            'x-api-key': '3EF9419C330BACBF1BC9713FC040B185',
+            'x-api-key': process.env.BANVENEZ_API_KEY,
             'Content-Type': 'application/json'
           }
         });
@@ -791,7 +791,38 @@ export class TransactionService {
         }];
       }
     }
-
-    return { data: result, message: 'Metodos obtenidos con exito' };
   }
+
+  async getConciliationData(fechaIni: string, fechaFin: string) {
+    try {
+      const payload = {
+        cuenta: process.env.BANVENEZ_ACCOUNT_NUMBER,
+        fechaIni: fechaIni,
+        fechaFin: fechaFin,
+        tipoMoneda: "VES",
+        nroMovimiento: ""
+      };
+
+      const response = await axios.post(process.env.BANVENEZ_CONCILIATION_URL, payload, {
+        headers: {
+          'x-api-key': process.env.BANVENEZ_API_KEY,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      return {
+        success: true,
+        message: "Datos de conciliación obtenidos exitosamente.",
+        data: response.data
+      };
+    } catch (error) {
+      console.error('Error al consultar conciliación bancaria:', error);
+      return {
+        success: false,
+        message: "Error al obtener datos de conciliación.",
+        error: error.message
+      };
+    }
+  }
+
 }
