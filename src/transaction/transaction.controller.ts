@@ -50,6 +50,10 @@ export class TransactionController {
   transferir(@Body() data){
     return this.transactionService.transferir(data)
   }
+  @Get('payments/methods')
+  paymentsMethods(@Query('countryCode') countryCode?: string) {
+      return this.transactionService.paymentsMethods(countryCode);
+  }
 
   @Get('obtener-conciliation')
   getConciliationData(@Query('fechaIni') fechaIni: string, @Query('fechaFin') fechaFin: string) {
