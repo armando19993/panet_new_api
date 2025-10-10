@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import { CreateMovementsAccountJuridicDto } from './dto/create-movements-account-juridic.dto';
 import { UpdateMovementsAccountJuridicDto } from './dto/update-movements-account-juridic.dto';
+import axios from 'axios';
 
 @Injectable()
 export class MovementsAccountJuridicService {
@@ -104,5 +105,36 @@ export class MovementsAccountJuridicService {
     return this.prisma.movementsAccountJuridic.delete({
       where: { id }
     });
+  }
+
+  async getAccountBalance() {
+    try {
+      const response = await axios.post(
+        'https://bdvconciliacion.banvenez.com/account/balance',
+        {
+          account: '01020645640000997168',
+          currency: 'VES'
+        },
+        {
+          headers: {
+            'x-api-key': process.env.BANVENEZ_API_KEY,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      return {
+        code: response.data.code,
+        message: response.data.message,
+        accountNumber: response.data.cuentaPrincipal,
+        blockedBalance: response.data.ppalSdoRetTot,
+        availableBalance: response.data.ppalSdoFinal
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Error al consultar el saldo de la cuenta bancaria',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 }

@@ -12,6 +12,11 @@ export class MovementsAccountJuridicController {
     return this.movementsAccountJuridicService.create(createMovementsAccountJuridicDto);
   }
 
+  @Get('balance')
+  getAccountBalance() {
+    return this.movementsAccountJuridicService.getAccountBalance();
+  }
+
   @Get()
   findAll(@Query() query: {
     startDate?: string;
