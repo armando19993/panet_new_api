@@ -22,6 +22,7 @@ import { WalletRequestModule } from './wallet-request/wallet-request.module';
 import { TransactionsPanetPayModule } from './transactions-panet-pay/transactions-panet-pay.module';
 import { RequestPaymentsPanetPayModule } from './request-payments-panet-pay/request-payments-panet-pay.module';
 import { ReportsModule } from './reports/reports.module';
+import { MovementsAccountJuridicModule } from './movements-account-juridic/movements-account-juridic.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { ReportsModule } from './reports/reports.module';
     TransactionsPanetPayModule,
     RequestPaymentsPanetPayModule,
     ReportsModule,
+    MovementsAccountJuridicModule,
   ],
   controllers: [],
   providers: [NotificationService],

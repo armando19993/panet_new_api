@@ -46,14 +46,23 @@ export class TransactionController {
   procesar(@Body() data,  @UploadedFile() file: Express.Multer.File, @Request() req){
     return this.transactionService.procesar(data, file, req.user)
   }
-
   @Post('transferir')
   transferir(@Body() data){
     return this.transactionService.transferir(data)
   }
 
-  @Get('/obtener/conciliation/bdv')
+  @Get('obtener-conciliation')
   getConciliationData(@Query('fechaIni') fechaIni: string, @Query('fechaFin') fechaFin: string) {
-    return this.transactionService.getConciliationData(fechaIni, fechaFin);
+    console.log('=== CONTROLADOR: PETICIÓN DE CONCILIACIÓN ===');
+    console.log('Fecha inicio recibida:', fechaIni);
+    console.log('Fecha fin recibida:', fechaFin);
+    console.log('Ejecutando método getConciliationData del servicio...');
+
+    const result = this.transactionService.getConciliationData(fechaIni, fechaFin);
+
+    console.log('Tipo de resultado:', typeof result);
+    console.log('Resultado:', result);
+
+    return result;
   }
 }

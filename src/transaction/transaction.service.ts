@@ -4,6 +4,7 @@ import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import { NotificationService } from 'src/notification/notification.service';
 import { WhatsappService } from 'src/whatsapp/whatsapp.service';
+import { MovementsAccountJuridicService } from 'src/movements-account-juridic/movements-account-juridic.service';
 import axios from 'axios';
 import { time } from 'console';
 
@@ -13,7 +14,8 @@ export class TransactionService {
   constructor(
     private prisma: PrismaService,
     private notification: NotificationService,
-    private whatsappService: WhatsappService
+    private whatsappService: WhatsappService,
+    private movementsAccountJuridicService: MovementsAccountJuridicService
   ) { }
 
   async create(createTransactionDto: CreateTransactionDto) {
@@ -345,6 +347,24 @@ export class TransactionService {
               nro_referencia: response.data.referencia
             }
           });
+
+          // Crear registros de movimientos para EGRESO
+          const transactionAmount = parseFloat(transaction.montoDestino.toString());
+
+          // Crear registro principal de EGRESO
+          await this.movementsAccountJuridicService.create({
+            amount: transactionAmount.toString(),
+            type: 'EGRESO',
+            description: `Egreso por transacción TRX-2025-${transaction.publicId}`
+          });
+
+          // Crear registro adicional del 0.3% como EGRESO
+          const feeAmount = transactionAmount * 0.003;
+          await this.movementsAccountJuridicService.create({
+            amount: feeAmount.toString(),
+            type: 'EGRESO',
+            description: `Comisión 0.3% por transacción TRX-2025-${transaction.publicId}`
+          });
         }
       } catch (error) {
         console.error('Error al llamar API de Banvenez:', error);
@@ -509,6 +529,25 @@ export class TransactionService {
         despachador: true,
       }
     });
+
+    // Crear registros de movimientos para EGRESO cuando la transacción se completa
+    const transactionAmount = parseFloat(data.montoDestino.toString());
+
+    // Crear registro principal de EGRESO
+    await this.movementsAccountJuridicService.create({
+      amount: transactionAmount.toString(),
+      type: 'EGRESO',
+      description: `Egreso por transacción TRX-2025-${data.publicId} (procesada)`
+    });
+
+    // Crear registro adicional del 0.3% como EGRESO si hay gasto adicional
+    if (extraCharge > 0) {
+      await this.movementsAccountJuridicService.create({
+        amount: extraCharge.toString(),
+        type: 'EGRESO',
+        description: `Comisión 0.3% por transacción TRX-2025-${data.publicId} (gasto adicional)`
+      });
+    }
 
     const wallet = await this.prisma.wallet.findFirst({
       where: {
@@ -794,6 +833,10 @@ export class TransactionService {
   }
 
   async getConciliationData(fechaIni: string, fechaFin: string) {
+    console.log('=== INICIANDO CONSULTA DE CONCILIACIÓN ===');
+    console.log('Fecha inicio:', fechaIni);
+    console.log('Fecha fin:', fechaFin);
+
     try {
       const payload = {
         cuenta: process.env.BANVENEZ_ACCOUNT_NUMBER,
@@ -803,6 +846,10 @@ export class TransactionService {
         nroMovimiento: ""
       };
 
+      console.log('Payload a enviar:', payload);
+      console.log('URL de conciliación:', process.env.BANVENEZ_CONCILIATION_URL);
+      console.log('API Key:', process.env.BANVENEZ_API_KEY ? 'Configurada' : 'No configurada');
+
       const response = await axios.post(process.env.BANVENEZ_CONCILIATION_URL, payload, {
         headers: {
           'x-api-key': process.env.BANVENEZ_API_KEY,
@@ -810,19 +857,29 @@ export class TransactionService {
         }
       });
 
-      console.log(response)
+      console.log('=== RESPUESTA DE LA API DE CONCILIACIÓN ===');
+      console.log('Status:', response.status);
+      console.log('Data recibida:', response.data);
 
       return {
         success: true,
         message: "Datos de conciliación obtenidos exitosamente.",
-        data: response.data
+        data: response.data,
+        requestPayload: payload,
+        timestamp: new Date().toISOString()
       };
     } catch (error) {
-      console.error('Error al consultar conciliación bancaria:', error);
+      console.error('=== ERROR EN CONSULTA DE CONCILIACIÓN ===');
+      console.error('Error completo:', error);
+      console.error('Response status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+
       return {
         success: false,
         message: "Error al obtener datos de conciliación.",
-        error: error.message
+        error: error.message,
+        details: error.response?.data || 'No response data',
+        timestamp: new Date().toISOString()
       };
     }
   }

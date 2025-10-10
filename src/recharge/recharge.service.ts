@@ -6,6 +6,7 @@ import { FlowApiService } from "src/flow-api/flow-api.service";
 import { WhatsappService } from "src/whatsapp/whatsapp.service";
 import { StatusRecharge, StatusTransactionsTemporal, TypeRecharge } from "@prisma/client";
 import { validate } from "class-validator";
+import { MovementsAccountJuridicService } from "src/movements-account-juridic/movements-account-juridic.service";
 
 @Injectable()
 export class RechargeService {
@@ -13,7 +14,8 @@ export class RechargeService {
     private prisma: PrismaService,
     private notification: NotificationService,
     private flowApiService: FlowApiService,
-    private whatsappService: WhatsappService
+    private whatsappService: WhatsappService,
+    private movementsAccountJuridicService: MovementsAccountJuridicService
   ) { }
 
   // Método utilitario para enviar notificaciones de WhatsApp de manera segura
@@ -721,6 +723,16 @@ export class RechargeService {
                 status: 'COMPLETADA',
                 nro_referencia: response.data.referencia
               }
+            });
+
+            // Crear registros de movimientos para EGRESO cuando la transacción se completa
+            const transactionAmount = parseFloat(trans.montoDestino.toString());
+
+            // Crear registro principal de EGRESO
+            await this.movementsAccountJuridicService.create({
+              amount: transactionAmount.toString(),
+              type: 'EGRESO',
+              description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)`
             });
           }
         } catch (error) {
