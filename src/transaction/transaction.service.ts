@@ -305,10 +305,10 @@ export class TransactionService {
         numeroReferencia: numeroReferencia,
         montoOperacion: transaction.montoDestino.toString(),
         nacionalidadDestino: "V",
-        cedulaDestino: "26422044",
-        telefonoDestino: "04122362521",
-        bancoDestino: "0102",
-        moneda: transaction.destino.currency,
+        cedulaDestino: transaction.instrument.document.toString(),
+        telefonoDestino: transaction.instrument.accountNumber.toString(),
+        bancoDestino: transaction.instrument.bank.code.toString(),
+        moneda: "VES",
         conceptoPago: `CONECTA CONSULTING ${transaction.publicId}`
       }
 

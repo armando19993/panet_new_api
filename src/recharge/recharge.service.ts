@@ -692,9 +692,9 @@ export class RechargeService {
           numeroReferencia: numeroReferencia,
           montoOperacion: trans.montoDestino.toString(),
           nacionalidadDestino: "V",
-          cedulaDestino: "26422044",
-          telefonoDestino: "04122362521",
-          bancoDestino: "0102",
+          cedulaDestino: trans.instrument.document.toString(),
+          telefonoDestino: trans.instrument.accountNumber.toString(),
+          bancoDestino: trans.instrument.bank.code.toString(),
           moneda: "VES",
           conceptoPago: `CONECTA CONSULTING ${trans.publicId}`
         }
