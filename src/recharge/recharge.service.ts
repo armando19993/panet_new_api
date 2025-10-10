@@ -613,6 +613,11 @@ export class RechargeService {
             include: {
               country: true
             }
+          },
+          instrument: {
+            include: {
+              bank: true
+            }
           }
         }
       })
@@ -652,6 +657,7 @@ export class RechargeService {
           },
         },
       });
+      let colaEspera = null;
 
       if (duenos.length === 0) {
         const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
@@ -660,7 +666,7 @@ export class RechargeService {
       else {
         const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
 
-        await this.prisma.colaEspera.create({
+        colaEspera = await this.prisma.colaEspera.create({
           data: {
             type: 'TRANSACCION',
             userId: randomUser.id,
@@ -669,6 +675,67 @@ export class RechargeService {
           }
         })
       }
+
+
+      //comenzamos a procesar
+      if (trans.instrument.typeInstrument === 'PAGO_MOVIL') {
+        // Generar número de referencia de 6 dígitos
+        let numeroReferencia = trans.publicId.toString();
+        if (numeroReferencia.length < 6) {
+          // Agregar número aleatorio adelante para completar 6 dígitos
+          const randomPrefix = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+          numeroReferencia = randomPrefix.toString() + numeroReferencia;
+        }
+        numeroReferencia = numeroReferencia.substring(0, 6); // Asegurar máximo 6 dígitos
+
+        const jsonBDV = {
+          numeroReferencia: numeroReferencia,
+          montoOperacion: trans.montoDestino.toString(),
+          nacionalidadDestino: "V",
+          cedulaDestino: "26422044",
+          telefonoDestino: "04122362521",
+          bancoDestino: "0102",
+          moneda: "VES",
+          conceptoPago: `CONECTA CONSULTING ${trans.publicId}`
+        }
+
+        // Realizar llamada a API de Banvenez
+        try {
+          const response = await axios.post('https://bdvconciliacion.banvenez.com/api/vuelto', jsonBDV, {
+            headers: {
+              'x-api-key': '3EF9419C330BACBF1BC9713FC040B185',
+              'Content-Type': 'application/json'
+            }
+          });
+
+          // Verificar respuesta exitosa
+          if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
+            // Actualizar cola de espera a CERRADA
+            if (colaEspera) {
+              await this.prisma.colaEspera.update({
+                where: {
+                  id: colaEspera.id
+                },
+                data: {
+                  status: 'CERRADA'
+                }
+              });
+            }
+            // Actualizar transacción a COMPLETADA con referencia
+            await this.prisma.transaction.update({
+              where: { id: trans.id },
+              data: {
+                status: 'COMPLETADA',
+                nro_referencia: response.data.referencia
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error al llamar API de Banvenez:', error);
+        }
+
+      }
+
     }
 
     console.log("Informacion de la recarga")
@@ -676,7 +743,7 @@ export class RechargeService {
 
     console.log(data.amount_total)
     let saldo = data.amount_total
-    if(data.pasarela === "Manual"){
+    if (data.pasarela === "Manual") {
       saldo = data.amount
     }
 
