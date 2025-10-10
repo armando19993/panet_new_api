@@ -8,12 +8,14 @@ import { extname } from 'path';
 import { NotificationService } from "src/notification/notification.service";
 import { FlowApiModule } from "src/flow-api/flow-api.module";
 import { WhatsappModule } from "src/whatsapp/whatsapp.module";
+import { MovementsAccountJuridicModule } from "src/movements-account-juridic/movements-account-juridic.module";
 
 @Module({
   imports: [
     FlowApiModule,
     PrismaModule,
     WhatsappModule,
+    MovementsAccountJuridicModule,
     MulterModule.register({
       storage: diskStorage({
         destination: "./uploads", // Ruta donde se guardarán los archivos
