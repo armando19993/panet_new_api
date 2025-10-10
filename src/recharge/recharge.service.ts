@@ -676,17 +676,13 @@ export class RechargeService {
         })
       }
 
-
-      //comenzamos a procesar
       if (trans.instrument.typeInstrument === 'PAGO_MOVIL') {
-        // Generar número de referencia de 6 dígitos
         let numeroReferencia = trans.publicId.toString();
         if (numeroReferencia.length < 6) {
-          // Agregar número aleatorio adelante para completar 6 dígitos
           const randomPrefix = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
           numeroReferencia = randomPrefix.toString() + numeroReferencia;
         }
-        numeroReferencia = numeroReferencia.substring(0, 6); // Asegurar máximo 6 dígitos
+        numeroReferencia = numeroReferencia.substring(0, 6);
 
         const jsonBDV = {
           numeroReferencia: numeroReferencia,
@@ -699,7 +695,6 @@ export class RechargeService {
           conceptoPago: `CONECTA CONSULTING ${trans.publicId}`
         }
 
-        // Realizar llamada a API de Banvenez
         try {
           const response = await axios.post('https://bdvconciliacion.banvenez.com/api/vuelto', jsonBDV, {
             headers: {
@@ -708,9 +703,7 @@ export class RechargeService {
             }
           });
 
-          // Verificar respuesta exitosa
           if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
-            // Actualizar cola de espera a CERRADA
             if (colaEspera) {
               await this.prisma.colaEspera.update({
                 where: {
@@ -721,7 +714,7 @@ export class RechargeService {
                 }
               });
             }
-            // Actualizar transacción a COMPLETADA con referencia
+            
             await this.prisma.transaction.update({
               where: { id: trans.id },
               data: {
