@@ -309,7 +309,7 @@ export class TransactionService {
         telefonoDestino: "04122362521",
         bancoDestino: "0102",
         moneda: transaction.destino.currency,
-        conceptoPago: `OPERACION CONECTA CONSULTING ${transaction.publicId}`
+        conceptoPago: `CONECTA CONSULTING ${transaction.publicId}`
       }
 
       // Realizar llamada a API de Banvenez
