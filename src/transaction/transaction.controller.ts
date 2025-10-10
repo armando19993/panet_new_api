@@ -10,6 +10,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
+  @Get('payments/methods')
+  paymentsMethods(@Query('countryCode') countryCode?: string) {
+      return this.transactionService.paymentsMethods(countryCode);
+  }
+  
   @Post()
   create(@Body() createTransactionDto: CreateTransactionDto) {
     return this.transactionService.create(createTransactionDto);
@@ -49,10 +54,6 @@ export class TransactionController {
   @Post('transferir')
   transferir(@Body() data){
     return this.transactionService.transferir(data)
-  }
-  @Get('payments/methods')
-  paymentsMethods(@Query('countryCode') countryCode?: string) {
-      return this.transactionService.paymentsMethods(countryCode);
   }
 
   @Get('obtener-conciliation')

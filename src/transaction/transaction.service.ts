@@ -811,6 +811,8 @@ export class TransactionService {
         }];
       }
     }
+
+    return { data: result, message: 'Metodos obtenidos con exito' };
   }
 
   async getConciliationData(fechaIni: string, fechaFin: string) {
