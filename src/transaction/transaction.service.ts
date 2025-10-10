@@ -810,6 +810,8 @@ export class TransactionService {
         }
       });
 
+      console.log(response)
+
       return {
         success: true,
         message: "Datos de conciliación obtenidos exitosamente.",
