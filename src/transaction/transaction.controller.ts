@@ -52,7 +52,7 @@ export class TransactionController {
     return this.transactionService.transferir(data)
   }
 
-  @Get('obtener-conciliation')
+  @Get('/obtener/conciliation/bdv')
   getConciliationData(@Query('fechaIni') fechaIni: string, @Query('fechaFin') fechaFin: string) {
     return this.transactionService.getConciliationData(fechaIni, fechaFin);
   }
