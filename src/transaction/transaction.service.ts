@@ -85,11 +85,6 @@ export class TransactionService {
       montoDestino = saldoCalculo / rateAmount;
     }
 
-    console.log(montoDestino)
-    console.log(rateAmount)
-    console.log(saldoCalculo)
-    console.log(transactionAmount)
-
     // Aplicar regla de redondeo específica para montoDestino
     const roundedValue = Math.round(montoDestino * 1000) / 1000; // Obtener 3 decimales primero
     const lastDigit = Math.round((roundedValue * 1000) % 10); // Obtener último dígito
@@ -185,7 +180,11 @@ export class TransactionService {
         creador: true,
         wallet: true,
         cliente: true,
-        instrument: true,
+        instrument: {
+          include:{
+            bank: true
+          }
+        },
         origen: true,
         destino: true,
       },
@@ -202,7 +201,7 @@ export class TransactionService {
         console.error('Error al enviar notificación de WhatsApp:', error);
       }
     } else {
-      await this.prisma.colaEspera.create({
+      const colaEspera = await this.prisma.colaEspera.create({
         data: {
           type: 'TRANSACCION',
           userId: randomUser.id,
@@ -291,6 +290,67 @@ export class TransactionService {
         walletId: wallet.id,
       }
     })
+
+    if(transaction.instrument.typeInstrument === 'PAGO_MOVIL'){
+      // Generar número de referencia de 6 dígitos
+      let numeroReferencia = transaction.publicId.toString();
+      if (numeroReferencia.length < 6) {
+        // Agregar número aleatorio adelante para completar 6 dígitos
+        const randomPrefix = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+        numeroReferencia = randomPrefix.toString() + numeroReferencia;
+      }
+      numeroReferencia = numeroReferencia.substring(0, 6); // Asegurar máximo 6 dígitos
+
+      const jsonBDV = {
+        numeroReferencia: numeroReferencia,
+        montoOperacion: transaction.montoDestino.toString(),
+        nacionalidadDestino: "V",
+        cedulaDestino: "26422044",
+        telefonoDestino: "04122362521",
+        bancoDestino: "0102",
+        moneda: transaction.destino.currency,
+        conceptoPago: `OPERACION CONECTA CONSULTING ${transaction.publicId}`
+      }
+
+      // Realizar llamada a API de Banvenez
+      try {
+        const response = await axios.post('https://bdvconciliacion.banvenez.com/api/vuelto', jsonBDV, {
+          headers: {
+            'x-api-key': '3EF9419C330BACBF1BC9713FC040B185',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        // Verificar respuesta exitosa
+        if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
+          // Actualizar cola de espera a CERRADA
+          await this.prisma.colaEspera.update({
+            where: {
+              transactionId_userId_type: {
+                transactionId: transaction.id,
+                type: 'TRANSACCION',
+                userId: randomUser.id
+              }
+            },
+            data: {
+              status: 'CERRADA'
+            }
+          });
+
+          // Actualizar transacción a COMPLETADA con referencia
+          await this.prisma.transaction.update({
+            where: { id: transaction.id },
+            data: {
+              status: 'COMPLETADA',
+              nro_referencia: response.data.referencia
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error al llamar API de Banvenez:', error);
+      }
+
+    }
 
     return {
       success: true,
