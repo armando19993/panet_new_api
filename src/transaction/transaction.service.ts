@@ -530,25 +530,6 @@ export class TransactionService {
       }
     });
 
-    // Crear registros de movimientos para EGRESO cuando la transacción se completa
-    const transactionAmount = parseFloat(data.montoDestino.toString());
-
-    // Crear registro principal de EGRESO
-    await this.movementsAccountJuridicService.create({
-      amount: transactionAmount.toString(),
-      type: 'EGRESO',
-      description: `Egreso por transacción TRX-2025-${data.publicId} (procesada)`
-    });
-
-    // Crear registro adicional del 0.3% como EGRESO si hay gasto adicional
-    if (extraCharge > 0) {
-      await this.movementsAccountJuridicService.create({
-        amount: extraCharge.toString(),
-        type: 'EGRESO',
-        description: `Comisión 0.3% por transacción TRX-2025-${data.publicId} (gasto adicional)`
-      });
-    }
-
     const wallet = await this.prisma.wallet.findFirst({
       where: {
         userId: user.id,
