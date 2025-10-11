@@ -441,7 +441,12 @@ export class TransactionService {
             Transaction: {
               include: {
                 origen: true,
-                destino: true
+                destino: true,
+                instrument: {
+                  include: {
+                    bank: true
+                  }
+                }
               },
               orderBy: {
                 publicId: 'desc'
