@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { SendDirectPagoMovilDto } from './dto/send-direct-pago-movil.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -54,6 +55,11 @@ export class TransactionController {
   @Post('transferir')
   transferir(@Body() data){
     return this.transactionService.transferir(data)
+  }
+
+  @Post('direct-pago-movil')
+  sendDirectPagoMovil(@Body() dto: SendDirectPagoMovilDto) {
+    return this.transactionService.sendDirectPagoMovil(dto);
   }
 
   @Get('obtener-conciliation')

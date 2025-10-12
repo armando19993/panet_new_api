@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { SendDirectPagoMovilDto } from './dto/send-direct-pago-movil.dto';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import { NotificationService } from 'src/notification/notification.service';
 import { WhatsappService } from 'src/whatsapp/whatsapp.service';
@@ -869,6 +870,70 @@ export class TransactionService {
         details: error.response?.data || 'No response data',
         timestamp: new Date().toISOString()
       };
+    }
+  }
+
+  async sendDirectPagoMovil(dto: SendDirectPagoMovilDto) {
+    // Generar número de referencia de 6 dígitos
+    const numeroReferencia = (Math.floor(Math.random() * 900000) + 100000).toString();
+
+    const jsonBDV = {
+      numeroReferencia: numeroReferencia,
+      montoOperacion: dto.amount.toString(),
+      nacionalidadDestino: "V",
+      cedulaDestino: dto.document.toString(),
+      telefonoDestino: dto.phoneNumber.toString(),
+      bancoDestino: dto.bankCode.toString(),
+      moneda: "VES",
+      conceptoPago: dto.description || `PAGO MOVIL DIRECTO`
+    }
+
+    // Realizar llamada a API de Banvenez
+    try {
+      const response = await axios.post(process.env.BANVENEZ_API_URL, jsonBDV, {
+        headers: {
+          'x-api-key': process.env.BANVENEZ_API_KEY,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Verificar respuesta exitosa
+      if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
+
+        // Crear registros de movimientos para EGRESO
+        const transactionAmount = parseFloat(dto.amount.toString());
+
+        // Crear registro principal de EGRESO
+        await this.movementsAccountJuridicService.create({
+          amount: transactionAmount.toString(),
+          type: 'EGRESO',
+          description: `Egreso por Pago Móvil Directo. Ref: ${response.data.referencia}`
+        });
+
+        // Crear registro adicional del 0.3% como EGRESO
+        const feeAmount = transactionAmount * 0.003;
+        await this.movementsAccountJuridicService.create({
+          amount: feeAmount.toString(),
+          type: 'EGRESO',
+          description: `Comisión 0.3% por Pago Móvil Directo. Ref: ${response.data.referencia}`
+        });
+
+        return {
+          success: true,
+          message: "Pago Móvil enviado exitosamente.",
+          data: {
+            reference: response.data.referencia,
+            ...jsonBDV
+          }
+        };
+
+      } else {
+        console.error('Error en la respuesta de la API de Banvenez:', response.data);
+        throw new BadRequestException(`Error al procesar el Pago Móvil: ${response.data.message || 'Respuesta no válida'}`);
+      }
+    } catch (error) {
+      console.error('Error al llamar API de Banvenez:', error.response?.data || error.message);
+      throw new BadRequestException('Error de conexión con el servicio de pago. Intente más tarde.');
     }
   }
 
