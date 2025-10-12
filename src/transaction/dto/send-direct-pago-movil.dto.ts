@@ -1,7 +1,7 @@
 import { IsString, IsNumber, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class SendDirectPagoMovilDto {
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
   amount: number;
 
