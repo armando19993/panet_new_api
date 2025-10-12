@@ -20,4 +20,8 @@ export class SendDirectPagoMovilDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsString()
+  @IsOptional()
+  transactionId?: string;
 }

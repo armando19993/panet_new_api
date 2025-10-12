@@ -900,6 +900,27 @@ export class TransactionService {
       // Verificar respuesta exitosa
       if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
 
+        if (dto.transactionId) {
+          const cola = await this.prisma.colaEspera.findFirst({
+            where: { transactionId: dto.transactionId, status: { not: 'CERRADA' } }
+          });
+
+          if (cola) {
+            await this.prisma.colaEspera.update({
+              where: { id: cola.id },
+              data: { status: 'CERRADA' }
+            });
+          }
+
+          await this.prisma.transaction.update({
+            where: { id: dto.transactionId },
+            data: {
+              status: 'COMPLETADA',
+              nro_referencia: response.data.referencia
+            }
+          });
+        }
+
         // Crear registros de movimientos para EGRESO
         const transactionAmount = parseFloat(dto.amount.toString());
 
