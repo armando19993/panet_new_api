@@ -549,7 +549,7 @@ export class RechargeService {
       })
       const rateAmount = parseFloat(rate.amount.toString());
       const porcentajePasarela = parseFloat(((parseFloat(info.montoOrigen.toString()) * 2) / 100).toFixed(3));
-      const saldoCalculo = parseFloat(info.montoOrigen.toString()) - porcentajePasarela
+      const saldoCalculo = parseFloat(info.montoOrigen.toString())
 
       const tipoCalculo = rate.type_profit;
       const porcentajeCalculo = origen[tipoCalculo];
