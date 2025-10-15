@@ -462,7 +462,8 @@ export class RechargeService {
         user: true,
         wallet: {
           include: {
-            country: true
+            country: true,
+            user: true
           }
         }
       },
