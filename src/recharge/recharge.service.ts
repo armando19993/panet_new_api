@@ -743,26 +743,11 @@ export class RechargeService {
 
     }
 
-    console.log("Informacion de la recarga")
-    console.log(data)
-
     console.log(data.amount_total)
     let saldo = data.amount_total
     if (data.pasarela === "Manual") {
       saldo = data.amount
     }
-
-    // sumar saldo al wallet de usuario que recarga
-    await this.prisma.wallet.update({
-      where: {
-        id: data.wallet.id,
-      },
-      data: {
-        balance: {
-          increment: saldo,
-        },
-      },
-    });
 
     await this.prisma.walletTransactions.create({
       data: {
@@ -776,6 +761,22 @@ export class RechargeService {
         },
         description: "Recarga de Saldo REC-2025-" + data.publicId,
         type: "DEPOSITO"
+      },
+    })
+
+    // registrar egreso por el mismo monto
+    await this.prisma.walletTransactions.create({
+      data: {
+        amount: saldo,
+        amount_new: parseFloat(data.wallet.balance.toString()),
+        amount_old: parseFloat(data.wallet.balance.toString()) + parseFloat(saldo.toString()),
+        wallet: {
+          connect: {
+            id: data.wallet.id,
+          },
+        },
+        description: "Egreso por Transaccion Completa",
+        type: "RETIRO"
       },
     })
 
