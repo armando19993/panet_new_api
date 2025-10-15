@@ -122,7 +122,12 @@ export class UserService {
           include: { wallet: true }
         },
         wallets: true,
-        referrals: true
+        referrals: true,
+        roles: {
+          include: {
+            role: true
+          }
+        }
       }
     });
 
