@@ -35,9 +35,9 @@ export class WalletService {
     return newWallet;
   }
 
-  async findWalletsByUser(user, type) {
+  async findWalletsByUser(user, type, userId?: string) {
     const whereClause: any = {
-      userId: user.id,
+      userId: userId || user.id,
     };
 
     if (type) {

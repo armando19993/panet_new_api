@@ -27,8 +27,8 @@ export class WalletController {
 
   @Get('for-user')
   @UseGuards(AuthGuard)
-  findWalletsByUser(@Request() req, @Query("type") type) {
-    return this.walletService.findWalletsByUser(req.user, type)
+  findWalletsByUser(@Request() req, @Query("type") type, @Query("userId") userId?: string) {
+    return this.walletService.findWalletsByUser(req.user, type, userId)
   }
 
   @Get()
