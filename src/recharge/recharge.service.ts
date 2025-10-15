@@ -510,8 +510,8 @@ export class RechargeService {
 
       this.notification.sendPushNotification(data.user.expoPushToken, 'Estado de Recarga Actualizado', `Tu recarga: REC-2025-${data.publicId} ha cambiado a estado ${updateRechargeDto.status}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
 
-      //cancela si existe un registro 
-      if (updateRecharge.TransactionTemporal) {
+      //cancela si existe un registro en TransactionTemporal
+      if (updateRecharge.TransactionTemporal && updateRecharge.TransactionTemporal.length > 0) {
         await this.prisma.transactionTemporal.update({
           where: {
             id: updateRecharge.TransactionTemporal[0].id
@@ -521,6 +521,14 @@ export class RechargeService {
           }
         })
       }
+
+      // Eliminar el registro de ColaEspera si existe
+      await this.prisma.colaEspera.deleteMany({
+        where: {
+          rechargeId: id
+        }
+      })
+
       return { data, message: 'Recarga Cancelada con exito' }
     }
 
