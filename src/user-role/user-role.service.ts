@@ -34,8 +34,35 @@ export class UserRoleService {
     return `This action returns a #${id} userRole`;
   }
 
-  async update(id: number, updateUserRoleDto: UpdateUserRoleDto) {
-    return `This action updates a #${id} userRole`;
+  async update(userId: string, updateUserRoleDto: UpdateUserRoleDto) {
+    // Eliminar todos los roles existentes del usuario
+    await this.prisma.userRole.deleteMany({
+      where: {
+        userId: userId
+      }
+    });
+
+    // Crear los nuevos roles
+    const userRoles = updateUserRoleDto.roles.map(roleId => ({
+      userId: userId,
+      roleId: roleId
+    }));
+
+    await this.prisma.userRole.createMany({
+      data: userRoles
+    });
+
+    // Obtener los roles actualizados
+    const data = await this.prisma.userRole.findMany({
+      where: {
+        userId: userId
+      },
+      include: {
+        role: true
+      }
+    });
+
+    return { data, message: 'Roles actualizados con éxito' };
   }
 
   async remove(userId, roleId) {

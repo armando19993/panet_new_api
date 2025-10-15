@@ -1,4 +1,7 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserRoleDto } from './create-user-role.dto';
+import { IsArray, IsUUID } from 'class-validator';
 
-export class UpdateUserRoleDto extends PartialType(CreateUserRoleDto) {}
+export class UpdateUserRoleDto {
+  @IsArray()
+  @IsUUID('4', { each: true })
+  roles: string[];
+}
