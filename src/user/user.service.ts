@@ -68,7 +68,13 @@ export class UserService {
 
     const data = await this.prisma.user.findMany({
       where: whereCondition,
-      include: { roles: true },
+      include: { 
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      },
     });
 
     return { data, message: 'Usuarios obtenidos con éxito' };

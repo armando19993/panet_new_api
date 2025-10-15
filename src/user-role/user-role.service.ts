@@ -16,8 +16,18 @@ export class UserRoleService {
     return { data, message: 'Rol Creado con exito' }
   }
 
-  async findAll() {
-    return `This action returns all userRole`;
+  async findAll(userId?: string) {
+    const where = userId ? { userId: userId } : {};
+    
+    const data = await this.prisma.userRole.findMany({
+      where,
+      include: {
+        role: true,
+        user: true
+      }
+    });
+
+    return { data, message: 'Roles obtenidos con éxito' };
   }
 
   async findOne(id: number) {
