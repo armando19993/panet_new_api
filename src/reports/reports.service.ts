@@ -196,4 +196,60 @@ export class ReportsService {
             throw new Error(`Error al obtener wallets de recepción: ${error.message}`);
         }
     }
+
+    async getUserDailyOperations(userId: string) {
+        try {
+            // Obtener el inicio y fin del día actual
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+
+            const endOfDay = new Date();
+            endOfDay.setHours(23, 59, 59, 999);
+
+            // Obtener todas las transacciones del usuario en el día actual
+            const transactions = await this.prisma.transaction.findMany({
+                where: {
+                    creadorId: userId,
+                    createdAt: {
+                        gte: startOfDay,
+                        lte: endOfDay
+                    }
+                },
+                include: {
+                    origen: true,
+                    destino: true,
+                    instrument: true,
+                    cliente: true
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            });
+
+            // Contar transacciones por estado
+            const countCreada = transactions.filter(t => t.status === 'CREADA').length;
+            const countCompletada = transactions.filter(t => t.status === 'COMPLETADA').length;
+            const countObservada = transactions.filter(t => t.status === 'OBSERVADA').length;
+            const countAnulada = transactions.filter(t => t.status === 'ANULADA').length;
+
+            return {
+                module: 'Reports',
+                data: {
+                    userId: userId,
+                    date: startOfDay.toISOString().split('T')[0],
+                    transactions: transactions,
+                    summary: {
+                        total: transactions.length,
+                        creada: countCreada,
+                        completada: countCompletada,
+                        observada: countObservada,
+                        anulada: countAnulada
+                    }
+                },
+                message: 'Operaciones del usuario obtenidas con éxito'
+            };
+        } catch (error) {
+            throw new Error(`Error al obtener operaciones del usuario: ${error.message}`);
+        }
+    }
 }

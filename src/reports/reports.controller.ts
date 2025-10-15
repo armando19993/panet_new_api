@@ -15,4 +15,9 @@ export class ReportsController {
   getReceptionWalletsByCountry(@Param('countryId') countryId: string) {
     return this.reportsService.getReceptionWalletsByCountry(countryId);
   }
+
+  @Get('user/:userId/daily-operations')
+  getUserDailyOperations(@Param('userId') userId: string) {
+    return this.reportsService.getUserDailyOperations(userId);
+  }
 }
