@@ -510,8 +510,8 @@ export class RechargeService {
 
       this.notification.sendPushNotification(data.user.expoPushToken, 'Estado de Recarga Actualizado', `Tu recarga: REC-2025-${data.publicId} ha cambiado a estado ${updateRechargeDto.status}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
 
-      //cancela si existe un registro en TransactionTemporal
-      if (updateRecharge.TransactionTemporal && updateRecharge.TransactionTemporal.length > 0) {
+      //cancela si existe un registro 
+      if (updateRecharge.TransactionTemporal) {
         await this.prisma.transactionTemporal.update({
           where: {
             id: updateRecharge.TransactionTemporal[0].id
@@ -521,14 +521,6 @@ export class RechargeService {
           }
         })
       }
-
-      // Eliminar el registro de ColaEspera si existe
-      await this.prisma.colaEspera.deleteMany({
-        where: {
-          rechargeId: id
-        }
-      })
-
       return { data, message: 'Recarga Cancelada con exito' }
     }
 
@@ -668,13 +660,14 @@ export class RechargeService {
         },
       });
       let colaEspera = null;
+      let randomUser = null;
 
       if (duenos.length === 0) {
         const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
         //await this.sendWhatsAppNotification('573207510120', message);
       }
       else {
-        const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
+        randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
 
         colaEspera = await this.prisma.colaEspera.create({
           data: {
@@ -723,6 +716,37 @@ export class RechargeService {
                   status: 'CERRADA'
                 }
               });
+
+              // Realizar egreso en el wallet del cliente (donde se hizo la recarga)
+              const montoEgreso = parseFloat(trans.montoDestino.toString());
+              
+              // Restar el saldo del wallet del cliente
+              await this.prisma.wallet.update({
+                where: {
+                  id: trans.wallet.id,
+                },
+                data: {
+                  balance: {
+                    decrement: montoEgreso,
+                  },
+                },
+              });
+
+              // Crear transacción de egreso en walletTransactions
+              await this.prisma.walletTransactions.create({
+                data: {
+                  amount: montoEgreso,
+                  amount_old: trans.wallet.balance,
+                  amount_new: parseFloat(trans.wallet.balance.toString()) - montoEgreso,
+                  wallet: {
+                    connect: {
+                      id: trans.wallet.id,
+                    },
+                  },
+                  description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)`,
+                  type: "RETIRO"
+                },
+              });
             }
             
             await this.prisma.transaction.update({
@@ -751,11 +775,26 @@ export class RechargeService {
 
     }
 
+    console.log("Informacion de la recarga")
+    console.log(data)
+
     console.log(data.amount_total)
     let saldo = data.amount_total
     if (data.pasarela === "Manual") {
       saldo = data.amount
     }
+
+    // sumar saldo al wallet de usuario que recarga
+    await this.prisma.wallet.update({
+      where: {
+        id: data.wallet.id,
+      },
+      data: {
+        balance: {
+          increment: saldo,
+        },
+      },
+    });
 
     await this.prisma.walletTransactions.create({
       data: {
@@ -769,22 +808,6 @@ export class RechargeService {
         },
         description: "Recarga de Saldo REC-2025-" + data.publicId,
         type: "DEPOSITO"
-      },
-    })
-
-    // registrar egreso por el mismo monto
-    await this.prisma.walletTransactions.create({
-      data: {
-        amount: saldo,
-        amount_new: parseFloat(data.wallet.balance.toString()),
-        amount_old: parseFloat(data.wallet.balance.toString()) + parseFloat(saldo.toString()),
-        wallet: {
-          connect: {
-            id: data.wallet.id,
-          },
-        },
-        description: "Egreso por Transaccion Completa",
-        type: "RETIRO"
       },
     })
 
