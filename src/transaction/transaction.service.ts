@@ -384,12 +384,12 @@ export class TransactionService {
     const { creadorId, origenId, destinoId, clienteId, instrumentId, status } = query;
     const filters: any = {};
 
-    // Verificar si el usuario tiene el rol de SUPERADMIN
+    // Verificar si el usuario tiene el rol de SUPERADMIN u OPERADOR
     const hasSuperAdminRole = user.roles.some(
-      (role) => role.role && role.role.name === 'SUPERADMIN'
+      (role) => role.role && (role.role.name === 'SUPERADMIN' || role.role.name === 'OPERADOR')
     );
 
-    // Si no es SUPERADMIN, limitar las transacciones al creadorId del usuario
+    // Si no es SUPERADMIN u OPERADOR, limitar las transacciones al creadorId del usuario
     if (!hasSuperAdminRole) {
       filters.creadorId = user.id;
     }
