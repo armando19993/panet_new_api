@@ -266,6 +266,23 @@ export class UserService {
     return { data, message: 'Contraseña actualizada con exito' }
   }
 
+  async toggleStatusDespachador(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const newStatus = user.status_despachador === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+
+    const data = await this.prisma.user.update({
+      where: { id },
+      data: { status_despachador: newStatus }
+    });
+
+    return { data, message: `Estado del despachador cambiado a ${newStatus}` };
+  }
+
   remove(id: number) {
     return `This action removes a #${id} user`;
   }

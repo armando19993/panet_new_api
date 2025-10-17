@@ -4,8 +4,7 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  url       = "postgresql://postgres:@localhost:5432/panet_nuevo?schema=public"
 }
 
 model Role {
@@ -55,6 +54,7 @@ model User {
   updatedAt                DateTime               @updatedAt
   expoPushToken            String?
   status                   WalletStatus           @default(ACTIVO)
+  status_despachador       WalletStatus           @default(ACTIVO)
   identity_validate        Boolean                @default(false)
   pin_panet_pay            Int?
   status_panet_pay         Boolean                @default(true)

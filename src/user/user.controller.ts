@@ -68,4 +68,10 @@ export class UserController {
   async updatePin(@Param('id') id: string, @Body() updatePinDto: UpdatePinDto) {
     return this.userService.updatePin(id, updatePinDto);
   }
+
+  @Patch(':id/toggle-status-despachador')
+  @UseGuards(AuthGuard)
+  async toggleStatusDespachador(@Param('id') id: string) {
+    return this.userService.toggleStatusDespachador(id);
+  }
 }
