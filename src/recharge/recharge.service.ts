@@ -717,7 +717,7 @@ export class RechargeService {
               });
 
               // Realizar egreso en el wallet del cliente (donde se hizo la recarga)
-              const montoEgreso = parseFloat(trans.montoDestino.toString());
+              const montoEgreso = parseFloat(trans.montoOrigen.toString());
               
               // Restar el saldo del wallet del cliente
               await this.prisma.wallet.update({

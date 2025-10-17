@@ -348,7 +348,7 @@ export class TransactionService {
           });
 
           // Crear registros de movimientos para EGRESO
-          const transactionAmount = parseFloat(transaction.montoDestino.toString());
+          const transactionAmount = parseFloat(transaction.montoOrigen.toString());
 
           // Crear registro principal de EGRESO
           await this.movementsAccountJuridicService.create({
