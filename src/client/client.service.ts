@@ -35,7 +35,10 @@ export class ClientService {
   async findOne(document) {
     const data = await this.prisma.client.findFirst({
       where: {
-        document: document.toString(),
+        OR: [
+          { id: document },
+          { document: document.toString() }
+        ]
       },
       include: {
         instruments: {
