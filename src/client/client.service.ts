@@ -47,7 +47,8 @@ export class ClientService {
             bank: true,
             accountType: true
           }
-        }
+        },
+        Transaction: true
       },
     });
     if (!data) {
