@@ -638,13 +638,11 @@ export class RechargeService {
               },
             },
           },
+          status_despachador: 'ACTIVO',
           wallets: {
             some: {
               countryId: trans.wallet.country.id,
               type: 'RECEPCION',
-              balance: {
-                gt: 0,
-              },
             },
           },
         },
