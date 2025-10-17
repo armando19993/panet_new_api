@@ -15,35 +15,21 @@ export class ClientService {
   }
 
   async findAll(intemediarioId) {
-    try {
-      const response = await axios.get('https://desarrollo.paneteirl.store/api/v1/clients');
-
-      const clients = response.data.data;
-
-      clients.forEach(async (client) => {
-        await this.prisma.client.upsert({
-          where: {
-            document: client.document
-          },
-          update: {
-            phone: client.phone,
-            email: client.phone,
-            name: client.full_name
-          },
-          create: {
-            document: client.document,
-            phone: client.phone,
-            email: client.phone,
-            name: client.full_name
+    const whereCondition = intemediarioId ? { intermediaryId: intemediarioId } : {};
+    
+    const data = await this.prisma.client.findMany({
+      where: whereCondition,
+      include: {
+        instruments: {
+          include: {
+            country: true,
+            bank: true,
+            accountType: true
           }
-        })
-      });
-
-      console.log('Procesamiento completado.');
-    } catch (error) {
-      console.error('Error al obtener o procesar los datos:', error.message);
-      throw new Error('Error al obtener los datos desde la API externa');
-    }
+        }
+      },
+    });
+    return { data, message: "Clientes obtenidos con exito!" };
   }
 
   async findOne(document) {
