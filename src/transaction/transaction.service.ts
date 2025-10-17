@@ -121,13 +121,11 @@ export class TransactionService {
             },
           },
         },
+        status_despachador: 'ACTIVO',
         wallets: {
           some: {
             countryId: destino.id,
             type: 'RECEPCION',
-            balance: {
-              gt: 0,
-            },
           },
         },
       },
