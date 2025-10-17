@@ -643,6 +643,7 @@ export class RechargeService {
             some: {
               countryId: trans.wallet.country.id,
               type: 'RECEPCION',
+              status: 'ACTIVO'
             },
           },
         },

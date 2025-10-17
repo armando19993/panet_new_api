@@ -62,4 +62,10 @@ export class WalletController {
   updateBalance(@Request() req, @Param("id") id: string, @Body() updateBalanceData) {
     return this.walletService.updateBalance(req.user, id, updateBalanceData)
   }
+
+  @Patch(":id/toggle-status")
+  @UseGuards(AuthGuard)
+  toggleStatus(@Param("id") id: string) {
+    return this.walletService.toggleStatus(id)
+  }
 }

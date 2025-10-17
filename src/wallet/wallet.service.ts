@@ -200,4 +200,27 @@ export class WalletService {
   remove(id: number) {
     return `This action removes a #${id} wallet`;
   }
+
+  async toggleStatus(id: string) {
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { id },
+    });
+
+    if (!wallet) {
+      throw new BadRequestException("Wallet no encontrada");
+    }
+
+    // Alternar entre ACTIVO e INACTIVO
+    const newStatus = wallet.status === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+
+    const updatedWallet = await this.prisma.wallet.update({
+      where: { id },
+      data: { status: newStatus },
+    });
+
+    return {
+      data: updatedWallet,
+      message: `Estado de wallet actualizado a ${newStatus}`,
+    };
+  }
 }

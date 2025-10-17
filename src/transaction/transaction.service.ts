@@ -126,6 +126,7 @@ export class TransactionService {
           some: {
             countryId: destino.id,
             type: 'RECEPCION',
+            status: 'ACTIVO'
           },
         },
       },
