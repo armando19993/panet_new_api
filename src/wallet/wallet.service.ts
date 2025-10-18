@@ -9,6 +9,7 @@ export interface CountryTotal {
   countryName: string;
   recarga: number;
   recepcion: number;
+  currency: string;
 }
 
 @Injectable()
@@ -253,6 +254,7 @@ export class WalletService {
       if (!totalsByCountry[wallet.country.id]) {
         totalsByCountry[wallet.country.id] = {
           id: wallet.country.id,
+          currency: wallet.country.currency,
           countryName: wallet.country.name,
           recarga: 0,
           recepcion: 0
