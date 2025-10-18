@@ -1,6 +1,5 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import QRCode from 'qrcode';
 import { Transaction } from '@prisma/client';
 
 export const generateTransactionPdf = async (transaction: any) => {
@@ -43,18 +42,9 @@ export const generateTransactionPdf = async (transaction: any) => {
     margin: { left: 15, right: 15 },
   });
 
-  // Footer with QR code (with error handling)
-  try {
-    if (transaction?.id) {
-      const qrCodeData = await QRCode.toDataURL(`https://paneteirl.com/verify/${transaction.id}`);
-      doc.addImage(qrCodeData, 'PNG', pageWidth - 40, pageHeight - 40, 25, 25);
-      doc.setFontSize(8);
-      doc.text('Escanea este código para verificar', pageWidth - 40, pageHeight - 15, { align: 'center' });
-    }
-  } catch (error) {
-    console.error('Error generating QR code:', error);
-    // Continue without QR code if generation fails
-  }
+  // Footer without QR code
+  doc.setFontSize(8);
+  doc.text('CONECTA – Soluciones Financieras', 15, pageHeight - 20);
 
   return doc.output('datauristring');
 };
