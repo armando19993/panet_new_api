@@ -231,9 +231,6 @@ export class WalletService {
   async getTotalsByCountry() {
     console.log('Iniciando getTotalsByCountry');
     const wallets = await this.prisma.wallet.findMany({
-      where: {
-        countryId: { not: null } // Sintaxis alternativa compatible
-      },
       include: {
         country: true
       }
