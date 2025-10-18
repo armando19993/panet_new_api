@@ -5,6 +5,7 @@ import { Wallet } from "@prisma/client";
 import { NotificationService } from "src/notification/notification.service";
 
 export interface CountryTotal {
+  id: string;
   countryName: string;
   recarga: number;
   recepcion: number;
@@ -251,6 +252,7 @@ export class WalletService {
       
       if (!totalsByCountry[wallet.country.id]) {
         totalsByCountry[wallet.country.id] = {
+          id: wallet.country.id,
           countryName: wallet.country.name,
           recarga: 0,
           recepcion: 0
