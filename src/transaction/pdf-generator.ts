@@ -6,31 +6,55 @@ export const generateTransactionPdf = async (transaction: any, logoDataUri?: str
   const doc = new jsPDF();
   const pageHeight = doc.internal.pageSize.height;
   const pageWidth = doc.internal.pageSize.width;
+  const horizontalMargin = 15;
+  const logoSize = 30;
+  const logoY = 15;
+
+  let titleY = 25;
 
   if (logoDataUri) {
-    doc.addImage(logoDataUri, 'PNG', 15, 10, 30, 15);
+    doc.addImage(logoDataUri, 'PNG', horizontalMargin, logoY, logoSize, logoSize);
+    titleY = logoY + logoSize + 10;
   }
 
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('COMPROBANTE DE TRANSACCIÓN', pageWidth / 2, 20, { align: 'center' });
+  doc.text('COMPROBANTE DE TRANSACCIÓN', pageWidth / 2, titleY, { align: 'center' });
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`N°: TRX-${new Date().getFullYear()}-${transaction.publicId}`, 15, 30);
-  doc.text(`Fecha: ${new Date(transaction.createdAt).toLocaleString()}`, 15, 35);
+  const transactionInfoStartY = titleY + 6;
+  doc.text(`N°: TRX-${new Date().getFullYear()}-${transaction.publicId}`, pageWidth - horizontalMargin, transactionInfoStartY, { align: 'right' });
+  doc.text(`Fecha: ${new Date(transaction.createdAt).toLocaleString()}`, pageWidth - horizontalMargin, transactionInfoStartY + 5, { align: 'right' });
   
+  const preferredContact = transaction.cliente || transaction.creador || {};
+  const fallbackContact = transaction.creador || {};
+  const contactName = preferredContact.name || fallbackContact.name || 'N/A';
+  const contactPhone = preferredContact.phone || fallbackContact.phone || 'N/A';
+  const contactEmail = preferredContact.email || fallbackContact.email || 'N/A';
+
+  const clientTableStartY = transactionInfoStartY + 12;
+  autoTable(doc, {
+    startY: clientTableStartY,
+    body: [
+      ['Nombre', contactName],
+      ['Teléfono', contactPhone],
+      ['Correo', contactEmail],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 10 },
+    margin: { left: horizontalMargin, right: horizontalMargin },
+  });
+
+  const clientTableFinalY = (doc as any).lastAutoTable?.finalY || clientTableStartY + 20;
+
   doc.setFont('helvetica', 'bold');
-  doc.text('CLIENTE:', 15, 45);
-  doc.setFont('helvetica', 'normal');
-  doc.text(transaction.cliente?.name || transaction.creador?.name || 'N/A', 15, 50);
-  
-  doc.setFont('helvetica', 'bold');
-  doc.text('DETALLE DE TRANSACCIÓN:', 15, 60);
+  const transactionDetailTitleY = clientTableFinalY + 8;
+  doc.text('DETALLE DE TRANSACCIÓN:', horizontalMargin, transactionDetailTitleY);
   doc.setFont('helvetica', 'normal');
   
   autoTable(doc, {
-    startY: 65,
+    startY: transactionDetailTitleY + 5,
     body: [
       ['Método', 'PAGO MÓVIL'],
       ['Monto', `${transaction.montoDestino} ${transaction.destino?.currency || ''}`],
@@ -39,7 +63,7 @@ export const generateTransactionPdf = async (transaction: any, logoDataUri?: str
     ],
     theme: 'grid',
     styles: { fontSize: 10 },
-    margin: { left: 15, right: 15 },
+    margin: { left: horizontalMargin, right: horizontalMargin },
   });
 
   // Footer without QR code
