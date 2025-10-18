@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { UpdateWalletDto } from "./dto/update-wallet.dto";
-import { PrismaService } from "../../src/prisma/prisma.servise";
+import { PrismaService } from 'src/prisma/prisma.servise';
 import { Wallet } from "@prisma/client";
 import { NotificationService } from "src/notification/notification.service";
 
