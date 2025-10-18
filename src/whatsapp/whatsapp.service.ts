@@ -62,4 +62,23 @@ export class WhatsappService {
       return false;
     }
   }
+
+  /**
+   * Envía un documento por WhatsApp
+   * 
+   * @param phone Número de teléfono del destinatario
+   * @param message Mensaje a enviar
+   * @param documentUrl URL del documento a enviar
+   * @param filename Nombre del archivo
+   * @returns true si el mensaje se envió correctamente, false si hubo un error
+   */
+  async sendDocumentMessage(phone: string, message: string, documentUrl: string, filename: string): Promise<boolean> {
+    try {
+      const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}&documentUrl=${documentUrl}&filename=${encodeURIComponent(filename)}`;
+      return await this.sendMessageSafely(url);
+    } catch (error) {
+      this.logger.error(`Error al preparar mensaje con documento: ${error.message || 'Error desconocido'}`, error?.stack);
+      return false;
+    }
+  }
 }

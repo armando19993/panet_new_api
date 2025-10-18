@@ -8,6 +8,7 @@ import { WhatsappService } from 'src/whatsapp/whatsapp.service';
 import { MovementsAccountJuridicService } from 'src/movements-account-juridic/movements-account-juridic.service';
 import axios from 'axios';
 import { time } from 'console';
+import { generateTransactionPdf } from './pdf-generator';
 
 @Injectable()
 export class TransactionService {
@@ -340,13 +341,52 @@ export class TransactionService {
           });
 
           // Actualizar transacción a COMPLETADA con referencia
-          await this.prisma.transaction.update({
+          const updatedTransaction = await this.prisma.transaction.update({
             where: { id: transaction.id },
             data: {
               status: 'COMPLETADA',
               nro_referencia: response.data.referencia
+            },
+            include: {
+              creador: true,
+              cliente: true,
+              destino: true,
+              instrument: {
+                include: {
+                  bank: true
+                }
+              }
             }
           });
+
+          // Generate and send PDF receipt
+          try {
+            const pdfDataUri = await generateTransactionPdf(updatedTransaction);
+            const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
+            
+            const pdfFileName = `comprobante-TRX-${updatedTransaction.publicId}.pdf`;
+            const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
+            require('fs').writeFileSync(pdfPath, pdfBuffer);
+            
+            const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
+            
+            // Send to client
+            const recipient = updatedTransaction.cliente || updatedTransaction.creador;
+            if (recipient) {
+              try {
+                await this.whatsappService.sendDocumentMessage(
+                  recipient.phone,
+                  'Adjunto encontrará el comprobante de su transacción',
+                  pdfUrl,
+                  `Comprobante-TRX-${updatedTransaction.publicId}.pdf`
+                );
+              } catch (error) {
+                console.error('Error al enviar PDF por WhatsApp:', error);
+              }
+            }
+          } catch (error) {
+            console.error('Error generating PDF:', error);
+          }
 
           // Crear registros de movimientos para EGRESO
           const transactionAmount = parseFloat(transaction.montoDestino.toString());
@@ -506,9 +546,19 @@ export class TransactionService {
   async procesar(dataAprobar, file, user) {
     const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
 
-    // Buscamos la transacción actual (podrías obtenerla previamente para calcular el extra)
+    // Buscamos la transacción actual
     const transaction = await this.prisma.transaction.findUnique({
       where: { id: dataAprobar.transactionId },
+      include: {
+        creador: true,
+        cliente: true,
+        destino: true,
+        instrument: {
+          include: {
+            bank: true
+          }
+        }
+      }
     });
 
     // Calculamos el monto extra si se indicó gasto adicional.
@@ -532,6 +582,11 @@ export class TransactionService {
         creador: true,
         cliente: true,
         despachador: true,
+        instrument: {
+          include: {
+            bank: true
+          }
+        }
       }
     });
 
@@ -610,6 +665,44 @@ export class TransactionService {
         },
       });
       throw new BadRequestException("No cuentas con el saldo disponible para ejecutar esta transaccion");
+    }
+
+    // Generate and send PDF receipt
+    try {
+      const pdfDataUri = await generateTransactionPdf(data);
+      const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
+      
+      // Save PDF to uploads folder
+      const pdfFileName = `comprobante-TRX-${data.publicId}.pdf`;
+      const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
+      require('fs').writeFileSync(pdfPath, pdfBuffer);
+      
+      const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
+      
+      // Enviar notificación con ambos documentos
+      const recipient = data.cliente || data.creador;
+      if (recipient) {
+        try {
+          // First send the image (original behavior)
+          await this.whatsappService.sendImageMessage(recipient.phone, `Transacción TRX-${data.publicId} completada`, fileUrl);
+          
+          // Then send the PDF
+          await this.whatsappService.sendDocumentMessage(recipient.phone, 'Adjunto encontrará el comprobante en formato PDF', pdfUrl, `Comprobante-TRX-${data.publicId}.pdf`);
+        } catch (error) {
+          console.error('Error al enviar notificación de WhatsApp:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Fallback to original image-only behavior if PDF fails
+      const recipient = data.cliente || data.creador;
+      if (recipient) {
+        try {
+          await this.whatsappService.sendImageMessage(recipient.phone, 'Transacción completada - adjunto comprobante', fileUrl);
+        } catch (error) {
+          console.error('Error al enviar notificación de WhatsApp:', error);
+        }
+      }
     }
 
     await this.prisma.colaEspera.update({
@@ -918,6 +1011,49 @@ export class TransactionService {
               nro_referencia: response.data.referencia
             }
           });
+        }
+
+        // Generate and send PDF receipt
+        try {
+          const transaction = await this.prisma.transaction.findFirst({
+            where: { id: dto.transactionId },
+            include: {
+              creador: true,
+              cliente: true,
+              destino: true,
+              instrument: {
+                include: {
+                  bank: true
+                }
+              }
+            }
+          });
+
+          const pdfDataUri = await generateTransactionPdf(transaction);
+          const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
+          
+          const pdfFileName = `comprobante-TRX-${transaction.publicId}.pdf`;
+          const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
+          require('fs').writeFileSync(pdfPath, pdfBuffer);
+          
+          const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
+          
+          // Send to client
+          const recipient = transaction.cliente || transaction.creador;
+          if (recipient) {
+            try {
+              await this.whatsappService.sendDocumentMessage(
+                recipient.phone,
+                'Adjunto encontrará el comprobante de su transacción',
+                pdfUrl,
+                `Comprobante-TRX-${transaction.publicId}.pdf`
+              );
+            } catch (error) {
+              console.error('Error al enviar PDF por WhatsApp:', error);
+            }
+          }
+        } catch (error) {
+          console.error('Error generating PDF:', error);
         }
 
         // Crear registros de movimientos para EGRESO
