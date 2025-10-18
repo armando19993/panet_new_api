@@ -232,7 +232,7 @@ export class WalletService {
     console.log('Iniciando getTotalsByCountry');
     const wallets = await this.prisma.wallet.findMany({
       where: {
-        country: { isNot: null } // Solo wallets con país
+        countryId: { not: null } // Sintaxis alternativa compatible
       },
       include: {
         country: true
