@@ -35,7 +35,7 @@ export class WhatsappService {
    */
   async sendTextMessage(phone: string, message: string): Promise<boolean> {
     try {
-      const url = `https://api-whatsapp.paneteirl.store/send-message/text?number=${phone}&message=${encodeURIComponent(message)}`;
+      const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}`;
       return await this.sendMessageSafely(url);
     } catch (error) {
       this.logger.error(`Error al preparar mensaje de texto: ${error.message || 'Error desconocido'}`, error?.stack);

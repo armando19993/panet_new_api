@@ -100,7 +100,7 @@ export class RechargeService {
           `Estimado cliente tu recarga REC-2025-${rechargeAutomatic.publicId}, ha sido creada con exito, procede por favor a realizar la misma, te notificaremos cuando tu saldo este disponible.`
         )
 
-        //await this.sendWhatsAppNotification('573207510120', `El cliente, ${rechargeAutomatic.wallet.user.name} ha generado una recarga por flow, hazle seguimiento! `);
+        await this.sendWhatsAppNotification('573207510120', `El cliente, ${rechargeAutomatic.wallet.user.name} ha generado una recarga por flow, hazle seguimiento! `);
 
         return { data, rechargeAutomatic, url: `${data.url}?token=${data.token}` }
       } catch (error) {
@@ -176,7 +176,7 @@ export class RechargeService {
             }
           });
 
-          //await this.sendWhatsAppNotification(data.wallet.user.phone, `El cliente, ${data.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `);
+          await this.sendWhatsAppNotification(data.wallet.user.phone, `El cliente, ${data.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `);
 
           return { data, message: "Recarga creada con exito!" };
         } catch (error) {
@@ -275,7 +275,7 @@ export class RechargeService {
 
     const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-    //await this.sendWhatsAppNotification(instrument.user.phone, message, fileUrl);
+    await this.sendWhatsAppNotification(instrument.user.phone, message, fileUrl);
 
     this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
     return {
@@ -371,8 +371,8 @@ export class RechargeService {
         const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
         const message2 = `*PANET APP:*\n\nHola, ${user.name}}, has creado la recarga:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\n *Comentario:* ${data.comentario}, la misma se encuentra en revision espera nuestra comunicacion. Cualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-        //await this.sendWhatsAppNotification(instrument.user.phone, message, fileUrl);
-        //await this.sendWhatsAppNotification(data.user.phone, message2, fileUrl);
+        await this.sendWhatsAppNotification(instrument.user.phone, message, fileUrl);
+        await this.sendWhatsAppNotification(data.user.phone, message2, fileUrl);
 
         this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
         this.notification.sendPushNotification(data.user.expoPushToken, 'Nueva Recarga Pendiente', `Tienes una nueva recarga pendiente de aprobacion: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
@@ -507,7 +507,7 @@ export class RechargeService {
 
       const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data?.comentario ? data.comentario : '*Sin Comentario*'} ha sido rechazada por el siguiente motivo *${updateRechargeDto.comentario}*\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-      //await this.sendWhatsAppNotification(data.user.phone, message);
+      await this.sendWhatsAppNotification(data.user.phone, message);
 
       this.notification.sendPushNotification(data.user.expoPushToken, 'Estado de Recarga Actualizado', `Tu recarga: REC-2025-${data.publicId} ha cambiado a estado ${updateRechargeDto.status}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
 
@@ -664,7 +664,8 @@ export class RechargeService {
 
       if (duenos.length === 0) {
         const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
-        //await this.sendWhatsAppNotification('573207510120', message);
+        
+        await this.sendWhatsAppNotification('573207510120', message);
       }
       else {
         randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
@@ -934,7 +935,7 @@ export class RechargeService {
 
     const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data.comentario} ha sido APROBADA con exito por un monto de ${data.amount} ${data.wallet.country.currency}, ya el saldo se encuentra disponible para su uso.\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-    //await this.sendWhatsAppNotification(data.user.phone, message);
+    await this.sendWhatsAppNotification(data.user.phone, message);
 
     return { data, message: 'Recarga Cancelada con exito' }
   }
@@ -1005,7 +1006,7 @@ export class RechargeService {
           },
         });
 
-        //await this.sendWhatsAppNotification('573207510120', `El cliente, ${recharge.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `);
+        await this.sendWhatsAppNotification('573207510120', `El cliente, ${recharge.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `);
 
         return updatedRecharge;
       } else {
