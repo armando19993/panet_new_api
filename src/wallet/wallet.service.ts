@@ -19,7 +19,7 @@ export class WalletService {
     private readonly notificaciones: NotificationService
   ) { }
 
-  async create(createWalletDto: Wallet) {
+  async create(createWalletDto: any) {
     const existingWallet = await this.prisma.wallet.findFirst({
       where: {
         AND: [
