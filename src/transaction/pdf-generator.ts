@@ -43,11 +43,18 @@ export const generateTransactionPdf = async (transaction: any) => {
     margin: { left: 15, right: 15 },
   });
 
-  // Footer
-  const qrCodeData = await QRCode.toDataURL(`https://paneteirl.com/verify/${transaction.id}`);
-  doc.addImage(qrCodeData, 'PNG', pageWidth - 40, pageHeight - 40, 25, 25);
-  doc.setFontSize(8);
-  doc.text('Escanea este código para verificar', pageWidth - 40, pageHeight - 15, { align: 'center' });
+  // Footer with QR code (with error handling)
+  try {
+    if (transaction?.id) {
+      const qrCodeData = await QRCode.toDataURL(`https://paneteirl.com/verify/${transaction.id}`);
+      doc.addImage(qrCodeData, 'PNG', pageWidth - 40, pageHeight - 40, 25, 25);
+      doc.setFontSize(8);
+      doc.text('Escanea este código para verificar', pageWidth - 40, pageHeight - 15, { align: 'center' });
+    }
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    // Continue without QR code if generation fails
+  }
 
   return doc.output('datauristring');
 };
