@@ -23,7 +23,7 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) { }
 
   @Post()
-  create(@Body() createWalletDto: CreateWalletDto) {
+  create(@Body() createWalletDto: any) {
     // TODO: Implementar validación/mapeo de DTO a Wallet
     return this.walletService.create(createWalletDto as unknown as Wallet);
   }
