@@ -7,7 +7,7 @@ export class ReportsService {
     constructor(
         private readonly prisma: PrismaService
     ) { }
-    
+
     async home() {
         try {
             // Obtener todos los países
@@ -15,7 +15,11 @@ export class ReportsService {
             const countries = countriesResponse;
 
             // Calcular la fecha de hace 15 días
-            const fifteenDaysAgo = new Date();
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+
+            const endOfDay = new Date();
+            endOfDay.setHours(23, 59, 59, 999);
 
             // Para cada país, obtener las wallets de recepción y sumar los montos
             const countryReports = await Promise.all(
@@ -50,7 +54,8 @@ export class ReportsService {
                                 in: walletIds
                             },
                             createdAt: {
-                                gte: fifteenDaysAgo
+                                gte: startOfDay,
+                                lte: endOfDay
                             }
                         }
                     });
@@ -62,7 +67,8 @@ export class ReportsService {
                                 in: walletIds
                             },
                             createdAt: {
-                                gte: fifteenDaysAgo
+                                gte: startOfDay,
+                                lte: endOfDay
                             }
                         }
                     });
@@ -154,7 +160,7 @@ export class ReportsService {
             const walletsFormatted = receptionWallets.map(wallet => {
                 const balance = parseFloat(wallet.balance.toString());
                 const balanceUSDT = rateWholesale > 0 ? balance / rateWholesale : 0;
-                
+
                 return {
                     id: wallet.id,
                     balance: balance,
