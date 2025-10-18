@@ -11,22 +11,25 @@ import {
   Query,
   Put,
 } from "@nestjs/common";
+import { Wallet } from "@prisma/client";
 import { WalletService } from "./wallet.service";
 import { CreateWalletDto } from "./dto/create-wallet.dto";
 import { UpdateWalletDto } from "./dto/update-wallet.dto";
 import { AuthGuard } from "src/auth/auth.guard";
+import { CountryTotal } from "./wallet.service";
 
 @Controller("wallet")
 export class WalletController {
   constructor(private readonly walletService: WalletService) { }
 
   @Post()
-  create(@Body() createWalletDto) {
-    return this.walletService.create(createWalletDto);
+  create(@Body() createWalletDto: CreateWalletDto) {
+    // TODO: Implementar validación/mapeo de DTO a Wallet
+    return this.walletService.create(createWalletDto as unknown as Wallet);
   }
 
   @Get('totals-by-country')
-  getTotalsByCountry() {
+  getTotalsByCountry(): Promise<{ data: CountryTotal[], message: string }> {
     return this.walletService.getTotalsByCountry();
   }
 

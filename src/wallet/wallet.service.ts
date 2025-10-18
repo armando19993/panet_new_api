@@ -4,7 +4,7 @@ import { PrismaService } from "../../src/prisma/prisma.servise";
 import { Wallet } from "@prisma/client";
 import { NotificationService } from "src/notification/notification.service";
 
-interface CountryTotal {
+export interface CountryTotal {
   countryName: string;
   recarga: number;
   recepcion: number;
