@@ -1,14 +1,20 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { UpdateWalletDto } from "./dto/update-wallet.dto";
-import { PrismaService } from "src/prisma/prisma.servise";
+import { PrismaService } from "../prisma/prisma.service";
 import { Wallet } from "@prisma/client";
 import { NotificationService } from "src/notification/notification.service";
+
+interface CountryTotal {
+  countryName: string;
+  recarga: number;
+  recepcion: number;
+}
 
 @Injectable()
 export class WalletService {
   constructor(
-    private prisma: PrismaService,
-    private notificaciones: NotificationService
+    private readonly prisma: PrismaService,
+    private readonly notificaciones: NotificationService
   ) { }
 
   async create(createWalletDto: Wallet) {
@@ -235,14 +241,13 @@ export class WalletService {
         country: true
       }
     });
-    console.log(`Wallets encontrados: ${wallets.length}`);
 
-    const totalsByCountry = {};
+    const totalsByCountry: Record<string, CountryTotal> = {};
 
     wallets.forEach(wallet => {
-      if (!wallet.country) return; // Ignorar wallets sin país
+      if (!wallet.country) return;
       
-      const balance = wallet.balance || 0; // Usar 0 si balance es null
+      const balance = Number(wallet.balance) || 0;
       
       if (!totalsByCountry[wallet.country.id]) {
         totalsByCountry[wallet.country.id] = {
@@ -257,6 +262,12 @@ export class WalletService {
       } else if (wallet.type === 'RECEPCION') {
         totalsByCountry[wallet.country.id].recepcion += balance;
       }
+    });
+
+    // Formatear números
+    Object.values(totalsByCountry).forEach(country => {
+      country.recarga = parseFloat(country.recarga.toFixed(2));
+      country.recepcion = parseFloat(country.recepcion.toFixed(2));
     });
 
     return {
