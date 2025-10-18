@@ -32,13 +32,21 @@ export const generateTransactionPdf = async (transaction: any, logoDataUri?: str
   const contactName = preferredContact.name || fallbackContact.name || 'N/A';
   const contactPhone = preferredContact.phone || fallbackContact.phone || 'N/A';
   const contactEmail = preferredContact.email || fallbackContact.email || 'N/A';
+  const instrumentType = transaction.instrument?.typeInstrument || '';
+  const formattedInstrumentType = instrumentType
+    ? instrumentType
+        .toLowerCase()
+        .split('_')
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    : 'N/A';
 
   const clientTableStartY = transactionInfoStartY + 12;
   autoTable(doc, {
     startY: clientTableStartY,
     body: [
       ['Nombre', contactName],
-      ['Teléfono', contactPhone],
+      ['Teléfono', '+'+contactPhone],
       ['Correo', contactEmail],
     ],
     theme: 'grid',
@@ -56,7 +64,10 @@ export const generateTransactionPdf = async (transaction: any, logoDataUri?: str
   autoTable(doc, {
     startY: transactionDetailTitleY + 5,
     body: [
-      ['Método', 'PAGO MÓVIL'],
+      ['Método', formattedInstrumentType],
+      ['Titular', transaction.instrument.holder],
+      ['Documento', transaction.instrument.document],
+      ['Numero ó Id', transaction.instrument.accountNumber],
       ['Monto', `${transaction.montoDestino} ${transaction.destino?.currency || ''}`],
       ['Referencia', transaction.nro_referencia || 'N/A'],
       ['Estado', transaction.status || 'N/A'],
