@@ -25,6 +25,11 @@ export class WalletController {
     return this.walletService.create(createWalletDto);
   }
 
+  @Get('totals-by-country')
+  getTotalsByCountry() {
+    return this.walletService.getTotalsByCountry();
+  }
+
   @Get('for-user')
   @UseGuards(AuthGuard)
   findWalletsByUser(@Request() req, @Query("type") type, @Query("userId") userId?: string) {
@@ -67,10 +72,5 @@ export class WalletController {
   @UseGuards(AuthGuard)
   toggleStatus(@Param("id") id: string) {
     return this.walletService.toggleStatus(id)
-  }
-
-  @Get('totals-by-country')
-  getTotalsByCountry() {
-    return this.walletService.getTotalsByCountry();
   }
 }
