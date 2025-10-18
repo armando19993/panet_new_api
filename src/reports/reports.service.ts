@@ -68,8 +68,10 @@ export class ReportsService {
                         }
                     });
 
-                    // Calcular el equivalente en USDT dividiendo por rate_wholesale
-                    const rateWholesale = parseFloat(country.rate_wholesale?.toString() || '1');
+                    const ratePurchase = parseFloat(country.rate_purchase?.toString() || '1');
+                    const rateSales = parseFloat(country.rate_sales?.toString() || '1');
+                    const rateWholesale = (ratePurchase + rateSales) / 2;
+
                     const totalAmountUSDT = rateWholesale > 0 ? totalAmount / rateWholesale : 0;
 
                     return {
@@ -145,8 +147,9 @@ export class ReportsService {
                 }
             });
 
-            // Calcular rate_wholesale para conversión a USDT
-            const rateWholesale = parseFloat(country.rate_wholesale?.toString() || '1');
+            const ratePurchase = parseFloat(country.rate_purchase?.toString() || '1');
+            const rateSales = parseFloat(country.rate_sales?.toString() || '1');
+            const rateWholesale = (ratePurchase + rateSales) / 2;
 
             // Formatear la respuesta incluyendo cálculos de USDT
             const walletsFormatted = receptionWallets.map(wallet => {
