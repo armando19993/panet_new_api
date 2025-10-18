@@ -223,4 +223,35 @@ export class WalletService {
       message: `Estado de wallet actualizado a ${newStatus}`,
     };
   }
+
+  async getTotalsByCountry() {
+    const wallets = await this.prisma.wallet.findMany({
+      include: {
+        country: true
+      }
+    });
+
+    const totalsByCountry = {};
+
+    wallets.forEach(wallet => {
+      if (!totalsByCountry[wallet.country.id]) {
+        totalsByCountry[wallet.country.id] = {
+          countryName: wallet.country.name,
+          recarga: 0,
+          recepcion: 0
+        };
+      }
+
+      if (wallet.type === 'RECARGA') {
+        totalsByCountry[wallet.country.id].recarga += wallet.balance;
+      } else if (wallet.type === 'RECEPCION') {
+        totalsByCountry[wallet.country.id].recepcion += wallet.balance;
+      }
+    });
+
+    return {
+      data: Object.values(totalsByCountry),
+      message: 'Totales por país obtenidos con éxito'
+    };
+  }
 }

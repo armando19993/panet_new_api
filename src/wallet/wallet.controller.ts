@@ -68,4 +68,9 @@ export class WalletController {
   toggleStatus(@Param("id") id: string) {
     return this.walletService.toggleStatus(id)
   }
+
+  @Get('totals-by-country')
+  getTotalsByCountry() {
+    return this.walletService.getTotalsByCountry();
+  }
 }
