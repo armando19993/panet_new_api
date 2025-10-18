@@ -156,6 +156,7 @@ export class ReportsService {
                 return {
                     id: wallet.id,
                     balance: balance,
+                    rateWholesale: rateWholesale,
                     balanceUSDT: balanceUSDT,
                     type: wallet.type,
                     createdAt: wallet.createdAt,
