@@ -179,6 +179,10 @@ export class WalletService {
       include: { transactions: true, country: true, user: true }
     });
 
+    if (!data) {
+      throw new BadRequestException('Wallet no encontrada');
+    }
+
     // Contar transacciones por tipo
     const depositosCount = data.transactions.filter(tx => tx.type === 'DEPOSITO').length;
     const retirosCount = data.transactions.filter(tx => tx.type === 'RETIRO').length;
@@ -225,15 +229,24 @@ export class WalletService {
   }
 
   async getTotalsByCountry() {
+    console.log('Iniciando getTotalsByCountry');
     const wallets = await this.prisma.wallet.findMany({
+      where: {
+        country: { isNot: null } // Solo wallets con país
+      },
       include: {
         country: true
       }
     });
+    console.log(`Wallets encontrados: ${wallets.length}`);
 
     const totalsByCountry = {};
 
     wallets.forEach(wallet => {
+      if (!wallet.country) return; // Ignorar wallets sin país
+      
+      const balance = wallet.balance || 0; // Usar 0 si balance es null
+      
       if (!totalsByCountry[wallet.country.id]) {
         totalsByCountry[wallet.country.id] = {
           countryName: wallet.country.name,
@@ -243,9 +256,9 @@ export class WalletService {
       }
 
       if (wallet.type === 'RECARGA') {
-        totalsByCountry[wallet.country.id].recarga += wallet.balance;
+        totalsByCountry[wallet.country.id].recarga += balance;
       } else if (wallet.type === 'RECEPCION') {
-        totalsByCountry[wallet.country.id].recepcion += wallet.balance;
+        totalsByCountry[wallet.country.id].recepcion += balance;
       }
     });
 
