@@ -2,29 +2,29 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Transaction } from '@prisma/client';
 
-export const generateTransactionPdf = async (transaction: any) => {
+export const generateTransactionPdf = async (transaction: any, logoDataUri?: string) => {
   const doc = new jsPDF();
   const pageHeight = doc.internal.pageSize.height;
   const pageWidth = doc.internal.pageSize.width;
 
-  // Header - Simplified to match your image format
+  if (logoDataUri) {
+    doc.addImage(logoDataUri, 'PNG', 15, 10, 30, 15);
+  }
+
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text('COMPROBANTE DE TRANSACCIÓN', pageWidth / 2, 20, { align: 'center' });
   
-  // Transaction Info
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text(`N°: TRX-${new Date().getFullYear()}-${transaction.publicId}`, 15, 30);
   doc.text(`Fecha: ${new Date(transaction.createdAt).toLocaleString()}`, 15, 35);
   
-  // Client Data
   doc.setFont('helvetica', 'bold');
   doc.text('CLIENTE:', 15, 45);
   doc.setFont('helvetica', 'normal');
   doc.text(transaction.cliente?.name || transaction.creador?.name || 'N/A', 15, 50);
   
-  // Transaction Details
   doc.setFont('helvetica', 'bold');
   doc.text('DETALLE DE TRANSACCIÓN:', 15, 60);
   doc.setFont('helvetica', 'normal');

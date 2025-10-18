@@ -359,9 +359,10 @@ export class TransactionService {
             }
           });
 
-          // Generate and send PDF receipt
           try {
-            const pdfDataUri = await generateTransactionPdf(updatedTransaction);
+            const logoResponse = await axios.get('https://panel.paneteirl.com/logo_conecta.png', { responseType: 'arraybuffer' });
+            const logoDataUri = `data:image/png;base64,${Buffer.from(logoResponse.data).toString('base64')}`;
+            const pdfDataUri = await generateTransactionPdf(updatedTransaction, logoDataUri);
             const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
             
             const pdfFileName = `comprobante-TRX-${updatedTransaction.publicId}.pdf`;
