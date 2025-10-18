@@ -36,6 +36,7 @@ export class WhatsappService {
   async sendTextMessage(phone: string, message: string): Promise<boolean> {
     try {
       const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}`;
+      console.log(url)
       return await this.sendMessageSafely(url);
     } catch (error) {
       this.logger.error(`Error al preparar mensaje de texto: ${error.message || 'Error desconocido'}`, error?.stack);
@@ -54,6 +55,7 @@ export class WhatsappService {
   async sendImageMessage(phone: string, message: string, imageUrl: string): Promise<boolean> {
     try {
       const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}&imageUrl=${imageUrl}`;
+      console.log(url)
       return await this.sendMessageSafely(url);
     } catch (error) {
       this.logger.error(`Error al preparar mensaje con imagen: ${error.message || 'Error desconocido'}`, error?.stack);
