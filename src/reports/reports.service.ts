@@ -149,7 +149,7 @@ export class ReportsService {
 
             const ratePurchase = parseFloat(country.rate_purchase?.toString() || '1');
             const rateSales = parseFloat(country.rate_sales?.toString() || '1');
-            const rateWholesale = (ratePurchase + rateSales) / 2;
+            const rateWholesale = parseFloat(country.rate_sales.toString());
 
             // Formatear la respuesta incluyendo cálculos de USDT
             const walletsFormatted = receptionWallets.map(wallet => {
