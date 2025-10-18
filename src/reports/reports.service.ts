@@ -16,7 +16,6 @@ export class ReportsService {
 
             // Calcular la fecha de hace 15 días
             const fifteenDaysAgo = new Date();
-            fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
             // Para cada país, obtener las wallets de recepción y sumar los montos
             const countryReports = await Promise.all(
