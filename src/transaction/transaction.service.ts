@@ -585,6 +585,16 @@ export class TransactionService {
           console.error('Error al enviar notificación de WhatsApp:', error);
         }
       }
+      if(data.creador){
+        try {
+          let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se ha procesada con exito!";
+          const url = `https://api-whatsapp.paneteirl.store/send-message?number=${data.creador.phone}&message=${encodeURIComponent(message)}&imageUrl=${fileUrl}`;
+          await this.whatsappService.sendMessageSafely(url);
+        } catch (error) {
+          // Simplemente registramos el error pero no lo propagamos
+          console.error('Error al enviar notificación de WhatsApp:', error);
+        }
+      }
 
       try {
         this.notification.sendPushNotification(
