@@ -20,7 +20,9 @@ export class RechargeService {
 
   // Método utilitario para enviar notificaciones de WhatsApp de manera segura
   private async sendWhatsAppNotification(phone: string, message: string, imageUrl?: string): Promise<boolean> {
+    console.log("se eejcuto 2")
     try {
+      console.log("se eejcuto 3")
       if (imageUrl) {
         return await this.whatsappService.sendImageMessage(phone, message, imageUrl);
       } else {
