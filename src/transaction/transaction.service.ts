@@ -418,16 +418,22 @@ export class TransactionService {
           await this.prisma.transaction.update({
             where: { id: transaction.id },
             data: {
-              status: 'ERROR'
+              status: 'ERROR',
+              errorResponse: response.data
             }
           });
         }
       } catch (error) {
         console.error('Error al llamar API de Banvenez:', error);
+        const errorPayload = axios.isAxiosError(error)
+          ? (error.response?.data ?? { message: error.message })
+          : { message: (error as Error).message };
+
         await this.prisma.transaction.update({
           where: { id: transaction.id },
           data: {
-            status: 'ERROR'
+            status: 'ERROR',
+            errorResponse: errorPayload
           }
         });
       }
