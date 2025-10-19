@@ -19,12 +19,15 @@ export class InstrumentsClientService {
         throw new BadRequestException('El countryId es requerido');
       }
 
+      const document = createInstrumentsClientDto.document?.trim() ?? createInstrumentsClientDto.document;
+      const accountNumber = createInstrumentsClientDto.accountNumber?.trim() ?? createInstrumentsClientDto.accountNumber;
+
       const data = await this.prisma.instrumentsClient.create({
         data: {
           accountNumberCCI: createInstrumentsClientDto.accountNumberCCI,
-          document: createInstrumentsClientDto.document,
+          document,
           holder: createInstrumentsClientDto.holder,
-          accountNumber: createInstrumentsClientDto.accountNumber,
+          accountNumber,
           accountType: createInstrumentsClientDto.accountTypeId
             ? { connect: { id: createInstrumentsClientDto.accountTypeId } }
             : undefined,
