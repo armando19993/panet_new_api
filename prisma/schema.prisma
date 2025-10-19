@@ -516,6 +516,7 @@ enum StatusTransactions {
   OBSERVADA
   ANULADA
   COMPLETADA
+  ERROR
 }
 
 enum StatusTransactionsTemporal {

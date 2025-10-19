@@ -630,58 +630,61 @@ export class RechargeService {
       })
       //agregar en cola
 
-      const roles = ['DESPACHADOR']
-      const duenos = await this.prisma.user.findMany({
-        where: {
-          roles: {
-            some: {
-              role: {
-                name: {
-                  in: roles,
-                },
-              },
-            },
-          },
-          status_despachador: 'ACTIVO',
-          wallets: {
-            some: {
-              countryId: trans.wallet.country.id,
-              type: 'RECEPCION',
-              status: 'ACTIVO'
-            },
-          },
-        },
-        include: {
-          wallets: true,
-          clientes: true,
-          referrals: true,
-          referrer: true,
-          roles: {
-            include: {
-              role: true,
-            },
-          },
-        },
-      });
       let colaEspera = null;
       let randomUser = null;
 
-      if (duenos.length === 0) {
-        const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
-        
-        await this.sendWhatsAppNotification('573207510120', message);
-      }
-      else {
-        randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
+      if (trans.instrument.typeInstrument !== 'PAGO_MOVIL') {
+        const roles = ['DESPACHADOR']
+        const duenos = await this.prisma.user.findMany({
+          where: {
+            roles: {
+              some: {
+                role: {
+                  name: {
+                    in: roles,
+                  },
+                },
+              },
+            },
+            status_despachador: 'ACTIVO',
+            wallets: {
+              some: {
+                countryId: trans.wallet.country.id,
+                type: 'RECEPCION',
+                status: 'ACTIVO'
+              },
+            },
+          },
+          include: {
+            wallets: true,
+            clientes: true,
+            referrals: true,
+            referrer: true,
+            roles: {
+              include: {
+                role: true,
+              },
+            },
+          },
+        });
 
-        colaEspera = await this.prisma.colaEspera.create({
-          data: {
-            type: 'TRANSACCION',
-            userId: randomUser.id,
-            transactionId: trans.id,
-            status: 'INICIADA'
-          }
-        })
+        if (duenos.length === 0) {
+          const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
+          
+          await this.sendWhatsAppNotification('573207510120', message);
+        }
+        else {
+          randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
+
+          colaEspera = await this.prisma.colaEspera.create({
+            data: {
+              type: 'TRANSACCION',
+              userId: randomUser.id,
+              transactionId: trans.id,
+              status: 'INICIADA'
+            }
+          })
+        }
       }
 
       if (trans.instrument.typeInstrument === 'PAGO_MOVIL') {
@@ -772,8 +775,23 @@ export class RechargeService {
               description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)`
             });
           }
-        } catch (error) {
+          else {
+            await this.prisma.transaction.update({
+              where: { id: trans.id },
+              data: {
+                status: 'ERROR'
+              }
+            });
+          }
+        }
+        catch (error) {
           console.error('Error al llamar API de Banvenez:', error);
+          await this.prisma.transaction.update({
+            where: { id: trans.id },
+            data: {
+              status: 'ERROR'
+            }
+          });
         }
 
       }

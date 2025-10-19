@@ -110,39 +110,6 @@ export class TransactionService {
 
     const gananciaPanet = parseFloat((porcentajeDelMonto - gananciaIntermediario).toFixed(3));
 
-    const roles = ['DESPACHADOR']
-    const duenos = await this.prisma.user.findMany({
-      where: {
-        roles: {
-          some: {
-            role: {
-              name: {
-                in: roles,
-              },
-            },
-          },
-        },
-        status_despachador: 'ACTIVO',
-        wallets: {
-          some: {
-            countryId: destino.id,
-            type: 'RECEPCION',
-            status: 'ACTIVO'
-          },
-        },
-      },
-      include: {
-        wallets: true,
-        clientes: true,
-        referrals: true,
-        referrer: true,
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
 
     // Crear la transacción
     const transaction = await this.prisma.transaction.create({
@@ -193,48 +160,86 @@ export class TransactionService {
       },
     });
 
-    //buscar usuarios dueños de cuenta
-    const randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
+    let randomUser: any = null;
 
-    if (duenos.length === 0) {
-      try {
-        const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
-        await this.whatsappService.sendTextMessage('584148383419', message);
-      } catch (error) {
-        console.error('Error al enviar notificación de WhatsApp:', error);
-      }
-    } else {
-      const colaEspera = await this.prisma.colaEspera.create({
-        data: {
-          type: 'TRANSACCION',
-          userId: randomUser.id,
-          transactionId: transaction.id,
-          status: 'INICIADA'
-        }
-      })
+    if (transaction.instrument.typeInstrument !== 'PAGO_MOVIL') {
+      const roles = ['DESPACHADOR']
+      const duenos = await this.prisma.user.findMany({
+        where: {
+          roles: {
+            some: {
+              role: {
+                name: {
+                  in: roles,
+                },
+              },
+            },
+          },
+          status_despachador: 'ACTIVO',
+          wallets: {
+            some: {
+              countryId: destino.id,
+              type: 'RECEPCION',
+              status: 'ACTIVO'
+            },
+          },
+        },
+        include: {
+          wallets: true,
+          clientes: true,
+          referrals: true,
+          referrer: true,
+          roles: {
+            include: {
+              role: true,
+            },
+          },
+        },
+      });
 
-      try {
-        const message = `Tienes una operacion por despachar, por favor realizada en menos de 5 minutos. Departamento de Tecnologia! `
-        await this.whatsappService.sendTextMessage(randomUser.phone, message);
-      } catch (error) {
-        console.error('Error al enviar notificación de WhatsApp:', error);
-      }
+      //buscar usuarios dueños de cuenta
+      randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
 
-      if (randomUser.expoPushToken) {
+      if (duenos.length === 0) {
         try {
-          this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
-            screen: "DespachoPage",
-            params: { transactionId: transaction.id }
-          });
+          const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
+          await this.whatsappService.sendTextMessage('584148383419', message);
         } catch (error) {
-          console.error('Error al enviar notificación push:', error);
+          console.error('Error al enviar notificación de WhatsApp:', error);
         }
+      } else {
+        const colaEspera = await this.prisma.colaEspera.create({
+          data: {
+            type: 'TRANSACCION',
+            userId: randomUser.id,
+            transactionId: transaction.id,
+            status: 'INICIADA'
+          }
+        })
 
         try {
-          const message = `La transaccion N° ${transaction.publicId} esta pendiente de despacho! `
+          const message = `Tienes una operacion por despachar, por favor realizada en menos de 5 minutos. Departamento de Tecnologia! `
           await this.whatsappService.sendTextMessage(randomUser.phone, message);
         } catch (error) {
           console.error('Error al enviar notificación de WhatsApp:', error);
+        }
+
+        if (randomUser.expoPushToken) {
+          try {
+            this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
+              screen: "DespachoPage",
+              params: { transactionId: transaction.id }
+            });
+          } catch (error) {
+            console.error('Error al enviar notificación push:', error);
+          }
+
+          try {
+            const message = `La transaccion N° ${transaction.publicId} esta pendiente de despacho! `
+            await this.whatsappService.sendTextMessage(randomUser.phone, message);
+          } catch (error) {
+            console.error('Error al enviar notificación de WhatsApp:', error);
+          }
         }
       }
     }
@@ -327,18 +332,20 @@ export class TransactionService {
         // Verificar respuesta exitosa
         if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
           // Actualizar cola de espera a CERRADA
-          await this.prisma.colaEspera.update({
-            where: {
-              transactionId_userId_type: {
-                transactionId: transaction.id,
-                type: 'TRANSACCION',
-                userId: randomUser.id
+          if (randomUser) {
+            await this.prisma.colaEspera.update({
+              where: {
+                transactionId_userId_type: {
+                  transactionId: transaction.id,
+                  type: 'TRANSACCION',
+                  userId: randomUser.id
+                }
+              },
+              data: {
+                status: 'CERRADA'
               }
-            },
-            data: {
-              status: 'CERRADA'
-            }
-          });
+            });
+          }
 
           // Actualizar transacción a COMPLETADA con referencia
           const updatedTransaction = await this.prisma.transaction.update({
@@ -364,13 +371,13 @@ export class TransactionService {
             const logoDataUri = `data:image/png;base64,${Buffer.from(logoResponse.data).toString('base64')}`;
             const pdfDataUri = await generateTransactionPdf(updatedTransaction, logoDataUri);
             const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
-            
+
             const pdfFileName = `comprobante-TRX-${updatedTransaction.publicId}.pdf`;
             const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
             require('fs').writeFileSync(pdfPath, pdfBuffer);
-            
+
             const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
-            
+
             // Send to client
             const recipient = updatedTransaction.cliente || updatedTransaction.creador;
             if (recipient) {
@@ -407,8 +414,22 @@ export class TransactionService {
             description: `Comisión 0.3% por transacción TRX-2025-${transaction.publicId}`
           });
         }
+        else {
+          await this.prisma.transaction.update({
+            where: { id: transaction.id },
+            data: {
+              status: 'ERROR'
+            }
+          });
+        }
       } catch (error) {
         console.error('Error al llamar API de Banvenez:', error);
+        await this.prisma.transaction.update({
+          where: { id: transaction.id },
+          data: {
+            status: 'ERROR'
+          }
+        });
       }
 
     }
@@ -672,21 +693,21 @@ export class TransactionService {
     try {
       const pdfDataUri = await generateTransactionPdf(data);
       const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
-      
+
       // Save PDF to uploads folder
       const pdfFileName = `comprobante-TRX-${data.publicId}.pdf`;
       const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
       require('fs').writeFileSync(pdfPath, pdfBuffer);
-      
+
       const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
-      
+
       // Enviar notificación con ambos documentos
       const recipient = data.cliente || data.creador;
       if (recipient) {
         try {
           // First send the image (original behavior)
           await this.whatsappService.sendImageMessage(recipient.phone, `Transacción TRX-${data.publicId} completada`, fileUrl);
-          
+
           // Then send the PDF
           await this.whatsappService.sendDocumentMessage(recipient.phone, 'Adjunto encontrará el comprobante en formato PDF', pdfUrl, `Comprobante-TRX-${data.publicId}.pdf`);
         } catch (error) {
@@ -1032,13 +1053,13 @@ export class TransactionService {
 
           const pdfDataUri = await generateTransactionPdf(transaction);
           const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
-          
+
           const pdfFileName = `comprobante-TRX-${transaction.publicId}.pdf`;
           const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
           require('fs').writeFileSync(pdfPath, pdfBuffer);
-          
+
           const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
-          
+
           // Send to client
           const recipient = transaction.cliente || transaction.creador;
           if (recipient) {
