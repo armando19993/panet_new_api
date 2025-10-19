@@ -105,7 +105,17 @@ export class InstrumentsClientService {
   }
 
   async update(id: string, updateInstrumentsClientDto: UpdateInstrumentsClientDto) {
-    const data = await this.prisma.instrumentsClient.update({ where: { id }, data: updateInstrumentsClientDto })
+    const document = updateInstrumentsClientDto.document?.trim() ?? updateInstrumentsClientDto.document;
+    const accountNumber = updateInstrumentsClientDto.accountNumber?.trim() ?? updateInstrumentsClientDto.accountNumber;
+
+    const data = await this.prisma.instrumentsClient.update({
+      where: { id },
+      data: {
+        ...updateInstrumentsClientDto,
+        document,
+        accountNumber,
+      }
+    })
 
     return { data, message: 'Instrumento Actualizado con exito' }
   }
