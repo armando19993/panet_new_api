@@ -1113,10 +1113,58 @@ export class TransactionService {
 
       } else {
         console.error('Error en la respuesta de la API de Banvenez:', response.data);
+
+        if (dto.transactionId) {
+          const cola = await this.prisma.colaEspera.findFirst({
+            where: { transactionId: dto.transactionId, status: { not: 'CERRADA' } }
+          });
+
+          if (cola) {
+            await this.prisma.colaEspera.update({
+              where: { id: cola.id },
+              data: { status: 'CERRADA' }
+            });
+          }
+
+          await this.prisma.transaction.update({
+            where: { id: dto.transactionId },
+            data: {
+              status: 'ERROR',
+              errorResponse: response.data
+            }
+          });
+        }
+
         throw new BadRequestException(`Error al procesar el Pago Móvil: ${response.data.message || 'Respuesta no válida'}`);
       }
     } catch (error) {
-      console.error('Error al llamar API de Banvenez:', error.response?.data || error.message);
+      const errorPayload = axios.isAxiosError(error)
+        ? (error.response?.data ?? { message: error.message })
+        : { message: (error as Error).message };
+
+      console.error('Error al llamar API de Banvenez:', errorPayload);
+
+      if (dto.transactionId) {
+        const cola = await this.prisma.colaEspera.findFirst({
+          where: { transactionId: dto.transactionId, status: { not: 'CERRADA' } }
+        });
+
+        if (cola) {
+          await this.prisma.colaEspera.update({
+            where: { id: cola.id },
+            data: { status: 'CERRADA' }
+          });
+        }
+
+        await this.prisma.transaction.update({
+          where: { id: dto.transactionId },
+          data: {
+            status: 'ERROR',
+            errorResponse: errorPayload
+          }
+        });
+      }
+
       throw new BadRequestException('Error de conexión con el servicio de pago. Intente más tarde.');
     }
   }
