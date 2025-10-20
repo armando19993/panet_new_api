@@ -695,25 +695,54 @@ export class RechargeService {
         }
         numeroReferencia = numeroReferencia.substring(0, 6);
 
-        const jsonBDV = {
-          numeroReferencia: numeroReferencia,
-          montoOperacion: trans.montoDestino.toString(),
-          nacionalidadDestino: "V",
-          cedulaDestino: trans.instrument.document.toString(),
-          telefonoDestino: trans.instrument.accountNumber.toString(),
-          bancoDestino: trans.instrument.bank.code.toString(),
-          moneda: "VES",
-          conceptoPago: `CONECTA CONSULTING ${trans.publicId}`
-        }
+        const safeToString = (value: unknown, field: string) => {
+          if (value === null || value === undefined) {
+            throw new Error(field);
+          }
+
+          return value.toString();
+        };
+
+        let jsonBDV: Record<string, string> | null = null;
 
         try {
-          const response = await axios.post(process.env.BANVENEZ_API_URL, jsonBDV, {
+          jsonBDV = {
+            numeroReferencia: numeroReferencia,
+            montoOperacion: safeToString(trans.montoDestino, 'montoDestino'),
+            nacionalidadDestino: "V",
+            cedulaDestino: safeToString(trans.instrument?.document, 'instrument.document'),
+            telefonoDestino: safeToString(trans.instrument?.accountNumber, 'instrument.accountNumber'),
+            bancoDestino: safeToString(trans.instrument?.bank?.code, 'instrument.bank.code'),
+            moneda: "VES",
+            conceptoPago: `CONECTA CONSULTING ${trans.publicId}`
+          };
+        }
+        catch (formatError) {
+          const missingField = formatError instanceof Error ? formatError.message : 'desconocido';
+
+          await this.prisma.transaction.update({
+            where: { id: trans.id },
+            data: {
+              status: 'ERROR',
+              errorResponse: {
+                message: 'Existe un error al formatear los datos del json para el pago movil',
+                details: {
+                  field: missingField
+                }
+              }
+            }
+          });
+        }
+
+        if (jsonBDV) {
+          try {
+            const response = await axios.post(process.env.BANVENEZ_API_URL, jsonBDV, {
             headers: {
               'x-api-key': process.env.BANVENEZ_API_KEY,
               'Content-Type': 'application/json'
             }
           });
-
+ 
           if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
             if (colaEspera) {
               await this.prisma.colaEspera.update({
@@ -798,6 +827,7 @@ export class RechargeService {
               errorResponse: errorPayload
             }
           });
+        }
         }
 
       }
