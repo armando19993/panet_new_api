@@ -64,16 +64,7 @@ export class TransactionController {
 
   @Get('obtener-conciliation')
   getConciliationData(@Query('fechaIni') fechaIni: string, @Query('fechaFin') fechaFin: string) {
-    console.log('=== CONTROLADOR: PETICIÓN DE CONCILIACIÓN ===');
-    console.log('Fecha inicio recibida:', fechaIni);
-    console.log('Fecha fin recibida:', fechaFin);
-    console.log('Ejecutando método getConciliationData del servicio...');
-
     const result = this.transactionService.getConciliationData(fechaIni, fechaFin);
-
-    console.log('Tipo de resultado:', typeof result);
-    console.log('Resultado:', result);
-
     return result;
   }
 }

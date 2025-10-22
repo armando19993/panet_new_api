@@ -212,6 +212,19 @@ export class RechargeService {
 
   async createFull(data, user, file) {
     const fileUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${file.filename}`;
+    // Validar duplicidad por nro_referencia y fecha_comprobante antes de crear
+    if (data?.nro_referencia && data?.fecha_comprobante) {
+      const fechaComprobante = new Date(data.fecha_comprobante);
+      const existing = await this.prisma.recharge.findFirst({
+        where: {
+          nro_referencia: data.nro_referencia,
+          fecha_comprobante: fechaComprobante
+        }
+      });
+      if (existing) {
+        throw new BadRequestException(`Esta recarga ya fue cargada: REC-2025-${existing.publicId}.`);
+      }
+    }
     //RECARGA 
     const recharge = await this.prisma.recharge.create({
       data: {
