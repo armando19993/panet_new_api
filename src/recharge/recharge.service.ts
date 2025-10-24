@@ -491,129 +491,93 @@ export class RechargeService {
 
   async updateManual(id, updateRechargeDto) {
     const data = await this.prisma.recharge.findFirst({
-      where: {
-        id
-      },
+      where: { id },
       include: {
-        instrument: {
-          include: {
-            user: true
-          }
-        },
-        wallet: {
-          include: {
-            country: true
-          }
-        },
+        instrument: { include: { user: true } },
+        wallet: { include: { country: true } },
         user: true,
-        TransactionTemporal: true
-      }
-    })
+        TransactionTemporal: true,
+      },
+    });
+
+    // Evitar cambios de estado si la recarga ya no está en estado 'CREADA'
+    if (data && data.status !== 'CREADA') {
+      return { data, message: 'La recarga ya fue procesada y no puede cambiar de estado.' };
+    }
 
     if (updateRechargeDto.status === 'CANCELADA') {
       const updateRecharge = await this.prisma.recharge.update({
         where: { id },
-        data: {
-          status: 'CANCELADA',
-          comentario: updateRechargeDto.comentario
-        },
-        include: {
-          TransactionTemporal: true
-        }
-      })
+        data: { status: 'CANCELADA', comentario: updateRechargeDto.comentario },
+        include: { TransactionTemporal: true },
+      });
 
       const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data?.comentario ? data.comentario : '*Sin Comentario*'} ha sido rechazada por el siguiente motivo *${updateRechargeDto.comentario}*\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
       await this.sendWhatsAppNotification(data.user.phone, message);
+      this.notification.sendPushNotification(
+        data.user.expoPushToken,
+        'Estado de Recarga Actualizado',
+        `Tu recarga: REC-2025-${data.publicId} ha cambiado a estado ${updateRechargeDto.status}`,
+        { screen: 'ReciboRecarga', params: { rechargeId: data.id } }
+      );
 
-      this.notification.sendPushNotification(data.user.expoPushToken, 'Estado de Recarga Actualizado', `Tu recarga: REC-2025-${data.publicId} ha cambiado a estado ${updateRechargeDto.status}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
-
-      //cancela si existe un registro 
       if (updateRecharge.TransactionTemporal) {
         await this.prisma.transactionTemporal.update({
-          where: {
-            id: updateRecharge.TransactionTemporal[0].id
-          },
-          data: {
-            status: "RECHAZADA"
-          }
-        })
+          where: { id: updateRecharge.TransactionTemporal[0].id },
+          data: { status: 'RECHAZADA' },
+        });
       }
-      return { data, message: 'Recarga Cancelada con exito' }
+
+      await this.prisma.colaEspera.deleteMany({ where: { rechargeId: id, type: 'RECARGA' } });
+      return { data, message: 'Recarga Cancelada con exito' };
     }
 
     if (data.TransactionTemporal[0]) {
       await this.prisma.transactionTemporal.update({
-        where: {
-          id: data.TransactionTemporal[0].id
-        },
-        data: {
-          status: StatusTransactionsTemporal.APROBADA
-        }
-      })
+        where: { id: data.TransactionTemporal[0].id },
+        data: { status: StatusTransactionsTemporal.APROBADA },
+      });
 
-      const info = data.TransactionTemporal[0]
-      const origen = await this.prisma.country.findUnique({ where: { id: info.origenId } })
-      const destino = await this.prisma.country.findUnique({ where: { id: info.destinoId } })
+      const info = data.TransactionTemporal[0];
+      const origen = await this.prisma.country.findUnique({ where: { id: info.origenId } });
+      const destino = await this.prisma.country.findUnique({ where: { id: info.destinoId } });
       const rate = await this.prisma.rate.findFirst({
-        where: {
-          originId: info.origenId,
-          destinationId: info.destinoId
-        },
-        include: {
-          origin: true,
-          destination: true
-        }
-      })
+        where: { originId: info.origenId, destinationId: info.destinoId },
+        include: { origin: true, destination: true },
+      });
       const rateAmount = parseFloat(rate.amount.toString());
       const porcentajePasarela = parseFloat(((parseFloat(info.montoOrigen.toString()) * 2) / 100).toFixed(3));
-      const saldoCalculo = parseFloat(info.montoOrigen.toString())
+      const saldoCalculo = parseFloat(info.montoOrigen.toString());
 
       const tipoCalculo = rate.type_profit;
       const porcentajeCalculo = origen[tipoCalculo];
       const porcentajeDelMonto = parseFloat(((parseFloat(info.montoOrigen.toString()) * porcentajeCalculo) / 100).toFixed(3));
 
-      let montoDestino = 0
-
-      if (rate.origin.name !== "VENEZUELA" && rate.origin.name !== "COLOMBIA") {
+      let montoDestino = 0;
+      if (rate.origin.name !== 'VENEZUELA' && rate.origin.name !== 'COLOMBIA') {
         montoDestino = saldoCalculo * rateAmount;
       } else {
         montoDestino = saldoCalculo * rateAmount;
       }
-
-      if (rate.origin.name === "VENEZUELA" && rate.destination.name === "COLOMBIA") {
+      if (rate.origin.name === 'VENEZUELA' && rate.destination.name === 'COLOMBIA') {
         montoDestino = saldoCalculo * rateAmount;
       }
-      if (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") {
+      if (rate.origin.name === 'VENEZUELA' && rate.destination.name !== 'COLOMBIA') {
+        montoDestino = saldoCalculo / rateAmount;
+      }
+      if (rate.origin.name === 'COLOMBIA' && rate.destination.name === 'VENEZUELA') {
         montoDestino = saldoCalculo / rateAmount;
       }
 
-      if (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA") {
-        montoDestino = saldoCalculo / rateAmount;
-      }
-
-
-      //crear la transaccion
       const trans = await this.prisma.transaction.create({
         data: {
-          creador: {
-            connect: { id: info.creadorId }
-          },
-          wallet: {
-            connect: { id: info.walletId }
-          },
-          cliente: info.clienteId ? {
-            connect: { id: info.clienteId }
-          } : undefined,
-          instrument: {
-            connect: { id: info.instrumentId }
-          },
-          origen: {
-            connect: { id: info.origenId }
-          },
-          destino: {
-            connect: { id: info.destinoId }
-          },
+          creador: { connect: { id: info.creadorId } },
+          wallet: { connect: { id: info.walletId } },
+          cliente: info.clienteId ? { connect: { id: info.clienteId } } : undefined,
+          instrument: { connect: { id: info.instrumentId } },
+          origen: { connect: { id: info.origenId } },
+          destino: { connect: { id: info.destinoId } },
           montoOrigen: info.montoOrigen,
           montoDestino: montoDestino,
           montoTasa: rateAmount,
@@ -626,77 +590,41 @@ export class RechargeService {
           nro_referencia: '0',
           comprobante: '0',
           observacion: 'ninguna',
-          status: "CREADA",
+          status: 'CREADA',
         },
         include: {
-          wallet: {
-            include: {
-              country: true
-            }
-          },
-          instrument: {
-            include: {
-              bank: true
-            }
-          }
-        }
-      })
-      //agregar en cola
+          wallet: { include: { country: true } },
+          instrument: { include: { bank: true } },
+        },
+      });
 
       let colaEspera = null;
       let randomUser = null;
-
       if (trans.instrument.typeInstrument !== 'PAGO_MOVIL') {
-        const roles = ['DESPACHADOR']
+        const roles = ['DESPACHADOR'];
         const duenos = await this.prisma.user.findMany({
           where: {
-            roles: {
-              some: {
-                role: {
-                  name: {
-                    in: roles,
-                  },
-                },
-              },
-            },
+            roles: { some: { role: { name: { in: roles } } } },
             status_despachador: 'ACTIVO',
-            wallets: {
-              some: {
-                countryId: trans.wallet.country.id,
-                type: 'RECEPCION',
-                status: 'ACTIVO'
-              },
-            },
+            wallets: { some: { countryId: trans.wallet.country.id, type: 'RECEPCION', status: 'ACTIVO' } },
           },
           include: {
             wallets: true,
             clientes: true,
             referrals: true,
             referrer: true,
-            roles: {
-              include: {
-                role: true,
-              },
-            },
+            roles: { include: { role: true } },
           },
         });
 
         if (duenos.length === 0) {
-          const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
-          
+          const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `;
           await this.sendWhatsAppNotification('573207510120', message);
-        }
-        else {
+        } else {
           randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
-
           colaEspera = await this.prisma.colaEspera.create({
-            data: {
-              type: 'TRANSACCION',
-              userId: randomUser.id,
-              transactionId: trans.id,
-              status: 'INICIADA'
-            }
-          })
+            data: { type: 'TRANSACCION', userId: randomUser.id, transactionId: trans.id, status: 'INICIADA' },
+          });
         }
       }
 
@@ -712,303 +640,140 @@ export class RechargeService {
           if (value === null || value === undefined) {
             throw new Error(field);
           }
-
           return value.toString();
         };
 
         let jsonBDV: Record<string, string> | null = null;
-
         try {
           jsonBDV = {
             numeroReferencia: numeroReferencia,
             montoOperacion: safeToString(trans.montoDestino, 'montoDestino'),
-            nacionalidadDestino: "V",
+            nacionalidadDestino: 'V',
             cedulaDestino: safeToString(trans.instrument?.document, 'instrument.document'),
             telefonoDestino: safeToString(trans.instrument?.accountNumber, 'instrument.accountNumber'),
             bancoDestino: safeToString(trans.instrument?.bank?.code, 'instrument.bank.code'),
-            moneda: "VES",
-            conceptoPago: `CONECTA CONSULTING ${trans.publicId}`
+            moneda: 'VES',
+            conceptoPago: `CONECTA CONSULTING ${trans.publicId}`,
           };
-        }
-        catch (formatError) {
+        } catch (formatError) {
           const missingField = formatError instanceof Error ? formatError.message : 'desconocido';
-
           await this.prisma.transaction.update({
             where: { id: trans.id },
             data: {
               status: 'ERROR',
-              errorResponse: {
-                message: 'Existe un error al formatear los datos del json para el pago movil',
-                details: {
-                  field: missingField
-                }
-              }
-            }
+              errorResponse: { message: 'Existe un error al formatear los datos del json para el pago movil', details: { field: missingField } },
+            },
           });
         }
 
         if (jsonBDV) {
           try {
             const response = await axios.post(process.env.BANVENEZ_API_URL, jsonBDV, {
-            headers: {
-              'x-api-key': process.env.BANVENEZ_API_KEY,
-              'Content-Type': 'application/json'
-            }
-          });
- 
-          if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
-            if (colaEspera) {
-              await this.prisma.colaEspera.update({
-                where: {
-                  id: colaEspera.id
-                },
-                data: {
-                  status: 'CERRADA'
-                }
-              });
+              headers: { 'x-api-key': process.env.BANVENEZ_API_KEY, 'Content-Type': 'application/json' },
+            });
 
-              // Realizar egreso en el wallet del cliente (donde se hizo la recarga)
-              const montoEgreso = parseFloat(trans.montoOrigen.toString());
-              
-              // Restar el saldo del wallet del cliente
-              await this.prisma.wallet.update({
-                where: {
-                  id: trans.wallet.id,
-                },
-                data: {
-                  balance: {
-                    decrement: montoEgreso,
+            if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
+              if (colaEspera) {
+                await this.prisma.colaEspera.update({ where: { id: colaEspera.id }, data: { status: 'CERRADA' } });
+                const montoEgreso = parseFloat(trans.montoOrigen.toString());
+                await this.prisma.wallet.update({ where: { id: trans.wallet.id }, data: { balance: { decrement: montoEgreso } } });
+                await this.prisma.walletTransactions.create({
+                  data: {
+                    amount: montoEgreso,
+                    amount_old: trans.wallet.balance,
+                    amount_new: parseFloat(trans.wallet.balance.toString()) - montoEgreso,
+                    wallet: { connect: { id: trans.wallet.id } },
+                    description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)`,
+                    type: 'RETIRO',
                   },
-                },
-              });
-
-              // Crear transacción de egreso en walletTransactions
-              await this.prisma.walletTransactions.create({
-                data: {
-                  amount: montoEgreso,
-                  amount_old: trans.wallet.balance,
-                  amount_new: parseFloat(trans.wallet.balance.toString()) - montoEgreso,
-                  wallet: {
-                    connect: {
-                      id: trans.wallet.id,
-                    },
-                  },
-                  description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)`,
-                  type: "RETIRO"
-                },
-              });
+                });
+              }
+              await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'COMPLETADA', nro_referencia: response.data.referencia } });
+              const transactionAmount = parseFloat(trans.montoDestino.toString());
+              await this.movementsAccountJuridicService.create({ amount: transactionAmount.toString(), type: 'EGRESO', description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)` });
+            } else {
+              await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'ERROR', errorResponse: response.data } });
             }
-            
-            await this.prisma.transaction.update({
-              where: { id: trans.id },
-              data: {
-                status: 'COMPLETADA',
-                nro_referencia: response.data.referencia
-              }
-            });
-
-            // Crear registros de movimientos para EGRESO cuando la transacción se completa
-            const transactionAmount = parseFloat(trans.montoDestino.toString());
-
-            // Crear registro principal de EGRESO
-            await this.movementsAccountJuridicService.create({
-              amount: transactionAmount.toString(),
-              type: 'EGRESO',
-              description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)`
-            });
-          }
-          else {
-            await this.prisma.transaction.update({
-              where: { id: trans.id },
-              data: {
-                status: 'ERROR',
-                errorResponse: response.data
-              }
-            });
+          } catch (error) {
+            console.error('Error al llamar API de Banvenez:', error);
+            const errorPayload = axios.isAxiosError(error) ? (error.response?.data ?? { message: error.message }) : { message: (error as Error).message };
+            await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'ERROR', errorResponse: errorPayload } });
           }
         }
-        catch (error) {
-          console.error('Error al llamar API de Banvenez:', error);
-          const errorPayload = axios.isAxiosError(error)
-            ? (error.response?.data ?? { message: error.message })
-            : { message: (error as Error).message };
-
-          await this.prisma.transaction.update({
-            where: { id: trans.id },
-            data: {
-              status: 'ERROR',
-              errorResponse: errorPayload
-            }
-          });
-        }
-        }
-
       }
-
     }
 
-    console.log("Informacion de la recarga")
-    console.log(data)
+    console.log('Informacion de la recarga');
+    console.log(data);
 
-    console.log(data.amount_total)
-    let saldo = data.amount_total
-    if (data.pasarela === "Manual") {
-      saldo = data.amount
+    console.log(data.amount_total);
+    let saldo = data.amount_total;
+    if (data.pasarela === 'Manual') {
+      saldo = data.amount;
     }
 
-    // sumar saldo al wallet de usuario que recarga
-    await this.prisma.wallet.update({
-      where: {
-        id: data.wallet.id,
-      },
-      data: {
-        balance: {
-          increment: saldo,
-        },
-      },
-    });
-
+    await this.prisma.wallet.update({ where: { id: data.wallet.id }, data: { balance: { increment: saldo } } });
     await this.prisma.walletTransactions.create({
       data: {
         amount: saldo,
         amount_new: parseFloat(data.wallet.balance.toString()) + parseFloat(saldo.toString()),
         amount_old: data.wallet.balance,
-        wallet: {
-          connect: {
-            id: data.wallet.id,
-          },
-        },
-        description: "Recarga de Saldo REC-2025-" + data.publicId,
-        type: "DEPOSITO"
+        wallet: { connect: { id: data.wallet.id } },
+        description: 'Recarga de Saldo REC-2025-' + data.publicId,
+        type: 'DEPOSITO',
       },
-    })
+    });
 
-    //  calcular saldos
     const profitPercentage = parseFloat(data.instrument.profit.toString());
     const profitAmount = (parseFloat(data.amount.toString()) * profitPercentage) / 100;
     const saldoPanet = parseFloat(data.amount.toString()) - profitAmount;
 
-    //agregar saldo al wallet de recepcion PANET
-    let walletRecepcion = await this.prisma.wallet.findFirst({
-      where: {
-        userId: data.instrument.user.id,
-        countryId: data.instrument.countryId,
-        type: 'RECEPCION'
-      }
-    })
+    let walletRecepcion = await this.prisma.wallet.findFirst({ where: { userId: data.instrument.user.id, countryId: data.instrument.countryId, type: 'RECEPCION' } });
     if (!walletRecepcion) {
-      walletRecepcion = await this.prisma.wallet.create({
-        data: {
-          userId: data.instrument.user.id,
-          countryId: data.instrument.countryId,
-          type: 'RECEPCION',
-          balance: saldoPanet
-        }
-      })
+      walletRecepcion = await this.prisma.wallet.create({ data: { userId: data.instrument.user.id, countryId: data.instrument.countryId, type: 'RECEPCION', balance: saldoPanet } });
+    } else {
+      await this.prisma.wallet.update({ where: { id: walletRecepcion.id }, data: { balance: { increment: saldoPanet } } });
     }
-    else {
-      await this.prisma.wallet.update({
-        where: { id: walletRecepcion.id }, data: {
-          balance: {
-            increment: saldoPanet
-          }
-        }
-      })
-    }
-
     await this.prisma.walletTransactions.create({
       data: {
         amount: saldoPanet,
         amount_new: parseFloat(walletRecepcion.balance.toString()) + saldoPanet,
         amount_old: walletRecepcion.balance,
-        wallet: {
-          connect: {
-            id: walletRecepcion.id,
-          },
-        },
-        description: "Recarga de Saldo REC-2025-" + data.publicId,
-        type: "DEPOSITO"
+        wallet: { connect: { id: walletRecepcion.id } },
+        description: 'Recarga de Saldo REC-2025-' + data.publicId,
+        type: 'DEPOSITO',
       },
-    })
+    });
 
-    //Agregar saldo de ganancia al duseño de cuenta
     if (data.instrument.profit.toNumber() > 0) {
-      let walletGananciaDueno = await this.prisma.wallet.findFirst({
-        where: {
-          userId: data.instrument.user.id,
-          countryId: data.instrument.countryId,
-          type: 'GANANCIAS'
-        }
-      })
+      let walletGananciaDueno = await this.prisma.wallet.findFirst({ where: { userId: data.instrument.user.id, countryId: data.instrument.countryId, type: 'GANANCIAS' } });
       if (!walletGananciaDueno) {
-        walletGananciaDueno = await this.prisma.wallet.create({
-          data: {
-            userId: data.instrument.user.id,
-            countryId: data.instrument.countryId,
-            type: 'GANANCIAS',
-            balance: profitAmount
-          }
-        })
+        walletGananciaDueno = await this.prisma.wallet.create({ data: { userId: data.instrument.user.id, countryId: data.instrument.countryId, type: 'GANANCIAS', balance: profitAmount } });
       } else {
-        await this.prisma.wallet.update({
-          where: {
-            id: walletGananciaDueno.id,
-          },
-          data: {
-            balance: {
-              increment: profitAmount,
-            },
-          },
-        });
+        await this.prisma.wallet.update({ where: { id: walletGananciaDueno.id }, data: { balance: { increment: profitAmount } } });
       }
-
       await this.prisma.walletTransactions.create({
         data: {
           amount: profitAmount,
           amount_new: parseFloat(walletGananciaDueno.balance.toString()) + profitAmount,
           amount_old: walletGananciaDueno.balance,
-          wallet: {
-            connect: {
-              id: walletGananciaDueno.id,
-            },
-          },
-          description: "Ganancia por recarga de Saldo REC-2025-" + data.publicId,
-          type: "DEPOSITO"
+          wallet: { connect: { id: walletGananciaDueno.id } },
+          description: 'Ganancia por recarga de Saldo REC-2025-' + data.publicId,
+          type: 'DEPOSITO',
         },
-      })
-
+      });
     }
 
-    // actualizar recarga
-    await this.prisma.recharge.update({
-      where: { id },
-      data: {
-        status: 'COMPLETADA',
-        gananciDespachador: profitAmount,
-        saldoPanet
-      }
-    })
-
+    await this.prisma.recharge.update({ where: { id }, data: { status: 'COMPLETADA', gananciDespachador: profitAmount, saldoPanet } });
     try {
-      await this.prisma.colaEspera.updateMany({
-        where: {
-          rechargeId: data.id,
-          type: 'RECARGA'
-        },
-        data: {
-          status: 'CERRADA'
-        }
-      })
-    }
-    catch {
-      console.log("No estamos actualizando esto correctamente")
+      await this.prisma.colaEspera.updateMany({ where: { rechargeId: data.id, type: 'RECARGA' }, data: { status: 'CERRADA' } });
+    } catch {
+      console.log('No estamos actualizando esto correctamente');
     }
 
     const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data.comentario} ha sido APROBADA con exito por un monto de ${data.amount} ${data.wallet.country.currency}, ya el saldo se encuentra disponible para su uso.\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
-
     await this.sendWhatsAppNotification(data.user.phone, message);
-
-    return { data, message: 'Recarga Cancelada con exito' }
+    return { data, message: 'Recarga Cancelada con exito' };
   }
 
   async updateAutomatic(data) {
