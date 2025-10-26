@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:@localhost:5432/panet_nuevo?schema=public"
+  url      = env("DATABASE_URL")
 }
 
 model Role {
@@ -311,7 +311,7 @@ model Recharge {
   Client              Client?               @relation("ClientRecharges", fields: [clientId], references: [id])
   clientId            String?
   TransactionTemporal TransactionTemporal[]
-  Transaction         Transaction[]         @relation("RechargeTransaction")
+  Transaction         Transaction[] @relation("RechargeTransaction")
 }
 
 model Rate {
