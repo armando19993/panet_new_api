@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = "postgresql://postgres:@localhost:5432/panet_nuevo?schema=public"
 }
 
 model Role {
@@ -311,6 +311,7 @@ model Recharge {
   Client              Client?               @relation("ClientRecharges", fields: [clientId], references: [id])
   clientId            String?
   TransactionTemporal TransactionTemporal[]
+  Transaction         Transaction[]         @relation("RechargeTransaction")
 }
 
 model Rate {
@@ -360,6 +361,8 @@ model Transaction {
   origen                Country            @relation("OrigenTransaction", fields: [origenId], references: [id])
   destinoId             String
   destino               Country            @relation("DestinoTransaction", fields: [destinoId], references: [id])
+  rechargeId            String?
+  recharge              Recharge?          @relation("RechargeTransaction", fields: [rechargeId], references: [id])
   montoOrigen           Decimal            @default(0.00) @db.Decimal(10, 3)
   montoDestino          Decimal            @default(0.00) @db.Decimal(10, 3)
   montoTasa             Decimal            @default(0.00) @db.Decimal(10, 3)
@@ -379,6 +382,7 @@ model Transaction {
   ColaEspera            ColaEspera[]       @relation("ColaTransaction")
   despachador           User?              @relation("DespachadorTransaction", fields: [despachadorId], references: [id])
   despachadorId         String?
+  Notifications         Notifications[]
 }
 
 model TransactionTemporal {
@@ -438,7 +442,6 @@ model RequestPaymentsPanetPay {
   requestedUserId String
   countryId       String
 
-  // Relación con la transacción asociada (opcional)
   transaction   TransactionsPanetPay? @relation(fields: [transactionId], references: [id])
   transactionId String?
 
@@ -456,6 +459,24 @@ model MovementsAccountJuridic {
   description    String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+}
+
+model Notifications {
+  id            String             @id @default(uuid())
+  publicId      Int                @unique @default(autoincrement())
+  phione        String
+  message       String
+  status        NotificationStatus @default(CREADA)
+  transactionId String?
+  transaction   Transaction?       @relation(fields: [transactionId], references: [id])
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+enum NotificationStatus {
+  CREADA
+  ENVIADA
+  ERROR
 }
 
 enum WalletType {
