@@ -320,7 +320,7 @@ export class ReportsService {
             for (const t of transactions) {
                 if (!t.origen) continue;
                 const key = t.origen.id;
-                const amount = parseFloat(t.montoOrigen.toString());
+                const amount = parseFloat(t.gananciaPanet.toString());
                 const ratePurchase = parseFloat(t.origen.rate_purchase?.toString() || '1');
                 const prev = countryMap.get(key);
                 if (!prev) {
