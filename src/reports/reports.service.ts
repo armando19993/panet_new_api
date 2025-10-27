@@ -261,4 +261,109 @@ export class ReportsService {
             throw new Error(`Error al obtener operaciones del usuario: ${error.message}`);
         }
     }
+
+    async getDailyGanancias(fechaInicio?: string, fechaFin?: string, paisOrigen?: string) {
+        try {
+            const start = fechaInicio ? new Date(fechaInicio) : new Date();
+            start.setHours(0, 0, 0, 0);
+            const end = fechaFin ? new Date(fechaFin) : new Date(start);
+            end.setHours(23, 59, 59, 999);
+
+            const where: any = {
+                createdAt: {
+                    gte: start,
+                    lte: end,
+                },
+            };
+            if (paisOrigen) {
+                where.origenId = paisOrigen;
+            }
+
+            const transactions = await this.prisma.transaction.findMany({
+                where,
+                select: {
+                    publicId: true,
+                    montoOrigen: true,
+                    gananciaPanet: true,
+                    createdAt: true,
+                    origen: {
+                        select: {
+                            id: true,
+                            name: true,
+                            abbreviation: true,
+                            currency: true,
+                            rate_purchase: true,
+                        }
+                    }
+                },
+                orderBy: { createdAt: 'desc' }
+            });
+
+            const txs = transactions.map(t => ({
+                numero: t.publicId,
+                monto_origen: parseFloat(t.montoOrigen.toString()),
+                ganancia_panet: parseFloat(t.gananciaPanet.toString()),
+                fecha: t.createdAt,
+                pais_origen: t.origen?.name,
+            }));
+
+            const countryMap = new Map<string, {
+                countryId: string,
+                name: string,
+                abbreviation: string,
+                currency: string,
+                ratePurchase: number,
+                totalAmount: number,
+                totalUSDT: number,
+            }>();
+
+            for (const t of transactions) {
+                if (!t.origen) continue;
+                const key = t.origen.id;
+                const amount = parseFloat(t.montoOrigen.toString());
+                const ratePurchase = parseFloat(t.origen.rate_purchase?.toString() || '1');
+                const prev = countryMap.get(key);
+                if (!prev) {
+                    const totalAmount = amount;
+                    const totalUSDT = ratePurchase > 0 ? totalAmount / ratePurchase : 0;
+                    countryMap.set(key, {
+                        countryId: t.origen.id,
+                        name: t.origen.name,
+                        abbreviation: t.origen.abbreviation,
+                        currency: t.origen.currency,
+                        ratePurchase,
+                        totalAmount,
+                        totalUSDT,
+                    });
+                } else {
+                    prev.totalAmount += amount;
+                    prev.totalUSDT = prev.ratePurchase > 0 ? prev.totalAmount / prev.ratePurchase : 0;
+                }
+            }
+
+            const countries = Array.from(countryMap.values());
+            const totals = {
+                totalTransactions: txs.length,
+                totalAmount: countries.reduce((s, c) => s + c.totalAmount, 0),
+                totalUSDT: countries.reduce((s, c) => s + c.totalUSDT, 0),
+            };
+
+            return {
+                module: 'Reports',
+                data: {
+                    filters: {
+                        fecha_inicio: start,
+                        fecha_fin: end,
+                        pais_origen: paisOrigen || null,
+                    },
+                    transactions: txs,
+                    per_country: countries,
+                    summary: totals,
+                },
+                message: 'Reporte de ganancias y montos por país obtenido con éxito',
+            };
+        } catch (error) {
+            throw new Error(`Error al obtener ganancias diarias: ${error.message}`);
+        }
+    }
 }
