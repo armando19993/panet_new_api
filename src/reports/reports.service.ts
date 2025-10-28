@@ -264,10 +264,24 @@ export class ReportsService {
 
     async getDailyGanancias(fechaInicio?: string, fechaFin?: string, paisOrigen?: string) {
         try {
-            const start = fechaInicio ? new Date(fechaInicio) : new Date();
-            start.setHours(0, 0, 0, 0);
-            const end = fechaFin ? new Date(fechaFin) : new Date(start);
-            end.setHours(23, 59, 59, 999);
+            let start: Date;
+            let end: Date;
+
+            if (fechaInicio) {
+                const [y, m, d] = fechaInicio.split('-').map(Number);
+                start = new Date(y, (m || 1) - 1, d || 1, 0, 0, 0, 0);
+            } else {
+                start = new Date();
+                start.setHours(0, 0, 0, 0);
+            }
+
+            if (fechaFin) {
+                const [y2, m2, d2] = fechaFin.split('-').map(Number);
+                end = new Date(y2, (m2 || 1) - 1, d2 || 1, 23, 59, 59, 999);
+            } else {
+                end = new Date(start);
+                end.setHours(23, 59, 59, 999);
+            }
 
             const where: any = {
                 createdAt: {
