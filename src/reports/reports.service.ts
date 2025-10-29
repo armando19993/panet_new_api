@@ -293,6 +293,8 @@ export class ReportsService {
                 where.origenId = paisOrigen;
             }
 
+            where.status = 'COMPLETADA';
+
             const transactions = await this.prisma.transaction.findMany({
                 where,
                 select: {
