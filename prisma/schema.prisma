@@ -376,6 +376,7 @@ model Transaction {
   comprobante           String?
   observacion           String?
   status                StatusTransactions @default(CREADA)
+  show                  Boolean            @default(false)
   errorResponse         Json?
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt

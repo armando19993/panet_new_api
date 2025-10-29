@@ -41,33 +41,64 @@ export class MovementsAccountJuridicService {
     specificDate?: string;
     type?: 'INGRESO' | 'EGRESO';
   }) {
-    const filters: any = {};
-
-    if (query?.specificDate) {
-      const specificDate = new Date(query.specificDate);
-      const startOfDay = new Date(specificDate.getFullYear(), specificDate.getMonth(), specificDate.getDate());
-      const endOfDay = new Date(specificDate.getFullYear(), specificDate.getMonth(), specificDate.getDate() + 1);
-      filters.date = {
-        gte: startOfDay,
-        lt: endOfDay
+    try {
+      const fmt = (d: Date) => {
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
       };
-    } else {
-      if (query?.startDate) {
-        filters.date = { gte: new Date(query.startDate) };
-      }
-      if (query?.endDate) {
-        filters.date = { ...filters.date, lte: new Date(query.endDate) };
-      }
-    }
 
-    if (query?.type) {
-      filters.type = query.type;
-    }
+      let fechaIni: string;
+      let fechaFin: string;
 
-    return this.prisma.movementsAccountJuridic.findMany({
-      where: filters,
-      orderBy: { createdAt: 'desc' }
-    });
+      if (query?.specificDate) {
+        const d = new Date(query.specificDate);
+        fechaIni = fmt(d);
+        fechaFin = fmt(d);
+      } else if (query?.startDate || query?.endDate) {
+        if (query.startDate && query.endDate) {
+          fechaIni = fmt(new Date(query.startDate));
+          fechaFin = fmt(new Date(query.endDate));
+        } else if (query.startDate) {
+          const d = new Date(query.startDate);
+          fechaIni = fmt(d);
+          fechaFin = fmt(d);
+        } else if (query.endDate) {
+          const d = new Date(query.endDate);
+          fechaIni = fmt(d);
+          fechaFin = fmt(d);
+        }
+      } else {
+        const today = new Date();
+        fechaIni = fmt(today);
+        fechaFin = fmt(today);
+      }
+
+      const response = await axios.post(
+        'https://bdvconciliacion.banvenez.com:443/apis/bdv/consulta/movimientos',
+        {
+          cuenta: '01020645640000997168',
+          fechaIni,
+          fechaFin,
+          tipoMoneda: 'VES',
+          nroMovimiento: ''
+        },
+        {
+          headers: {
+            'x-api-key': process.env.BANVENEZ_API_KEY,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      throw new HttpException(
+        'Error al consultar los movimientos bancarios',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async findOne(id: string) {
