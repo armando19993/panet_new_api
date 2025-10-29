@@ -92,7 +92,8 @@ export class MovementsAccountJuridicService {
         }
       );
 
-      return response.data;
+      //return response.data;
+      
     } catch (error) {
       throw new HttpException(
         'Error al consultar los movimientos bancarios',
