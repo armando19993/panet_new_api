@@ -2,7 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PDFDocument } from 'pdf-lib';
 import { createCanvas, loadImage } from 'canvas';
-import fs from 'fs';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export const generateTransactionImage = async (transaction: any, logoDataUri?: string) => {
   const doc = new jsPDF();
