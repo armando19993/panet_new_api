@@ -1,7 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { PDFDocument } from 'pdf-lib';
-import { createCanvas, loadImage } from 'canvas';
+import { fromPath } from 'pdf2pic';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -80,27 +79,30 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
   doc.setFontSize(8);
   doc.text('CONECTA – Soluciones Financieras', 15, pageHeight - 20);
 
-  // Guardar temporalmente el PDF
+  // Guardar PDF temporal
   const pdfBytes = doc.output('arraybuffer');
-  const tempPdfPath = `${process.cwd()}/uploads/temp_${transaction.publicId}.pdf`;
+  const tempPdfPath = path.join(process.cwd(), `uploads/temp_${transaction.publicId}.pdf`);
   fs.writeFileSync(tempPdfPath, Buffer.from(pdfBytes));
 
-  // Convertir PDF -> Imagen PNG
-  const pdfDoc = await PDFDocument.load(pdfBytes);
-  const page = pdfDoc.getPage(0);
-  const { width, height } = page.getSize();
+  // Convertir PDF -> PNG con pdf2pic
+  const converter = fromPath(tempPdfPath, {
+    density: 300,
+    saveFilename: `trx_${transaction.publicId}`,
+    savePath: path.join(process.cwd(), 'uploads'),
+    format: 'png',
+    width: 600,
+    height: 800,
+  });
 
-  const canvas = createCanvas(width, height);
-  const context = canvas.getContext('2d');
+  const result = await converter(1); // convierte la primera página a PNG
 
-  // Dibujar el PDF como imagen
-  // Nota: pdf-lib no renderiza contenido visual, así que convertimos usando jsPDF->PNG
-  const pngDataUri = doc.output('datauristring');
-  const pngImage = await loadImage(pngDataUri);
-  context.drawImage(pngImage, 0, 0, width, height);
+  // Leer la imagen generada
+  const imageBuffer = fs.readFileSync(result.path);
+  const finalImageDataUri = `data:image/png;base64,${imageBuffer.toString('base64')}`;
 
-  const finalImageDataUri = canvas.toDataURL('image/png');
-  fs.unlinkSync(tempPdfPath); // eliminar el temporal
+  // Limpiar archivos temporales
+  fs.unlinkSync(tempPdfPath);
+  fs.unlinkSync(result.path);
 
   return finalImageDataUri;
 };

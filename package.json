@@ -42,6 +42,7 @@
     "jspdf-autotable": "^5.0.2",
     "multer": "^1.4.5-lts.1",
     "pdf-lib": "^1.17.1",
+    "pdf2pic": "^3.2.0",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
