@@ -10,7 +10,7 @@ import axios from 'axios';
 import { time } from 'console';
 import { generateTransactionPdf } from './pdf-generator';
 import { generateTransactionImage } from './image-generator';
-import fs from 'fs';
+import * as fs from 'fs';
 
 @Injectable()
 export class TransactionService {
