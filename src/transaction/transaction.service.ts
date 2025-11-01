@@ -994,11 +994,10 @@ export class TransactionService {
   }
 
   async sendDirectPagoMovil(dto: SendDirectPagoMovilDto) {
-    // Generar número de referencia de 6 dígitos
     const numeroReferencia = (Math.floor(Math.random() * 900000) + 100000).toString();
-
+  
     const jsonBDV = {
-      numeroReferencia: numeroReferencia,
+      numeroReferencia,
       montoOperacion: dto.amount.toString(),
       nacionalidadDestino: "V",
       cedulaDestino: dto.document.toString(),
@@ -1006,9 +1005,8 @@ export class TransactionService {
       bancoDestino: dto.bankCode.toString(),
       moneda: "VES",
       conceptoPago: dto.description || `PAGO MOVIL DIRECTO`
-    }
-
-    // Realizar llamada a API de Banvenez
+    };
+  
     try {
       const response = await axios.post(process.env.BANVENEZ_API_URL, jsonBDV, {
         headers: {
@@ -1016,116 +1014,123 @@ export class TransactionService {
           'Content-Type': 'application/json'
         }
       });
-
-      // Verificar respuesta exitosa
-      if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
-
+  
+      // ✅ Caso de éxito
+      if (response.data?.code === 1000 && response.data?.message === 'Transaccion realizada') {
+  
         if (dto.transactionId) {
-          const cola = await this.prisma.colaEspera.findFirst({
-            where: { transactionId: dto.transactionId, status: { not: 'CERRADA' } }
+          const transaction = await this.prisma.transaction.findUnique({
+            where: { id: dto.transactionId }
           });
-
-          if (cola) {
-            await this.prisma.colaEspera.update({
-              where: { id: cola.id },
-              data: { status: 'CERRADA' }
+  
+          if (transaction) {
+            const cola = await this.prisma.colaEspera.findFirst({
+              where: { transactionId: dto.transactionId, status: { not: 'CERRADA' } }
             });
-          }
-
-          await this.prisma.transaction.update({
-            where: { id: dto.transactionId },
-            data: {
-              status: 'COMPLETADA',
-              nro_referencia: response.data.referencia
+  
+            if (cola) {
+              await this.prisma.colaEspera.update({
+                where: { id: cola.id },
+                data: { status: 'CERRADA' }
+              });
             }
-          });
+  
+            await this.prisma.transaction.update({
+              where: { id: dto.transactionId },
+              data: {
+                status: 'COMPLETADA',
+                nro_referencia: response.data.referencia
+              }
+            });
+          } else {
+            console.warn(`⚠️ Transacción con ID ${dto.transactionId} no encontrada. Se omite actualización.`);
+          }
         }
-
-        // Generate and send PDF receipt
+  
+        // 🔹 Generar PDF y enviar comprobante
         try {
-          const transaction = await this.prisma.transaction.findFirst({
-            where: { id: dto.transactionId },
-            include: {
-              creador: true,
-              cliente: true,
-              destino: true,
-              instrument: {
-                include: {
-                  bank: true
+          if (dto.transactionId) {
+            const transaction = await this.prisma.transaction.findFirst({
+              where: { id: dto.transactionId },
+              include: {
+                creador: true,
+                cliente: true,
+                destino: true,
+                instrument: { include: { bank: true } }
+              }
+            });
+  
+            if (transaction) {
+              const pdfDataUri = await generateTransactionPdf(transaction);
+              const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
+  
+              const pdfFileName = `comprobante-TRX-${transaction.publicId}.pdf`;
+              const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
+              require('fs').writeFileSync(pdfPath, pdfBuffer);
+  
+              const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
+              const recipient = transaction.cliente || transaction.creador;
+  
+              if (recipient) {
+                try {
+                  await this.whatsappService.sendDocumentMessage(
+                    recipient.phone,
+                    'Adjunto encontrará el comprobante de su transacción',
+                    pdfUrl,
+                    `Comprobante-TRX-${transaction.publicId}.pdf`
+                  );
+                } catch (error) {
+                  console.error('Error al enviar PDF por WhatsApp:', error);
                 }
               }
             }
-          });
-
-          const pdfDataUri = await generateTransactionPdf(transaction);
-          const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
-
-          const pdfFileName = `comprobante-TRX-${transaction.publicId}.pdf`;
-          const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
-          require('fs').writeFileSync(pdfPath, pdfBuffer);
-
-          const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
-
-          // Send to client
-          const recipient = transaction.cliente || transaction.creador;
-          if (recipient) {
-            try {
-              await this.whatsappService.sendDocumentMessage(
-                recipient.phone,
-                'Adjunto encontrará el comprobante de su transacción',
-                pdfUrl,
-                `Comprobante-TRX-${transaction.publicId}.pdf`
-              );
-            } catch (error) {
-              console.error('Error al enviar PDF por WhatsApp:', error);
-            }
           }
         } catch (error) {
-          console.error('Error generating PDF:', error);
+          console.error('Error generando o enviando PDF:', error);
         }
-
-        // Crear registros de movimientos para EGRESO
+  
+        // 🔹 Registrar movimientos
         const transactionAmount = parseFloat(dto.amount.toString());
-
-        // Crear registro principal de EGRESO
         await this.movementsAccountJuridicService.create({
           amount: transactionAmount.toString(),
           type: 'EGRESO',
           description: `Egreso por Pago Móvil Directo. Ref: ${response.data.referencia}`
         });
-
-        // Crear registro adicional del 0.3% como EGRESO
+  
         const feeAmount = transactionAmount * 0.003;
         await this.movementsAccountJuridicService.create({
           amount: feeAmount.toString(),
           type: 'EGRESO',
           description: `Comisión 0.3% por Pago Móvil Directo. Ref: ${response.data.referencia}`
         });
-
+  
         return {
           success: true,
           message: "Pago Móvil enviado exitosamente.",
-          data: {
-            reference: response.data.referencia,
-            ...jsonBDV
-          }
+          data: { reference: response.data.referencia, ...jsonBDV }
         };
-
-      } else {
-        console.error('Error en la respuesta de la API de Banvenez:', response.data);
-
-        if (dto.transactionId) {
+      }
+  
+      // ❌ Error en respuesta del API Banvenez
+      console.error('Error en la respuesta de la API de Banvenez:', response.data);
+  
+      if (dto.transactionId) {
+        const transaction = await this.prisma.transaction.findUnique({
+          where: { id: dto.transactionId }
+        });
+  
+        if (transaction) {
           const cola = await this.prisma.colaEspera.findFirst({
             where: { transactionId: dto.transactionId, status: { not: 'CERRADA' } }
           });
-
+  
           if (cola) {
             await this.prisma.colaEspera.update({
               where: { id: cola.id },
               data: { status: 'CERRADA' }
             });
           }
-
+  
           await this.prisma.transaction.update({
             where: { id: dto.transactionId },
             data: {
@@ -1133,40 +1138,52 @@ export class TransactionService {
               errorResponse: response.data
             }
           });
+        } else {
+          console.warn(`⚠️ Transacción con ID ${dto.transactionId} no encontrada. Se omite actualización.`);
         }
-
-        throw new BadRequestException(`Error al procesar el Pago Móvil: ${response.data.message || 'Respuesta no válida'}`);
       }
+  
+      throw new BadRequestException(`Error al procesar el Pago Móvil: ${response.data.message || 'Respuesta no válida'}`);
+  
     } catch (error) {
       const errorPayload = axios.isAxiosError(error)
         ? (error.response?.data ?? { message: error.message })
         : { message: (error as Error).message };
-
+  
       console.error('Error al llamar API de Banvenez:', errorPayload);
-
+  
       if (dto.transactionId) {
-        const cola = await this.prisma.colaEspera.findFirst({
-          where: { transactionId: dto.transactionId, status: { not: 'CERRADA' } }
+        const transaction = await this.prisma.transaction.findUnique({
+          where: { id: dto.transactionId }
         });
-
-        if (cola) {
-          await this.prisma.colaEspera.update({
-            where: { id: cola.id },
-            data: { status: 'CERRADA' }
+  
+        if (transaction) {
+          const cola = await this.prisma.colaEspera.findFirst({
+            where: { transactionId: dto.transactionId, status: { not: 'CERRADA' } }
           });
-        }
-
-        await this.prisma.transaction.update({
-          where: { id: dto.transactionId },
-          data: {
-            status: 'ERROR',
-            errorResponse: errorPayload
+  
+          if (cola) {
+            await this.prisma.colaEspera.update({
+              where: { id: cola.id },
+              data: { status: 'CERRADA' }
+            });
           }
-        });
+  
+          await this.prisma.transaction.update({
+            where: { id: dto.transactionId },
+            data: {
+              status: 'ERROR',
+              errorResponse: errorPayload
+            }
+          });
+        } else {
+          console.warn(`⚠️ Transacción con ID ${dto.transactionId} no encontrada. Se omite actualización.`);
+        }
       }
-
+  
       throw new BadRequestException('Error de conexión con el servicio de pago. Intente más tarde.');
     }
   }
+  
 
 }
