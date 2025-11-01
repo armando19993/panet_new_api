@@ -384,7 +384,7 @@ export class TransactionService {
             const recipient = updatedTransaction.cliente || updatedTransaction.creador;
             if (recipient) {
               const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
-              await this.whatsappService.sendTextMessage(recipient.phone, message);
+              await this.whatsappService.sendImageMessage(recipient.phone, message, imageUrl);
             }
 
           } catch (error) {
