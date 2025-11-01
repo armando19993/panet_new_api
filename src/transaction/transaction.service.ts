@@ -9,6 +9,7 @@ import { MovementsAccountJuridicService } from 'src/movements-account-juridic/mo
 import axios from 'axios';
 import { time } from 'console';
 import { generateTransactionPdf } from './pdf-generator';
+import { generateTransactionImage } from './image-generator';
 
 @Injectable()
 export class TransactionService {
@@ -369,32 +370,29 @@ export class TransactionService {
           try {
             const logoResponse = await axios.get('https://panel.paneteirl.com/logo_conecta.png', { responseType: 'arraybuffer' });
             const logoDataUri = `data:image/png;base64,${Buffer.from(logoResponse.data).toString('base64')}`;
-            const pdfDataUri = await generateTransactionPdf(updatedTransaction, logoDataUri);
-            const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
-
-            const pdfFileName = `comprobante-TRX-${updatedTransaction.publicId}.pdf`;
-            const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
-            require('fs').writeFileSync(pdfPath, pdfBuffer);
-
-            const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
-
-            // Send to client
+          
+            const imageDataUri = await generateTransactionImage(updatedTransaction, logoDataUri);
+            const imageBuffer = Buffer.from(imageDataUri.split(',')[1], 'base64');
+          
+            const imageFileName = `comprobante-TRX-${updatedTransaction.publicId}.png`;
+            const imagePath = `${process.cwd()}/uploads/${imageFileName}`;
+            require('fs').writeFileSync(imagePath, imageBuffer);
+          
+            const imageUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${imageFileName}`;
+          
             const recipient = updatedTransaction.cliente || updatedTransaction.creador;
             if (recipient) {
               try {
-                await this.whatsappService.sendDocumentMessage(
-                  recipient.phone,
-                  'Adjunto encontrará el comprobante de su transacción',
-                  pdfUrl,
-                  `Comprobante-TRX-${updatedTransaction.publicId}.pdf`
-                );
+                const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
+                await this.whatsappService.sendTextMessage(recipient.phone, message);
               } catch (error) {
-                console.error('Error al enviar PDF por WhatsApp:', error);
+                console.error('Error al enviar comprobante por WhatsApp:', error);
               }
             }
           } catch (error) {
-            console.error('Error generating PDF:', error);
+            console.error('Error generando imagen del comprobante:', error);
           }
+          
 
           // Crear registros de movimientos para EGRESO
           const transactionAmount = parseFloat(transaction.montoDestino.toString());
