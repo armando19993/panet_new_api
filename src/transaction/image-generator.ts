@@ -1,5 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PDFDocument } from 'pdf-lib';
+import { createCanvas, loadImage } from 'canvas';
+import fs from 'fs';
 
 export const generateTransactionImage = async (transaction: any, logoDataUri?: string) => {
   const doc = new jsPDF();
@@ -19,13 +22,13 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text('COMPROBANTE DE TRANSACCIÓN', pageWidth / 2, titleY, { align: 'center' });
-  
+
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   const transactionInfoStartY = titleY + 6;
   doc.text(`N°: TRX-${new Date().getFullYear()}-${transaction.publicId}`, pageWidth - horizontalMargin, transactionInfoStartY, { align: 'right' });
   doc.text(`Fecha: ${new Date(transaction.createdAt).toLocaleString()}`, pageWidth - horizontalMargin, transactionInfoStartY + 5, { align: 'right' });
-  
+
   const preferredContact = transaction.cliente || transaction.creador || {};
   const fallbackContact = transaction.creador || {};
   const contactName = preferredContact.name || fallbackContact.name || 'N/A';
@@ -33,11 +36,7 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
   const contactEmail = preferredContact.email || fallbackContact.email || 'N/A';
   const instrumentType = transaction.instrument?.typeInstrument || '';
   const formattedInstrumentType = instrumentType
-    ? instrumentType
-        .toLowerCase()
-        .split('_')
-        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
+    ? instrumentType.toLowerCase().split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
     : 'N/A';
 
   const clientTableStartY = transactionInfoStartY + 12;
@@ -59,7 +58,7 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
   const transactionDetailTitleY = clientTableFinalY + 8;
   doc.text('DETALLE DE TRANSACCIÓN:', horizontalMargin, transactionDetailTitleY);
   doc.setFont('helvetica', 'normal');
-  
+
   autoTable(doc, {
     startY: transactionDetailTitleY + 5,
     body: [
@@ -80,7 +79,27 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
   doc.setFontSize(8);
   doc.text('CONECTA – Soluciones Financieras', 15, pageHeight - 20);
 
-  // ✅ Convertir el PDF en una imagen PNG
-  const imageDataUri = doc.output('datauristring', { type: 'image/png' });
-  return imageDataUri;
+  // Guardar temporalmente el PDF
+  const pdfBytes = doc.output('arraybuffer');
+  const tempPdfPath = `${process.cwd()}/uploads/temp_${transaction.publicId}.pdf`;
+  fs.writeFileSync(tempPdfPath, Buffer.from(pdfBytes));
+
+  // Convertir PDF -> Imagen PNG
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const page = pdfDoc.getPage(0);
+  const { width, height } = page.getSize();
+
+  const canvas = createCanvas(width, height);
+  const context = canvas.getContext('2d');
+
+  // Dibujar el PDF como imagen
+  // Nota: pdf-lib no renderiza contenido visual, así que convertimos usando jsPDF->PNG
+  const pngDataUri = doc.output('datauristring');
+  const pngImage = await loadImage(pngDataUri);
+  context.drawImage(pngImage, 0, 0, width, height);
+
+  const finalImageDataUri = canvas.toDataURL('image/png');
+  fs.unlinkSync(tempPdfPath); // eliminar el temporal
+
+  return finalImageDataUri;
 };
