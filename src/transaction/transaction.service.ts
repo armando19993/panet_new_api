@@ -1043,7 +1043,7 @@ export class TransactionService {
           }
         }
 
-        // 🔹 Generar PDF y enviar comprobante
+        // 🔹 Generar imagen y enviar comprobante
         try {
           if (dto.transactionId) {
             const transaction = await this.prisma.transaction.findFirst({
@@ -1057,32 +1057,27 @@ export class TransactionService {
             });
 
             if (transaction) {
-              const pdfDataUri = await generateTransactionPdf(transaction);
-              const pdfBuffer = Buffer.from(pdfDataUri.split(',')[1], 'base64');
+              const logoResponse = await axios.get('https://panel.paneteirl.com/logo_conecta.png', { responseType: 'arraybuffer' });
+              const logoDataUri = `data:image/png;base64,${Buffer.from(logoResponse.data).toString('base64')}`;
 
-              const pdfFileName = `comprobante-TRX-${transaction.publicId}.pdf`;
-              const pdfPath = `${process.cwd()}/uploads/${pdfFileName}`;
-              require('fs').writeFileSync(pdfPath, pdfBuffer);
+              const imageDataUri = await generateTransactionImage(transaction, logoDataUri);
+              const imageBuffer = Buffer.from(imageDataUri.split(',')[1], 'base64');
 
-              const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
+              const imageFileName = `comprobante-TRX-${transaction.publicId}.png`;
+              const imagePath = `${process.cwd()}/uploads/${imageFileName}`;
+              fs.writeFileSync(imagePath, imageBuffer);
+
+              const imageUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${imageFileName}`;
+
               const recipient = transaction.cliente || transaction.creador;
-
               if (recipient) {
-                try {
-                  await this.whatsappService.sendDocumentMessage(
-                    recipient.phone,
-                    'Adjunto encontrará el comprobante de su transacción',
-                    pdfUrl,
-                    `Comprobante-TRX-${transaction.publicId}.pdf`
-                  );
-                } catch (error) {
-                  console.error('Error al enviar PDF por WhatsApp:', error);
-                }
+                const message = `🧾 Comprobante de tu transacción TRX-${transaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
+                await this.whatsappService.sendImageMessage(recipient.phone, message, imageUrl);
               }
             }
           }
         } catch (error) {
-          console.error('Error generando o enviando PDF:', error);
+          console.error('Error generando imagen del comprobante:', error);
         }
 
         // 🔹 Registrar movimientos
