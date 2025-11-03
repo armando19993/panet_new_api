@@ -92,7 +92,7 @@ export class MovementsAccountJuridicService {
         }
       );
 
-      //return response.data;
+      return response.data;
       
     } catch (error) {
       throw new HttpException(
