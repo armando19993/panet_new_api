@@ -596,6 +596,24 @@ export class RechargeService {
         },
       });
 
+      // Restar montoOrigen del wallet de recarga al crear la transacción temporal
+      const montoOrigenEgreso = parseFloat(info.montoOrigen.toString());
+      const balanceAnteriorRecarga = parseFloat(data.wallet.balance.toString());
+      await this.prisma.wallet.update({
+        where: { id: data.wallet.id },
+        data: { balance: { decrement: montoOrigenEgreso } }
+      });
+      await this.prisma.walletTransactions.create({
+        data: {
+          amount: montoOrigenEgreso,
+          amount_old: balanceAnteriorRecarga,
+          amount_new: balanceAnteriorRecarga - montoOrigenEgreso,
+          wallet: { connect: { id: data.wallet.id } },
+          description: `Egreso por creación de transacción TRX-2025-${trans.publicId} (recarga)`,
+          type: 'RETIRO',
+        },
+      });
+
       let colaEspera = null;
       let randomUser = null;
       if (trans.instrument.typeInstrument !== 'PAGO_MOVIL') {
@@ -673,48 +691,7 @@ export class RechargeService {
             if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
               if (colaEspera) {
                 await this.prisma.colaEspera.update({ where: { id: colaEspera.id }, data: { status: 'CERRADA' } });
-                const montoEgreso = parseFloat(trans.montoOrigen.toString());
-                await this.prisma.wallet.update({ where: { id: trans.wallet.id }, data: { balance: { decrement: montoEgreso } } });
-                await this.prisma.walletTransactions.create({
-                  data: {
-                    amount: montoEgreso,
-                    amount_old: trans.wallet.balance,
-                    amount_new: parseFloat(trans.wallet.balance.toString()) - montoEgreso,
-                    wallet: { connect: { id: trans.wallet.id } },
-                    description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)`,
-                    type: 'RETIRO',
-                  },
-                });
               }
-              
-              // Restar montoOrigen del wallet de recepción cuando se completa la transacción
-              const montoOrigenEgreso = parseFloat(trans.montoOrigen.toString());
-              let walletRecepcion = await this.prisma.wallet.findFirst({
-                where: {
-                  userId: data.instrument.user.id,
-                  countryId: data.instrument.countryId,
-                  type: 'RECEPCION'
-                }
-              });
-              
-              if (walletRecepcion) {
-                const balanceAnteriorRecepcion = parseFloat(walletRecepcion.balance.toString());
-                await this.prisma.wallet.update({
-                  where: { id: walletRecepcion.id },
-                  data: { balance: { decrement: montoOrigenEgreso } }
-                });
-                await this.prisma.walletTransactions.create({
-                  data: {
-                    amount: montoOrigenEgreso,
-                    amount_old: balanceAnteriorRecepcion,
-                    amount_new: balanceAnteriorRecepcion - montoOrigenEgreso,
-                    wallet: { connect: { id: walletRecepcion.id } },
-                    description: `Egreso por transacción completada TRX-2025-${trans.publicId} (recarga)`,
-                    type: 'RETIRO',
-                  },
-                });
-              }
-              
               await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'COMPLETADA', nro_referencia: response.data.referencia } });
               const transactionAmount = parseFloat(trans.montoDestino.toString());
               await this.movementsAccountJuridicService.create({ amount: transactionAmount.toString(), type: 'EGRESO', description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)` });
