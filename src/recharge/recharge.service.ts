@@ -686,6 +686,35 @@ export class RechargeService {
                   },
                 });
               }
+              
+              // Restar montoOrigen del wallet de recepción cuando se completa la transacción
+              const montoOrigenEgreso = parseFloat(trans.montoOrigen.toString());
+              let walletRecepcion = await this.prisma.wallet.findFirst({
+                where: {
+                  userId: data.instrument.user.id,
+                  countryId: data.instrument.countryId,
+                  type: 'RECEPCION'
+                }
+              });
+              
+              if (walletRecepcion) {
+                const balanceAnteriorRecepcion = parseFloat(walletRecepcion.balance.toString());
+                await this.prisma.wallet.update({
+                  where: { id: walletRecepcion.id },
+                  data: { balance: { decrement: montoOrigenEgreso } }
+                });
+                await this.prisma.walletTransactions.create({
+                  data: {
+                    amount: montoOrigenEgreso,
+                    amount_old: balanceAnteriorRecepcion,
+                    amount_new: balanceAnteriorRecepcion - montoOrigenEgreso,
+                    wallet: { connect: { id: walletRecepcion.id } },
+                    description: `Egreso por transacción completada TRX-2025-${trans.publicId} (recarga)`,
+                    type: 'RETIRO',
+                  },
+                });
+              }
+              
               await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'COMPLETADA', nro_referencia: response.data.referencia } });
               const transactionAmount = parseFloat(trans.montoDestino.toString());
               await this.movementsAccountJuridicService.create({ amount: transactionAmount.toString(), type: 'EGRESO', description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)` });
