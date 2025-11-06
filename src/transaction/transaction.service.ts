@@ -164,7 +164,7 @@ export class TransactionService {
 
     let randomUser: any = null;
 
-    if (transaction.instrument.typeInstrument !== 'PAGO_MOVIL') {
+    if (transaction.instrument.typeInstrument !== 'PAGO_MOVIL' && transaction.destino.name === 'VENEZUELA') {
       const roles = ['DESPACHADOR']
       const duenos = await this.prisma.user.findMany({
         where: {
@@ -302,6 +302,40 @@ export class TransactionService {
     })
 
     if (transaction.instrument.typeInstrument === 'PAGO_MOVIL' && transaction.destino.name === 'VENEZUELA') {
+      // Validar balance disponible antes de procesar el pago móvil
+      try {
+        const balanceInfo = await this.movementsAccountJuridicService.getAccountBalance();
+        const availableBalance = parseFloat(balanceInfo.availableBalance.toString());
+        
+        if (availableBalance <= 10000) {
+          await this.prisma.transaction.update({
+            where: { id: transaction.id },
+            data: {
+              status: 'ERROR',
+              errorResponse: { 
+                message: 'Saldo insuficiente en cuenta bancaria',
+                availableBalance: balanceInfo.availableBalance,
+                requiredMinimum: 10000
+              }
+            }
+          });
+          return transaction;
+        }
+      } catch (balanceError) {
+        console.error('Error al consultar balance de cuenta bancaria:', balanceError);
+        await this.prisma.transaction.update({
+          where: { id: transaction.id },
+          data: {
+            status: 'ERROR',
+            errorResponse: { 
+              message: 'Error al consultar saldo de cuenta bancaria',
+              error: balanceError instanceof Error ? balanceError.message : 'Error desconocido'
+            }
+          }
+        });
+        return transaction;
+      }
+
       // Generar número de referencia de 6 dígitos
       let numeroReferencia = transaction.publicId.toString();
       if (numeroReferencia.length < 6) {

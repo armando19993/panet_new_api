@@ -620,7 +620,7 @@ export class RechargeService {
 
       let colaEspera = null;
       let randomUser = null;
-      if (trans.instrument.typeInstrument !== 'PAGO_MOVIL') {
+      if (trans.instrument.typeInstrument !== 'PAGO_MOVIL' ) {
         const roles = ['DESPACHADOR'];
         const duenos = await this.prisma.user.findMany({
           where: {
@@ -649,113 +649,146 @@ export class RechargeService {
       }
 
       if (trans.instrument.typeInstrument === 'PAGO_MOVIL' && trans.destino.name === 'VENEZUELA') {
-        let numeroReferencia = trans.publicId.toString();
-        if (numeroReferencia.length < 6) {
-          const randomPrefix = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
-          numeroReferencia = randomPrefix.toString() + numeroReferencia;
-        }
-        numeroReferencia = numeroReferencia.substring(0, 6);
-
-        const safeToString = (value: unknown, field: string) => {
-          if (value === null || value === undefined) {
-            throw new Error(field);
-          }
-          return value.toString();
-        };
-
-        let jsonBDV: Record<string, string> | null = null;
+        // Validar balance disponible antes de procesar el pago móvil
         try {
-          jsonBDV = {
-            numeroReferencia: numeroReferencia,
-            montoOperacion: safeToString(trans.montoDestino, 'montoDestino'),
-            nacionalidadDestino: 'V',
-            cedulaDestino: safeToString(trans.instrument?.document, 'instrument.document'),
-            telefonoDestino: safeToString(trans.instrument?.accountNumber, 'instrument.accountNumber'),
-            bancoDestino: safeToString(trans.instrument?.bank?.code, 'instrument.bank.code'),
-            moneda: 'VES',
-            conceptoPago: `CONECTA CONSULTING ${trans.publicId}`,
-          };
-        } catch (formatError) {
-          const missingField = formatError instanceof Error ? formatError.message : 'desconocido';
+          const balanceInfo = await this.movementsAccountJuridicService.getAccountBalance();
+          const availableBalance = parseFloat(balanceInfo.availableBalance.toString());
+          
+          if (availableBalance <= 10000) {
+            await this.prisma.transaction.update({
+              where: { id: trans.id },
+              data: {
+                status: 'ERROR',
+                errorResponse: { 
+                  message: 'Saldo insuficiente en cuenta bancaria',
+                  availableBalance: balanceInfo.availableBalance,
+                  requiredMinimum: 10000
+                }
+              }
+            });
+          } else {
+            // Continuar con el proceso si el balance es suficiente
+            let numeroReferencia = trans.publicId.toString();
+            if (numeroReferencia.length < 6) {
+              const randomPrefix = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+              numeroReferencia = randomPrefix.toString() + numeroReferencia;
+            }
+            numeroReferencia = numeroReferencia.substring(0, 6);
+
+            const safeToString = (value: unknown, field: string) => {
+              if (value === null || value === undefined) {
+                throw new Error(field);
+              }
+              return value.toString();
+            };
+
+            let jsonBDV: Record<string, string> | null = null;
+            try {
+              jsonBDV = {
+                numeroReferencia: numeroReferencia,
+                montoOperacion: safeToString(trans.montoDestino, 'montoDestino'),
+                nacionalidadDestino: 'V',
+                cedulaDestino: safeToString(trans.instrument?.document, 'instrument.document'),
+                telefonoDestino: safeToString(trans.instrument?.accountNumber, 'instrument.accountNumber'),
+                bancoDestino: safeToString(trans.instrument?.bank?.code, 'instrument.bank.code'),
+                moneda: 'VES',
+                conceptoPago: `CONECTA CONSULTING ${trans.publicId}`,
+              };
+            } catch (formatError) {
+              const missingField = formatError instanceof Error ? formatError.message : 'desconocido';
+              await this.prisma.transaction.update({
+                where: { id: trans.id },
+                data: {
+                  status: 'ERROR',
+                  errorResponse: { message: 'Existe un error al formatear los datos del json para el pago movil', details: { field: missingField } },
+                },
+              });
+            }
+
+            if (jsonBDV) {
+              try {
+                const response = await axios.post(process.env.BANVENEZ_API_URL, jsonBDV, {
+                  headers: { 'x-api-key': process.env.BANVENEZ_API_KEY, 'Content-Type': 'application/json' },
+                });
+
+                if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
+                  if (colaEspera) {
+                    await this.prisma.colaEspera.update({ where: { id: colaEspera.id }, data: { status: 'CERRADA' } });
+                  }
+                  const updatedTransaction = await this.prisma.transaction.update({
+                    where: { id: trans.id },
+                    data: { status: 'COMPLETADA', nro_referencia: response.data.referencia },
+                    include: {
+                      creador: true,
+                      cliente: true,
+                      destino: true,
+                      instrument: {
+                        include: {
+                          bank: true
+                        }
+                      }
+                    }
+                  });
+                  const transactionAmount = parseFloat(trans.montoDestino.toString());
+                  await this.movementsAccountJuridicService.create({ amount: transactionAmount.toString(), type: 'EGRESO', description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)` });
+
+                  // Generar y enviar comprobante
+                  try {
+                    const logoResponse = await axios.get('https://panel.paneteirl.com/logo_conecta.png', { responseType: 'arraybuffer' });
+                    const logoDataUri = `data:image/png;base64,${Buffer.from(logoResponse.data).toString('base64')}`;
+
+                    const imageDataUri = await generateTransactionImage(updatedTransaction, logoDataUri);
+                    const imageBuffer = Buffer.from(imageDataUri.split(',')[1], 'base64');
+
+                    const imageFileName = `comprobante-TRX-${updatedTransaction.publicId}.png`;
+                    const imagePath = `${process.cwd()}/uploads/${imageFileName}`;
+                    fs.writeFileSync(imagePath, imageBuffer);
+
+                    const imageUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${imageFileName}`;
+
+                    const recipient = updatedTransaction.cliente || updatedTransaction.creador;
+                    if (recipient) {
+                      const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
+                      await this.whatsappService.sendImageMessage(recipient.phone, message, imageUrl);
+
+                      // Enviar mensaje de la rifa hasta el 13/11/2025
+                      try {
+                        const today = new Date();
+                        const raffleEndDate = new Date('2025-11-13T23:59:59');
+                        if (today <= raffleEndDate) {
+                          const raffleMessage = `🎄 ¡LA GRAN RIFA 1.0 DE PANET! 🎄\n\nUna iniciativa de Panet,  La Finca y Acampos Digital\n\n🏆 PREMIOS EN EFECTIVO 💰\n\n🥇 1 GANADOR PRINCIPAL: 125.000 VES\n\n⭐ 5 TICKETS PREMIADOS: 10.000 VES c/u\n\n🛒 TOP DE COMPRA: 25.000 VES\n\n📅 FECHA DEL SORTEO:\n\nJueves, 13 de Noviembre\n\n🎰 MECÁNICA:\n\nEl sorteo se realizará a través de Super Gana (lotería oficial)\n\n⚠ IMPORTANTE:\n\nSi los tickets se agotan antes de la fecha, el sorteo se realizará anticipadamente. Todos los compradores recibirán aviso previo. 📢\n\n🔹 ¡Participa con Panet La Finca y Acampos Digital!\n\n🎫 Compra tu ticket y aprovecha esta gran oportunidad\n\n🌏 https://gana.paneteirl.com/raffle/la-gran-rifa-1-0`;
+                          const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/la%20gran%20rifa.jpg';
+                          await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                        }
+                      } catch (error) {
+                        console.error('Error al enviar mensaje de la rifa:', error);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error generando imagen del comprobante:', error);
+                  }
+                } else {
+                  await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'ERROR', errorResponse: response.data } });
+                }
+              } catch (error) {
+                console.error('Error al llamar API de Banvenez:', error);
+                const errorPayload = axios.isAxiosError(error) ? (error.response?.data ?? { message: error.message }) : { message: (error as Error).message };
+                await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'ERROR', errorResponse: errorPayload } });
+              }
+            }
+          }
+        } catch (balanceError) {
+          console.error('Error al consultar balance de cuenta bancaria:', balanceError);
           await this.prisma.transaction.update({
             where: { id: trans.id },
             data: {
               status: 'ERROR',
-              errorResponse: { message: 'Existe un error al formatear los datos del json para el pago movil', details: { field: missingField } },
-            },
-          });
-        }
-
-        if (jsonBDV) {
-          try {
-            const response = await axios.post(process.env.BANVENEZ_API_URL, jsonBDV, {
-              headers: { 'x-api-key': process.env.BANVENEZ_API_KEY, 'Content-Type': 'application/json' },
-            });
-
-            if (response.data && response.data.code === 1000 && response.data.message === 'Transaccion realizada') {
-              if (colaEspera) {
-                await this.prisma.colaEspera.update({ where: { id: colaEspera.id }, data: { status: 'CERRADA' } });
+              errorResponse: { 
+                message: 'Error al consultar saldo de cuenta bancaria',
+                error: balanceError instanceof Error ? balanceError.message : 'Error desconocido'
               }
-              const updatedTransaction = await this.prisma.transaction.update({
-                where: { id: trans.id },
-                data: { status: 'COMPLETADA', nro_referencia: response.data.referencia },
-                include: {
-                  creador: true,
-                  cliente: true,
-                  destino: true,
-                  instrument: {
-                    include: {
-                      bank: true
-                    }
-                  }
-                }
-              });
-              const transactionAmount = parseFloat(trans.montoDestino.toString());
-              await this.movementsAccountJuridicService.create({ amount: transactionAmount.toString(), type: 'EGRESO', description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)` });
-
-              // Generar y enviar comprobante
-              try {
-                const logoResponse = await axios.get('https://panel.paneteirl.com/logo_conecta.png', { responseType: 'arraybuffer' });
-                const logoDataUri = `data:image/png;base64,${Buffer.from(logoResponse.data).toString('base64')}`;
-
-                const imageDataUri = await generateTransactionImage(updatedTransaction, logoDataUri);
-                const imageBuffer = Buffer.from(imageDataUri.split(',')[1], 'base64');
-
-                const imageFileName = `comprobante-TRX-${updatedTransaction.publicId}.png`;
-                const imagePath = `${process.cwd()}/uploads/${imageFileName}`;
-                fs.writeFileSync(imagePath, imageBuffer);
-
-                const imageUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${imageFileName}`;
-
-                const recipient = updatedTransaction.cliente || updatedTransaction.creador;
-                if (recipient) {
-                  const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
-                  await this.whatsappService.sendImageMessage(recipient.phone, message, imageUrl);
-
-                  // Enviar mensaje de la rifa hasta el 13/11/2025
-                  try {
-                    const today = new Date();
-                    const raffleEndDate = new Date('2025-11-13T23:59:59');
-                    if (today <= raffleEndDate) {
-                      const raffleMessage = `🎄 ¡LA GRAN RIFA 1.0 DE PANET! 🎄\n\nUna iniciativa de Panet,  La Finca y Acampos Digital\n\n🏆 PREMIOS EN EFECTIVO 💰\n\n🥇 1 GANADOR PRINCIPAL: 125.000 VES\n\n⭐ 5 TICKETS PREMIADOS: 10.000 VES c/u\n\n🛒 TOP DE COMPRA: 25.000 VES\n\n📅 FECHA DEL SORTEO:\n\nJueves, 13 de Noviembre\n\n🎰 MECÁNICA:\n\nEl sorteo se realizará a través de Super Gana (lotería oficial)\n\n⚠ IMPORTANTE:\n\nSi los tickets se agotan antes de la fecha, el sorteo se realizará anticipadamente. Todos los compradores recibirán aviso previo. 📢\n\n🔹 ¡Participa con Panet La Finca y Acampos Digital!\n\n🎫 Compra tu ticket y aprovecha esta gran oportunidad\n\n🌏 https://gana.paneteirl.com/raffle/la-gran-rifa-1-0`;
-                      const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/la%20gran%20rifa.jpg';
-                      await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
-                    }
-                  } catch (error) {
-                    console.error('Error al enviar mensaje de la rifa:', error);
-                  }
-                }
-              } catch (error) {
-                console.error('Error generando imagen del comprobante:', error);
-              }
-            } else {
-              await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'ERROR', errorResponse: response.data } });
             }
-          } catch (error) {
-            console.error('Error al llamar API de Banvenez:', error);
-            const errorPayload = axios.isAxiosError(error) ? (error.response?.data ?? { message: error.message }) : { message: (error as Error).message };
-            await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'ERROR', errorResponse: errorPayload } });
-          }
+          });
         }
       }
     }
