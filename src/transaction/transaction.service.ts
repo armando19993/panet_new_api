@@ -301,7 +301,7 @@ export class TransactionService {
       }
     })
 
-    if (transaction.instrument.typeInstrument === 'PAGO_MOVIL') {
+    if (transaction.instrument.typeInstrument === 'PAGO_MOVIL' && transaction.origen.name === 'VENEZUELA') {
       // Generar número de referencia de 6 dígitos
       let numeroReferencia = transaction.publicId.toString();
       if (numeroReferencia.length < 6) {
@@ -385,6 +385,19 @@ export class TransactionService {
             if (recipient) {
               const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
               await this.whatsappService.sendImageMessage(recipient.phone, message, imageUrl);
+
+              // Enviar mensaje de la rifa hasta el 13/11/2025
+              try {
+                const today = new Date();
+                const raffleEndDate = new Date('2025-11-13T23:59:59');
+                if (today <= raffleEndDate) {
+                  const raffleMessage = `🎄 ¡LA GRAN RIFA 1.0 DE PANET! 🎄\n\nUna iniciativa de Panet,  La Finca y Acampos Digital\n\n🏆 PREMIOS EN EFECTIVO 💰\n\n🥇 1 GANADOR PRINCIPAL: 125.000 VES\n\n⭐ 5 TICKETS PREMIADOS: 10.000 VES c/u\n\n🛒 TOP DE COMPRA: 25.000 VES\n\n📅 FECHA DEL SORTEO:\n\nJueves, 13 de Noviembre\n\n🎰 MECÁNICA:\n\nEl sorteo se realizará a través de Super Gana (lotería oficial)\n\n⚠ IMPORTANTE:\n\nSi los tickets se agotan antes de la fecha, el sorteo se realizará anticipadamente. Todos los compradores recibirán aviso previo. 📢\n\n🔹 ¡Participa con Panet La Finca y Acampos Digital!\n\n🎫 Compra tu ticket y aprovecha esta gran oportunidad\n\n🌏 https://gana.paneteirl.com/raffle/la-gran-rifa-1-0`;
+                  const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/la%20gran%20rifa.jpg';
+                  await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                }
+              } catch (error) {
+                console.error('Error al enviar mensaje de la rifa:', error);
+              }
             }
 
           } catch (error) {
@@ -1073,6 +1086,19 @@ export class TransactionService {
               if (recipient) {
                 const message = `🧾 Comprobante de tu transacción TRX-${transaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
                 await this.whatsappService.sendImageMessage(recipient.phone, message, imageUrl);
+
+                // Enviar mensaje de la rifa hasta el 13/11/2025
+                try {
+                  const today = new Date();
+                  const raffleEndDate = new Date('2025-11-13T23:59:59');
+                  if (today <= raffleEndDate) {
+                    const raffleMessage = `🎄 ¡LA GRAN RIFA 1.0 DE PANET! 🎄\n\nUna iniciativa de Panet,  La Finca y Acampos Digital\n\n🏆 PREMIOS EN EFECTIVO 💰\n\n🥇 1 GANADOR PRINCIPAL: 125.000 VES\n\n⭐ 5 TICKETS PREMIADOS: 10.000 VES c/u\n\n🛒 TOP DE COMPRA: 25.000 VES\n\n📅 FECHA DEL SORTEO:\n\nJueves, 13 de Noviembre\n\n🎰 MECÁNICA:\n\nEl sorteo se realizará a través de Super Gana (lotería oficial)\n\n⚠ IMPORTANTE:\n\nSi los tickets se agotan antes de la fecha, el sorteo se realizará anticipadamente. Todos los compradores recibirán aviso previo. 📢\n\n🔹 ¡Participa con Panet La Finca y Acampos Digital!\n\n🎫 Compra tu ticket y aprovecha esta gran oportunidad\n\n🌏 https://gana.paneteirl.com/raffle/la-gran-rifa-1-0`;
+                    const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/la%20gran%20rifa.jpg';
+                    await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                  }
+                } catch (error) {
+                  console.error('Error al enviar mensaje de la rifa:', error);
+                }
               }
             }
           }

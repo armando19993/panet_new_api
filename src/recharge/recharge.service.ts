@@ -7,6 +7,8 @@ import { WhatsappService } from "src/whatsapp/whatsapp.service";
 import { StatusRecharge, StatusTransactionsTemporal, TypeRecharge } from "@prisma/client";
 import { validate } from "class-validator";
 import { MovementsAccountJuridicService } from "src/movements-account-juridic/movements-account-juridic.service";
+import { generateTransactionImage } from "../transaction/image-generator";
+import * as fs from "fs";
 
 @Injectable()
 export class RechargeService {
@@ -593,6 +595,8 @@ export class RechargeService {
         include: {
           wallet: { include: { country: true } },
           instrument: { include: { bank: true } },
+          origen: true,
+          destino: true,
         },
       });
 
@@ -644,7 +648,7 @@ export class RechargeService {
         }
       }
 
-      if (trans.instrument.typeInstrument === 'PAGO_MOVIL') {
+      if (trans.instrument.typeInstrument === 'PAGO_MOVIL' && trans.origen.name === 'VENEZUELA') {
         let numeroReferencia = trans.publicId.toString();
         if (numeroReferencia.length < 6) {
           const randomPrefix = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
@@ -692,9 +696,58 @@ export class RechargeService {
               if (colaEspera) {
                 await this.prisma.colaEspera.update({ where: { id: colaEspera.id }, data: { status: 'CERRADA' } });
               }
-              await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'COMPLETADA', nro_referencia: response.data.referencia } });
+              const updatedTransaction = await this.prisma.transaction.update({
+                where: { id: trans.id },
+                data: { status: 'COMPLETADA', nro_referencia: response.data.referencia },
+                include: {
+                  creador: true,
+                  cliente: true,
+                  destino: true,
+                  instrument: {
+                    include: {
+                      bank: true
+                    }
+                  }
+                }
+              });
               const transactionAmount = parseFloat(trans.montoDestino.toString());
               await this.movementsAccountJuridicService.create({ amount: transactionAmount.toString(), type: 'EGRESO', description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)` });
+
+              // Generar y enviar comprobante
+              try {
+                const logoResponse = await axios.get('https://panel.paneteirl.com/logo_conecta.png', { responseType: 'arraybuffer' });
+                const logoDataUri = `data:image/png;base64,${Buffer.from(logoResponse.data).toString('base64')}`;
+
+                const imageDataUri = await generateTransactionImage(updatedTransaction, logoDataUri);
+                const imageBuffer = Buffer.from(imageDataUri.split(',')[1], 'base64');
+
+                const imageFileName = `comprobante-TRX-${updatedTransaction.publicId}.png`;
+                const imagePath = `${process.cwd()}/uploads/${imageFileName}`;
+                fs.writeFileSync(imagePath, imageBuffer);
+
+                const imageUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${imageFileName}`;
+
+                const recipient = updatedTransaction.cliente || updatedTransaction.creador;
+                if (recipient) {
+                  const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
+                  await this.whatsappService.sendImageMessage(recipient.phone, message, imageUrl);
+
+                  // Enviar mensaje de la rifa hasta el 13/11/2025
+                  try {
+                    const today = new Date();
+                    const raffleEndDate = new Date('2025-11-13T23:59:59');
+                    if (today <= raffleEndDate) {
+                      const raffleMessage = `🎄 ¡LA GRAN RIFA 1.0 DE PANET! 🎄\n\nUna iniciativa de Panet,  La Finca y Acampos Digital\n\n🏆 PREMIOS EN EFECTIVO 💰\n\n🥇 1 GANADOR PRINCIPAL: 125.000 VES\n\n⭐ 5 TICKETS PREMIADOS: 10.000 VES c/u\n\n🛒 TOP DE COMPRA: 25.000 VES\n\n📅 FECHA DEL SORTEO:\n\nJueves, 13 de Noviembre\n\n🎰 MECÁNICA:\n\nEl sorteo se realizará a través de Super Gana (lotería oficial)\n\n⚠ IMPORTANTE:\n\nSi los tickets se agotan antes de la fecha, el sorteo se realizará anticipadamente. Todos los compradores recibirán aviso previo. 📢\n\n🔹 ¡Participa con Panet La Finca y Acampos Digital!\n\n🎫 Compra tu ticket y aprovecha esta gran oportunidad\n\n🌏 https://gana.paneteirl.com/raffle/la-gran-rifa-1-0`;
+                      const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/la%20gran%20rifa.jpg';
+                      await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                    }
+                  } catch (error) {
+                    console.error('Error al enviar mensaje de la rifa:', error);
+                  }
+                }
+              } catch (error) {
+                console.error('Error generando imagen del comprobante:', error);
+              }
             } else {
               await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'ERROR', errorResponse: response.data } });
             }
@@ -707,10 +760,6 @@ export class RechargeService {
       }
     }
 
-    console.log('Informacion de la recarga');
-    console.log(data);
-
-    console.log(data.amount_total);
     let saldo = data.amount_total;
     if (data.pasarela === 'Manual') {
       saldo = data.amount;
