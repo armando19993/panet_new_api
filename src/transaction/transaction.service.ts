@@ -301,7 +301,7 @@ export class TransactionService {
       }
     })
 
-    if (transaction.instrument.typeInstrument === 'PAGO_MOVIL' && transaction.origen.name === 'VENEZUELA') {
+    if (transaction.instrument.typeInstrument === 'PAGO_MOVIL' && transaction.destino.name === 'VENEZUELA') {
       // Generar número de referencia de 6 dígitos
       let numeroReferencia = transaction.publicId.toString();
       if (numeroReferencia.length < 6) {

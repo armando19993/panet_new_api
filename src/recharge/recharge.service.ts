@@ -648,7 +648,7 @@ export class RechargeService {
         }
       }
 
-      if (trans.instrument.typeInstrument === 'PAGO_MOVIL' && trans.origen.name === 'VENEZUELA') {
+      if (trans.instrument.typeInstrument === 'PAGO_MOVIL' && trans.destino.name === 'VENEZUELA') {
         let numeroReferencia = trans.publicId.toString();
         if (numeroReferencia.length < 6) {
           const randomPrefix = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
