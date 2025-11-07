@@ -541,11 +541,18 @@ export class TransactionService {
     return { data, message: 'Transacciones Obtenidas con éxito' };
   }
 
-  async findOne(id) {
+  async findOne(identifier) {
+    const where = identifier
+      ? {
+        OR: [
+          { id: identifier },
+          { nro_referencia: identifier },
+        ],
+      }
+      : undefined;
+
     const data = await this.prisma.transaction.findFirst({
-      where: {
-        id,
-      },
+      where,
       include: {
         creador: {
           include: {
