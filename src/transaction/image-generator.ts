@@ -1,90 +1,225 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import QRCode from 'qrcode';
 import { fromPath } from 'pdf2pic';
 import * as fs from 'fs';
 import * as path from 'path';
 
-export const generateTransactionImage = async (transaction: any, logoDataUri?: string) => {
-  const doc = new jsPDF();
-  const pageHeight = doc.internal.pageSize.height;
-  const pageWidth = doc.internal.pageSize.width;
-  const horizontalMargin = 15;
-  const logoSize = 30;
-  const logoY = 15;
+const normalizePhone = (phone?: string | null) => {
+  if (!phone) {
+    return 'N/A';
+  }
+  return phone.startsWith('+') ? phone : `+${phone}`;
+};
 
-  let titleY = 25;
+const formatInstrumentType = (type?: string | null) => {
+  if (!type) {
+    return 'N/A';
+  }
+  return type
+    .toLowerCase()
+    .split('_')
+    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
 
-  if (logoDataUri) {
-    doc.addImage(logoDataUri, 'PNG', horizontalMargin, logoY, logoSize, logoSize);
-    titleY = logoY + logoSize + 10;
+const formatAmount = (amount: any, currency?: string | null) => {
+  if (amount === null || amount === undefined) {
+    return 'N/A';
   }
 
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('COMPROBANTE DE TRANSACCIÓN', pageWidth / 2, titleY, { align: 'center' });
+  const numericAmount = Number(amount);
+  const sanitizedCurrency = currency || 'VES';
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  const transactionInfoStartY = titleY + 6;
-  doc.text(`N°: TRX-${new Date().getFullYear()}-${transaction.publicId}`, pageWidth - horizontalMargin, transactionInfoStartY, { align: 'right' });
-  doc.text(`Fecha: ${new Date(transaction.createdAt).toLocaleString()}`, pageWidth - horizontalMargin, transactionInfoStartY + 5, { align: 'right' });
+  if (!Number.isNaN(numericAmount)) {
+    try {
+      return new Intl.NumberFormat('es-VE', {
+        style: 'currency',
+        currency: sanitizedCurrency,
+      }).format(numericAmount);
+    } catch {
+      return `${numericAmount.toFixed(2)} ${sanitizedCurrency}`.trim();
+    }
+  }
+
+  return `${amount} ${sanitizedCurrency}`.trim();
+};
+
+const buildValidationCode = (transaction: any) => {
+  const paddedId = String(transaction.publicId ?? '').padStart(4, '0');
+  const reference = String(transaction.nro_referencia ?? '').slice(-4).padStart(4, '0');
+  return `CON${paddedId}${reference}`.toUpperCase();
+};
+
+export const generateTransactionImage = async (transaction: any, logoDataUri?: string) => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const horizontalMargin = 15;
+  let currentY = 20;
 
   const preferredContact = transaction.cliente || transaction.creador || {};
   const fallbackContact = transaction.creador || {};
   const contactName = preferredContact.name || fallbackContact.name || 'N/A';
-  const contactPhone = preferredContact.phone || fallbackContact.phone || 'N/A';
+  const contactPhone = normalizePhone(preferredContact.phone || fallbackContact.phone);
   const contactEmail = preferredContact.email || fallbackContact.email || 'N/A';
-  const instrumentType = transaction.instrument?.typeInstrument || '';
-  const formattedInstrumentType = instrumentType
-    ? instrumentType.toLowerCase().split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-    : 'N/A';
 
-  const clientTableStartY = transactionInfoStartY + 12;
-  autoTable(doc, {
-    startY: clientTableStartY,
-    body: [
-      ['Nombre', contactName],
-      ['Teléfono', '+' + contactPhone],
-      ['Correo', contactEmail],
-    ],
-    theme: 'grid',
-    styles: { fontSize: 10 },
-    margin: { left: horizontalMargin, right: horizontalMargin },
-  });
+  const instrument = transaction.instrument || {};
+  const bankName = instrument.bank?.name || 'N/A';
+  const instrumentType = formatInstrumentType(instrument.typeInstrument);
+  const instrumentHolder = instrument.holder || 'N/A';
+  const instrumentDocument = instrument.document || 'N/A';
+  const instrumentAccount = instrument.accountNumber || 'N/A';
+  const currency = transaction.destino?.currency || 'VES';
+  const formattedAmount = formatAmount(transaction.montoDestino, currency);
+  const validationCode = buildValidationCode(transaction);
+  const transactionNumber = `TRX-${new Date().getFullYear()}-${transaction.publicId}`;
+  const emissionDate = new Date(transaction.createdAt).toLocaleString('es-VE');
 
-  const clientTableFinalY = (doc as any).lastAutoTable?.finalY || clientTableStartY + 20;
+  if (logoDataUri) {
+    const logoHeight = 22;
+    const logoWidth = 60;
+    doc.addImage(logoDataUri, 'PNG', (pageWidth - logoWidth) / 2, currentY, logoWidth, logoHeight);
+    currentY += logoHeight + 6;
+  }
 
   doc.setFont('helvetica', 'bold');
-  const transactionDetailTitleY = clientTableFinalY + 8;
-  doc.text('DETALLE DE TRANSACCIÓN:', horizontalMargin, transactionDetailTitleY);
+  doc.setFontSize(16);
+  doc.text('CONECTA', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 6;
+
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
+  doc.text('RIF: J-12345678-9', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 4;
+  doc.text('Calle Falsa 123, Caracas – soporte@conecta.com', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 4;
+  doc.text('+58 4XX-XXXXXXX', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 10;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('COMPROBANTE DE PAGO', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Comprobante N°: ${transactionNumber}`, horizontalMargin, currentY);
+  doc.text(`Estado: ${transaction.status || 'N/A'}`, pageWidth - horizontalMargin, currentY, { align: 'right' });
+  currentY += 5;
+
+  doc.text(`Fecha / Hora emisión: ${emissionDate}`, horizontalMargin, currentY);
+  currentY += 8;
+
+  doc.setDrawColor(200);
+  doc.roundedRect(horizontalMargin, currentY, pageWidth - horizontalMargin * 2, 22, 3, 3, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Total pagado', horizontalMargin + 6, currentY + 8);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Moneda: ${currency}`, horizontalMargin + 6, currentY + 15);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text(formattedAmount, pageWidth - horizontalMargin - 6, currentY + 13, { align: 'right' });
+  currentY += 30;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Datos del cliente', horizontalMargin, currentY);
+  currentY += 6;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Nombre: ${contactName}`, horizontalMargin, currentY);
+  currentY += 5;
+  doc.text(`Teléfono: ${contactPhone}`, horizontalMargin, currentY);
+  currentY += 5;
+  doc.text(`Correo: ${contactEmail}`, horizontalMargin, currentY);
+  currentY += 8;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Detalles del pago', horizontalMargin, currentY);
+  currentY += 6;
 
   autoTable(doc, {
-    startY: transactionDetailTitleY + 5,
+    startY: currentY,
     body: [
-      ['Método', formattedInstrumentType],
-      ['Titular', transaction.instrument.holder],
-      ['Documento', transaction.instrument.document],
-      ['Número o Id', transaction.instrument.accountNumber],
-      ['Monto', `${transaction.montoDestino} ${transaction.destino?.currency || ''}`],
+      ['Método', instrumentType],
+      ['Titular', instrumentHolder],
+      ['Documento', instrumentDocument],
+      ['Cuenta / ID', instrumentAccount],
+      ['Banco', bankName],
       ['Referencia', transaction.nro_referencia || 'N/A'],
-      ['Estado', transaction.status || 'N/A'],
     ],
-    theme: 'grid',
-    styles: { fontSize: 10 },
+    theme: 'plain',
+    styles: {
+      fontSize: 10,
+      cellPadding: { top: 1.2, bottom: 1.2, left: 2, right: 2 },
+      lineWidth: 0.1,
+      lineColor: [200, 200, 200],
+    },
+    headStyles: {
+      fontStyle: 'bold',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 40 },
+      1: { cellWidth: pageWidth - horizontalMargin * 2 - 40 },
+    },
     margin: { left: horizontalMargin, right: horizontalMargin },
   });
 
-  // Footer
-  doc.setFontSize(8);
-  doc.text('CONECTA – Soluciones Financieras', 15, pageHeight - 20);
+  currentY = ((doc as any).lastAutoTable?.finalY || currentY) + 10;
 
-  // Guardar PDF temporal
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Observación', horizontalMargin, currentY);
+  currentY += 6;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  const observation = transaction.observacion || 'Pago por soporte mensual. Exento de IVA.';
+  const splitObservation = doc.splitTextToSize(observation, pageWidth - horizontalMargin * 2);
+  doc.text(splitObservation, horizontalMargin, currentY);
+  currentY += splitObservation.length * 5 + 4;
+
+  const qrPayload = JSON.stringify({
+    transaction: transactionNumber,
+    amount: transaction.montoDestino,
+    currency,
+    reference: transaction.nro_referencia || 'N/A',
+    validationCode,
+  });
+  const qrDataUri = await QRCode.toDataURL(qrPayload, { errorCorrectionLevel: 'M', margin: 0 });
+  const qrSize = 40;
+  doc.addImage(qrDataUri, 'PNG', (pageWidth - qrSize) / 2, currentY, qrSize, qrSize);
+  currentY += qrSize + 6;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(`Código de validación: ${validationCode}`, pageWidth / 2, currentY, { align: 'center' });
+  currentY += 6;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text('Escanea el código QR para validar el comprobante.', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 20;
+
+  doc.setFontSize(8);
+  doc.text('CONECTA – Soluciones Financieras', pageWidth / 2, pageHeight - 20, { align: 'center' });
+
   const pdfBytes = doc.output('arraybuffer');
   const tempPdfPath = path.join(process.cwd(), `uploads/temp_${transaction.publicId}.pdf`);
   fs.writeFileSync(tempPdfPath, Buffer.from(pdfBytes));
 
-  // Convertir PDF -> PNG con pdf2pic
   const converter = fromPath(tempPdfPath, {
     density: 300,
     saveFilename: `trx_${transaction.publicId}`,
@@ -94,13 +229,11 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
     height: 800,
   });
 
-  const result = await converter(1); // convierte la primera página a PNG
+  const result = await converter(1);
 
-  // Leer la imagen generada
   const imageBuffer = fs.readFileSync(result.path);
   const finalImageDataUri = `data:image/png;base64,${imageBuffer.toString('base64')}`;
 
-  // Limpiar archivos temporales
   fs.unlinkSync(tempPdfPath);
   fs.unlinkSync(result.path);
 
