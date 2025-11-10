@@ -1159,9 +1159,6 @@ export class TransactionService {
 
               const recipient = transaction.cliente || transaction.creador;
               if (recipient) {
-                const message = `🧾 Comprobante de tu transacción TRX-${transaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
-                await this.whatsappService.sendImageMessage(recipient.phone, message, imageUrl);
-
                 // Enviar mensaje de la rifa hasta el 13/11/2025
                 try {
                   const today = new Date();
