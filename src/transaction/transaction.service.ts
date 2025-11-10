@@ -22,6 +22,72 @@ export class TransactionService {
     private movementsAccountJuridicService: MovementsAccountJuridicService
   ) { }
 
+  private transactionDetailInclude() {
+    return {
+      creador: {
+        include: {
+          Transaction: {
+            include: {
+              origen: true,
+              destino: true,
+              instrument: {
+                include: {
+                  bank: true
+                }
+              }
+            },
+            orderBy: {
+              publicId: 'desc'
+            },
+            take: 10
+          },
+          _count: {
+            select: {
+              Transaction: true,
+              Recharge: true,
+              wallets: true
+            }
+          }
+        }
+      },
+      origen: true,
+      destino: true,
+      despachador: true,
+      wallet: {
+        include: {
+          country: true
+        }
+      },
+      cliente: {
+        include: {
+          recharges: {
+            orderBy: {
+              publicId: 'desc',
+            },
+            take: 10,
+          },
+          Transaction: {
+            include: {
+              origen: true,
+              destino: true
+            },
+            orderBy: {
+              publicId: 'desc',
+            },
+            take: 10,
+          },
+        },
+      },
+      instrument: {
+        include: {
+          accountType: true,
+          bank: true,
+          country: true,
+        },
+      },
+    } as any;
+  }
+
   async create(createTransactionDto: CreateTransactionDto) {
     // Buscar las relaciones necesarias
     const creador = await this.prisma.user.findFirstOrThrow({ where: { id: createTransactionDto.creadorId } });
@@ -306,13 +372,13 @@ export class TransactionService {
       try {
         const balanceInfo = await this.movementsAccountJuridicService.getAccountBalance();
         const availableBalance = parseFloat(balanceInfo.availableBalance.toString());
-        
+
         if (availableBalance <= 10000) {
           await this.prisma.transaction.update({
             where: { id: transaction.id },
             data: {
               status: 'ERROR',
-              errorResponse: { 
+              errorResponse: {
                 message: 'Saldo insuficiente en cuenta bancaria',
                 availableBalance: balanceInfo.availableBalance,
                 requiredMinimum: 10000
@@ -327,7 +393,7 @@ export class TransactionService {
           where: { id: transaction.id },
           data: {
             status: 'ERROR',
-            errorResponse: { 
+            errorResponse: {
               message: 'Error al consultar saldo de cuenta bancaria',
               error: balanceError instanceof Error ? balanceError.message : 'Error desconocido'
             }
@@ -553,72 +619,38 @@ export class TransactionService {
 
     const data = await this.prisma.transaction.findFirst({
       where,
-      include: {
-        creador: {
-          include: {
-            Transaction: {
-              include: {
-                origen: true,
-                destino: true,
-                instrument: {
-                  include: {
-                    bank: true
-                  }
-                }
-              },
-              orderBy: {
-                publicId: 'desc'
-              },
-              take: 10
-            },
-            _count: {
-              select: {
-                Transaction: true,
-                Recharge: true,
-                wallets: true
-              }
-            }
-          }
-        },
-        origen: true,
-        destino: true,
-        despachador: true,
-        wallet: {
-          include: {
-            country: true
-          }
-        },
-        cliente: {
-          include: {
-            recharges: {
-              orderBy: {
-                publicId: 'desc',
-              },
-              take: 10,
-            },
-            Transaction: {
-              include: {
-                origen: true,
-                destino: true
-              },
-              orderBy: {
-                publicId: 'desc',
-              },
-              take: 10,
-            },
-          },
-        },
-        instrument: {
-          include: {
-            accountType: true,
-            bank: true,
-            country: true,
-          },
-        },
-      },
+      include: this.transactionDetailInclude(),
     });
 
     return { data, message: 'Listado de Transacciones' };
+  }
+
+  async findByReferenceToday(reference: string) {
+    if (!reference) {
+      throw new BadRequestException('El número de referencia es requerido.');
+    }
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const data = await this.prisma.transaction.findFirst({
+      where: {
+        nro_referencia: reference,
+        createdAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      include: this.transactionDetailInclude(),
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return { data, message: 'Transacción encontrada para el día actual' };
   }
 
   async procesar(dataAprobar, file, user) {

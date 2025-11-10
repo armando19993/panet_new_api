@@ -26,6 +26,11 @@ export class TransactionController {
     return this.transactionService.findAll(query, req.user);
   }
 
+  @Get('reference/today/:reference')
+  findByReferenceToday(@Param('reference') reference: string) {
+    return this.transactionService.findByReferenceToday(reference);
+  }
+
   @Get(':id')
   findOne(@Param('id') id) {
     return this.transactionService.findOne(id);
