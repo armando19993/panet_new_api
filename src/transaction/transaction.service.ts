@@ -492,8 +492,10 @@ export class TransactionService {
                 const raffleEndDate = new Date('2025-11-13T23:59:59');
                 if (today <= raffleEndDate) {
                   const raffleMessage = `🎄 ¡LA GRAN RIFA 1.0 DE PANET! 🎄\n\nUna iniciativa de Panet,  La Finca y Acampos Digital\n\n🏆 PREMIOS EN EFECTIVO 💰\n\n🥇 1 GANADOR PRINCIPAL: 125.000 VES\n\n⭐ 5 TICKETS PREMIADOS: 10.000 VES c/u\n\n🛒 TOP DE COMPRA: 25.000 VES\n\n📅 FECHA DEL SORTEO:\n\nJueves, 13 de Noviembre\n\n🎰 MECÁNICA:\n\nEl sorteo se realizará a través de Super Gana (lotería oficial)\n\n⚠ IMPORTANTE:\n\nSi los tickets se agotan antes de la fecha, el sorteo se realizará anticipadamente. Todos los compradores recibirán aviso previo. 📢\n\n🔹 ¡Participa con Panet La Finca y Acampos Digital!\n\n🎫 Compra tu ticket y aprovecha esta gran oportunidad\n\n🌏 https://gana.paneteirl.com/raffle/la-gran-rifa-1-0`;
-                  const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/la%20gran%20rifa.jpg';
+                  const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
                   await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                  const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/metodos_pago.png';
+                  await this.whatsappService.sendImageMessage(recipient.phone, "", raffleUrl2);
                 }
               } catch (error) {
                 console.error('Error al enviar mensaje de la rifa:', error);
@@ -1166,8 +1168,10 @@ export class TransactionService {
                   const raffleEndDate = new Date('2025-11-13T23:59:59');
                   if (today <= raffleEndDate) {
                     const raffleMessage = `🎄 ¡LA GRAN RIFA 1.0 DE PANET! 🎄\n\nUna iniciativa de Panet,  La Finca y Acampos Digital\n\n🏆 PREMIOS EN EFECTIVO 💰\n\n🥇 1 GANADOR PRINCIPAL: 125.000 VES\n\n⭐ 5 TICKETS PREMIADOS: 10.000 VES c/u\n\n🛒 TOP DE COMPRA: 25.000 VES\n\n📅 FECHA DEL SORTEO:\n\nJueves, 13 de Noviembre\n\n🎰 MECÁNICA:\n\nEl sorteo se realizará a través de Super Gana (lotería oficial)\n\n⚠ IMPORTANTE:\n\nSi los tickets se agotan antes de la fecha, el sorteo se realizará anticipadamente. Todos los compradores recibirán aviso previo. 📢\n\n🔹 ¡Participa con Panet La Finca y Acampos Digital!\n\n🎫 Compra tu ticket y aprovecha esta gran oportunidad\n\n🌏 https://gana.paneteirl.com/raffle/la-gran-rifa-1-0`;
-                    const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/la%20gran%20rifa.jpg';
+                    const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
                     await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                    const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/metodos_pago.png';
+                    await this.whatsappService.sendImageMessage(recipient.phone, "", raffleUrl2);
                   }
                 } catch (error) {
                   console.error('Error al enviar mensaje de la rifa:', error);
