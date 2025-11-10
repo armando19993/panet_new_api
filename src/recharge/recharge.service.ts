@@ -756,10 +756,10 @@ export class RechargeService {
                         const today = new Date();
                         const raffleEndDate = new Date('2025-11-13T23:59:59');
                         if (today <= raffleEndDate) {
-                          const raffleMessage = `🎄 ¡LA GRAN RIFA 1.0 DE PANET! 🎄\n\nUna iniciativa de Panet,  La Finca y Acampos Digital\n\n🏆 PREMIOS EN EFECTIVO 💰\n\n🥇 1 GANADOR PRINCIPAL: 125.000 VES\n\n⭐ 5 TICKETS PREMIADOS: 10.000 VES c/u\n\n🛒 TOP DE COMPRA: 25.000 VES\n\n📅 FECHA DEL SORTEO:\n\nJueves, 13 de Noviembre\n\n🎰 MECÁNICA:\n\nEl sorteo se realizará a través de Super Gana (lotería oficial)\n\n⚠ IMPORTANTE:\n\nSi los tickets se agotan antes de la fecha, el sorteo se realizará anticipadamente. Todos los compradores recibirán aviso previo. 📢\n\n🔹 ¡Participa con Panet La Finca y Acampos Digital!\n\n🎫 Compra tu ticket y aprovecha esta gran oportunidad\n\n🌏 https://gana.paneteirl.com/raffle/la-gran-rifa-1-0`;
+                         const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
                           const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
                           await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
-                          const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/metodos_pago.png';
+                          const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
                           await this.whatsappService.sendImageMessage(recipient.phone, "", raffleUrl2);
                         }
                       } catch (error) {
