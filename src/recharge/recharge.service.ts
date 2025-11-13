@@ -23,9 +23,28 @@ export class RechargeService {
   // Método utilitario para enviar notificaciones de WhatsApp de manera segura usando la nueva API
   private async sendWhatsAppNotification(phone: string, message: string, imageUrl?: string): Promise<boolean> {
     try {
-      return await this.whatsappService.sendMessageNewApi(phone, message, imageUrl);
+      console.log('🔄 [RechargeService] Iniciando envío de WhatsApp:', {
+        telefono: phone,
+        tieneImagen: !!imageUrl,
+        mediaUrl: imageUrl,
+        mensaje: message?.substring(0, 50) + (message?.length > 50 ? '...' : ''),
+      });
+      
+      const result = await this.whatsappService.sendMessageNewApi(phone, message, imageUrl);
+      
+      console.log('📊 [RechargeService] Resultado del envío:', {
+        telefono: phone,
+        exito: result,
+        tieneImagen: !!imageUrl,
+      });
+      
+      return result;
     } catch (error) {
-      console.error('Error al enviar notificación de WhatsApp:', error);
+      console.error('❌ [RechargeService] Error al enviar notificación de WhatsApp:', {
+        telefono: phone,
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       // No propagamos el error para que no afecte el flujo principal
       return false;
     }
@@ -764,8 +783,24 @@ export class RechargeService {
 
                     const imageUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${imageFileName}`;
 
+                    console.log('🧾 [RechargeService] Comprobante generado para transacción:', {
+                      transactionId: updatedTransaction.publicId,
+                      imageFileName: imageFileName,
+                      imagePath: imagePath,
+                      imageUrl: imageUrl,
+                      archivoExiste: fs.existsSync(imagePath),
+                    });
+
                     const recipient = updatedTransaction.cliente || updatedTransaction.creador;
                     if (recipient) {
+                      console.log('👤 [RechargeService] Preparando envío de comprobante a:', {
+                        transactionId: updatedTransaction.publicId,
+                        recipientId: recipient.id,
+                        recipientName: recipient.name,
+                        recipientPhone: recipient.phone,
+                        tieneTelefono: !!recipient.phone,
+                      });
+
                       const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
                       await this.sendWhatsAppNotification(recipient.phone, message, imageUrl);
 

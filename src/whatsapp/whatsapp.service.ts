@@ -150,6 +150,16 @@ export class WhatsappService {
           linkPreview: options?.linkPreview !== undefined ? options.linkPreview : true,
           mentionsEveryOne: options?.mentionsEveryOne !== undefined ? options.mentionsEveryOne : true,
         };
+        console.log('📤 [WhatsApp] Intentando enviar MENSAJE CON IMAGEN:', {
+          tipo: 'MEDIA',
+          telefono: normalizedPhone,
+          telefonoOriginal: phone,
+          endpoint: apiUrl,
+          caption: text?.substring(0, 100) + (text?.length > 100 ? '...' : ''),
+          mediaUrl: mediaUrl,
+          fileName: payload.fileName,
+          delay: delay,
+        });
       } else {
         // Usar endpoint de texto para mensajes sin imagen
         apiUrl = this.apiTextUrl;
@@ -158,7 +168,17 @@ export class WhatsappService {
           text: text || '',
           delay: delay,
         };
+        console.log('📤 [WhatsApp] Intentando enviar MENSAJE DE TEXTO:', {
+          tipo: 'TEXT',
+          telefono: normalizedPhone,
+          telefonoOriginal: phone,
+          endpoint: apiUrl,
+          texto: text?.substring(0, 100) + (text?.length > 100 ? '...' : ''),
+          delay: delay,
+        });
       }
+
+      console.log('📤 [WhatsApp] Payload completo:', JSON.stringify(payload, null, 2));
 
       const response = await axios.post(apiUrl, payload, {
         headers: {
@@ -168,8 +188,28 @@ export class WhatsappService {
         timeout: 10000, // 10 segundos de timeout
       });
 
+      console.log('✅ [WhatsApp] Mensaje enviado EXITOSAMENTE:', {
+        telefono: normalizedPhone,
+        tipo: mediaUrl ? 'MEDIA' : 'TEXT',
+        status: response.status,
+        statusText: response.statusText,
+        data: response.data,
+      });
+
       return true;
     } catch (error) {
+      console.error('❌ [WhatsApp] ERROR al enviar mensaje:', {
+        telefono: phone,
+        tipo: mediaUrl ? 'MEDIA' : 'TEXT',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        stack: error instanceof Error ? error.stack : undefined,
+        response: axios.isAxiosError(error) ? {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+        } : undefined,
+      });
+      
       this.logger.error(
         `Error al enviar mensaje con nueva API: ${error.message || 'Error desconocido'}`,
         error?.stack

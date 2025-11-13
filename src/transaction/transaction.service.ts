@@ -28,9 +28,28 @@ export class TransactionService {
    */
   async sendWhatsAppMessage(phone: string, caption: string, mediaUrl?: string): Promise<boolean> {
     try {
-      return await this.whatsappService.sendMessageNewApi(phone, caption, mediaUrl);
+      console.log('🔄 [TransactionService] Iniciando envío de WhatsApp:', {
+        telefono: phone,
+        tieneImagen: !!mediaUrl,
+        mediaUrl: mediaUrl,
+        mensaje: caption?.substring(0, 50) + (caption?.length > 50 ? '...' : ''),
+      });
+      
+      const result = await this.whatsappService.sendMessageNewApi(phone, caption, mediaUrl);
+      
+      console.log('📊 [TransactionService] Resultado del envío:', {
+        telefono: phone,
+        exito: result,
+        tieneImagen: !!mediaUrl,
+      });
+      
+      return result;
     } catch (error) {
-      console.error('Error al enviar mensaje de WhatsApp:', error);
+      console.error('❌ [TransactionService] Error al enviar mensaje de WhatsApp:', {
+        telefono: phone,
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return false;
     }
   }
@@ -516,8 +535,24 @@ export class TransactionService {
 
             const imageUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${imageFileName}`;
 
+            console.log('🧾 [TransactionService] Comprobante generado para transacción:', {
+              transactionId: updatedTransaction.publicId,
+              imageFileName: imageFileName,
+              imagePath: imagePath,
+              imageUrl: imageUrl,
+              archivoExiste: fs.existsSync(imagePath),
+            });
+
             const recipient = updatedTransaction.cliente || updatedTransaction.creador;
             if (recipient) {
+              console.log('👤 [TransactionService] Preparando envío de comprobante a:', {
+                transactionId: updatedTransaction.publicId,
+                recipientId: recipient.id,
+                recipientName: recipient.name,
+                recipientPhone: recipient.phone,
+                tieneTelefono: !!recipient.phone,
+              });
+
               const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
               await this.sendWhatsAppMessage(recipient.phone, message, imageUrl);
 
@@ -826,28 +861,54 @@ export class TransactionService {
 
       const pdfUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${pdfFileName}`;
 
+      console.log('📄 [TransactionService] PDF generado (procesar):', {
+        transactionId: data.publicId,
+        pdfFileName: pdfFileName,
+        pdfPath: pdfPath,
+        pdfUrl: pdfUrl,
+        fileUrl: fileUrl,
+        archivoPdfExiste: fs.existsSync(pdfPath),
+      });
+
       // Enviar notificación con ambos documentos
       const recipient = data.cliente || data.creador;
       if (recipient) {
+        console.log('👤 [TransactionService] Preparando envío de comprobante (procesar):', {
+          transactionId: data.publicId,
+          recipientId: recipient.id,
+          recipientName: recipient.name,
+          recipientPhone: recipient.phone,
+          tieneTelefono: !!recipient.phone,
+        });
+
         try {
           // First send the image (original behavior)
+          console.log('📤 [TransactionService] Enviando imagen del comprobante...');
           await this.sendWhatsAppMessage(recipient.phone, `Transacción TRX-${data.publicId} completada`, fileUrl);
 
           // Then send the PDF (mantener método antiguo para documentos por ahora)
+          console.log('📤 [TransactionService] Enviando PDF del comprobante...');
           await this.whatsappService.sendDocumentMessage(recipient.phone, 'Adjunto encontrará el comprobante en formato PDF', pdfUrl, `Comprobante-TRX-${data.publicId}.pdf`);
         } catch (error) {
-          console.error('Error al enviar notificación de WhatsApp:', error);
+          console.error('❌ [TransactionService] Error al enviar notificación de WhatsApp (procesar):', error);
         }
+      } else {
+        console.warn('⚠️ [TransactionService] No se encontró destinatario para enviar comprobante (procesar):', {
+          transactionId: data.publicId,
+          tieneCliente: !!data.cliente,
+          tieneCreador: !!data.creador,
+        });
       }
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('❌ [TransactionService] Error generating PDF:', error);
       // Fallback to original image-only behavior if PDF fails
       const recipient = data.cliente || data.creador;
       if (recipient) {
+        console.log('🔄 [TransactionService] Fallback: enviando solo imagen sin PDF...');
         try {
           await this.sendWhatsAppMessage(recipient.phone, 'Transacción completada - adjunto comprobante', fileUrl);
         } catch (error) {
-          console.error('Error al enviar notificación de WhatsApp:', error);
+          console.error('❌ [TransactionService] Error al enviar notificación de WhatsApp (fallback):', error);
         }
       }
     }
@@ -1192,8 +1253,28 @@ export class TransactionService {
 
               const imageUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${imageFileName}`;
 
+              console.log('🧾 [TransactionService] Comprobante generado (sendDirectPagoMovil):', {
+                transactionId: transaction.publicId,
+                imageFileName: imageFileName,
+                imagePath: imagePath,
+                imageUrl: imageUrl,
+                archivoExiste: fs.existsSync(imagePath),
+              });
+
               const recipient = transaction.cliente || transaction.creador;
               if (recipient) {
+                console.log('👤 [TransactionService] Preparando envío de comprobante (sendDirectPagoMovil):', {
+                  transactionId: transaction.publicId,
+                  recipientId: recipient.id,
+                  recipientName: recipient.name,
+                  recipientPhone: recipient.phone,
+                  tieneTelefono: !!recipient.phone,
+                });
+
+                // Enviar comprobante
+                const message = `🧾 Comprobante de tu transacción TRX-${transaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
+                await this.sendWhatsAppMessage(recipient.phone, message, imageUrl);
+
                 try {
                   const today = new Date();
                   const raffleEndDate = new Date('2025-11-13T23:59:59');
@@ -1207,6 +1288,12 @@ export class TransactionService {
                 } catch (error) {
                   console.error('Error al enviar mensaje de la rifa:', error);
                 }
+              } else {
+                console.warn('⚠️ [TransactionService] No se encontró destinatario para enviar comprobante:', {
+                  transactionId: transaction.publicId,
+                  tieneCliente: !!transaction.cliente,
+                  tieneCreador: !!transaction.creador,
+                });
               }
             }
           }
