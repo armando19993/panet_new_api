@@ -523,9 +523,15 @@ export class TransactionService {
           });
 
           try {
+            console.log('🔄 [TransactionService] Iniciando generación de comprobante (pago móvil):', {
+              transactionId: updatedTransaction.publicId,
+              status: updatedTransaction.status,
+            });
+
             const logoResponse = await axios.get('https://panel.paneteirl.com/logo_conecta.png', { responseType: 'arraybuffer' });
             const logoDataUri = `data:image/png;base64,${Buffer.from(logoResponse.data).toString('base64')}`;
 
+            console.log('📸 [TransactionService] Generando imagen del comprobante...');
             const imageDataUri = await generateTransactionImage(updatedTransaction, logoDataUri);
             const imageBuffer = Buffer.from(imageDataUri.split(',')[1], 'base64');
 
@@ -541,9 +547,17 @@ export class TransactionService {
               imagePath: imagePath,
               imageUrl: imageUrl,
               archivoExiste: fs.existsSync(imagePath),
+              tamañoArchivo: fs.existsSync(imagePath) ? fs.statSync(imagePath).size : 0,
             });
 
             const recipient = updatedTransaction.cliente || updatedTransaction.creador;
+            console.log('🔍 [TransactionService] Verificando destinatario:', {
+              transactionId: updatedTransaction.publicId,
+              tieneCliente: !!updatedTransaction.cliente,
+              tieneCreador: !!updatedTransaction.creador,
+              tieneRecipient: !!recipient,
+            });
+
             if (recipient) {
               console.log('👤 [TransactionService] Preparando envío de comprobante a:', {
                 transactionId: updatedTransaction.publicId,
@@ -553,8 +567,21 @@ export class TransactionService {
                 tieneTelefono: !!recipient.phone,
               });
 
-              const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
-              await this.sendWhatsAppMessage(recipient.phone, message, imageUrl);
+              if (!recipient.phone) {
+                console.error('❌ [TransactionService] ERROR: El destinatario no tiene teléfono:', {
+                  transactionId: updatedTransaction.publicId,
+                  recipientId: recipient.id,
+                  recipientName: recipient.name,
+                });
+              } else {
+                const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
+                console.log('📤 [TransactionService] Enviando comprobante de pago móvil...');
+                const resultado = await this.sendWhatsAppMessage(recipient.phone, message, imageUrl);
+                console.log('📊 [TransactionService] Resultado del envío de comprobante:', {
+                  transactionId: updatedTransaction.publicId,
+                  exito: resultado,
+                });
+              }
 
               // Enviar mensaje de la rifa hasta el 13/11/2025
               try {
@@ -570,10 +597,20 @@ export class TransactionService {
               } catch (error) {
                 console.error('Error al enviar mensaje de la rifa:', error);
               }
+            } else {
+              console.warn('⚠️ [TransactionService] No se encontró destinatario para enviar comprobante:', {
+                transactionId: updatedTransaction.publicId,
+                tieneCliente: !!updatedTransaction.cliente,
+                tieneCreador: !!updatedTransaction.creador,
+              });
             }
 
           } catch (error) {
-            console.error('Error generando imagen del comprobante:', error);
+            console.error('❌ [TransactionService] ERROR generando o enviando comprobante (pago móvil):', {
+              transactionId: updatedTransaction?.publicId,
+              error: error instanceof Error ? error.message : 'Error desconocido',
+              stack: error instanceof Error ? error.stack : undefined,
+            });
           }
 
 
