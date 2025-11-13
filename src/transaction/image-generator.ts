@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import QRCode from 'qrcode';
+import * as QRCode from 'qrcode';
 import { fromPath } from 'pdf2pic';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -198,7 +198,42 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
     reference: transaction.nro_referencia || 'N/A',
     validationCode,
   });
-  const qrDataUri = await QRCode.toDataURL(qrPayload, { errorCorrectionLevel: 'M', margin: 0 });
+  
+  // Generar QR code con manejo de errores
+  let qrDataUri: string;
+  try {
+    // Verificar que QRCode esté disponible y tenga el método toDataURL
+    console.log('🔍 [ImageGenerator] Verificando QRCode:', {
+      qrCodeExiste: !!QRCode,
+      tipoQRCode: typeof QRCode,
+      tieneToDataURL: QRCode ? typeof (QRCode as any).toDataURL === 'function' : false,
+      keysQRCode: QRCode ? Object.keys(QRCode) : [],
+    });
+
+    if (!QRCode) {
+      throw new Error('QRCode no está disponible (undefined)');
+    }
+
+    // Intentar diferentes formas de acceder al método
+    const qrToDataURL = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL;
+    
+    if (!qrToDataURL || typeof qrToDataURL !== 'function') {
+      throw new Error('QRCode.toDataURL no está disponible. Tipo: ' + typeof QRCode);
+    }
+
+    qrDataUri = await qrToDataURL(qrPayload, { errorCorrectionLevel: 'M', margin: 0 });
+    console.log('✅ [ImageGenerator] QR code generado exitosamente');
+  } catch (qrError) {
+    console.error('❌ [ImageGenerator] Error al generar QR code:', {
+      error: qrError instanceof Error ? qrError.message : 'Error desconocido',
+      stack: qrError instanceof Error ? qrError.stack : undefined,
+      qrPayload: qrPayload,
+      qrCodeType: typeof QRCode,
+      qrCodeKeys: QRCode ? Object.keys(QRCode) : [],
+    });
+    // Crear un placeholder simple si falla la generación del QR
+    qrDataUri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  }
   const qrSize = 40;
   doc.addImage(qrDataUri, 'PNG', (pageWidth - qrSize) / 2, currentY, qrSize, qrSize);
   currentY += qrSize + 6;
