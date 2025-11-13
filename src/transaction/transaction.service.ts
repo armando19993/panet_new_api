@@ -34,15 +34,15 @@ export class TransactionService {
         mediaUrl: mediaUrl,
         mensaje: caption?.substring(0, 50) + (caption?.length > 50 ? '...' : ''),
       });
-      
+
       const result = await this.whatsappService.sendMessageNewApi(phone, caption, mediaUrl);
-      
+
       console.log('📊 [TransactionService] Resultado del envío:', {
         telefono: phone,
         exito: result,
         tieneImagen: !!mediaUrl,
       });
-      
+
       return result;
     } catch (error) {
       console.error('❌ [TransactionService] Error al enviar mensaje de WhatsApp:', {
@@ -60,7 +60,7 @@ export class TransactionService {
   private async notifyLowBalance(availableBalance: number): Promise<void> {
     try {
       const adminPhone = '584148383419'; // Número de administrador
-      
+
       if (availableBalance < 10000) {
         const message = `⚠️ ALERTA CRÍTICA DE SALDO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 10,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nPor favor, recargar la cuenta inmediatamente.`;
         await this.sendWhatsAppMessage(adminPhone, message);
@@ -576,28 +576,77 @@ export class TransactionService {
                   recipientName: recipient.name,
                 });
               } else {
-                const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
-                console.log('📤 [TransactionService] Enviando comprobante de pago móvil...');
-                const resultado = await this.sendWhatsAppMessage(recipient.phone, message, imageUrl);
-                console.log('📊 [TransactionService] Resultado del envío de comprobante:', {
+                const completionMessage = `🎉 ¡Transacción Completada Exitosamente! 🎉
+
+Hola ${recipient.name || 'Estimado cliente'},
+
+Te informamos que tu transacción ha sido procesada y completada correctamente.
+
+📋 *Detalles de tu operación:*
+• Número de transacción: TRX-${updatedTransaction.publicId}
+• Estado: ✅ Completada
+
+Adjunto encontrarás el comprobante de tu operación.
+
+Gracias por confiar en *Panet Remesas* 💙
+
+Si tienes alguna consulta, no dudes en contactarnos.
+Equipo Panet Remesas`;
+
+                console.log('📤 [TransactionService] Preparando envío de comprobante de pago móvil:', {
                   transactionId: updatedTransaction.publicId,
-                  exito: resultado,
+                  telefono: recipient.phone,
+                  imageUrl: imageUrl,
+                  imagenExiste: fs.existsSync(imagePath),
+                  tamañoMensaje: completionMessage.length,
                 });
+
+                try {
+                  const resultado = await this.sendWhatsAppMessage(recipient.phone, completionMessage, imageUrl);
+                  console.log('📊 [TransactionService] Resultado del envío de comprobante (pago móvil):', {
+                    transactionId: updatedTransaction.publicId,
+                    telefono: recipient.phone,
+                    exito: resultado,
+                    timestamp: new Date().toISOString(),
+                  });
+
+                  if (!resultado) {
+                    console.error('❌ [TransactionService] FALLO en el envío del comprobante (pago móvil):', {
+                      transactionId: updatedTransaction.publicId,
+                      telefono: recipient.phone,
+                      imageUrl: imageUrl,
+                      razon: 'El método sendWhatsAppMessage retornó false',
+                    });
+                  }
+                } catch (sendError) {
+                  console.error('❌ [TransactionService] EXCEPCIÓN al enviar comprobante (pago móvil):', {
+                    transactionId: updatedTransaction.publicId,
+                    telefono: recipient.phone,
+                    error: sendError instanceof Error ? sendError.message : 'Error desconocido',
+                    stack: sendError instanceof Error ? sendError.stack : undefined,
+                  });
+                  throw sendError; // Re-lanzar para que se capture en el catch externo
+                }
               }
 
               // Enviar mensaje de la rifa hasta el 13/11/2025
-              try {
-                const today = new Date();
-                const raffleEndDate = new Date('2025-11-13T23:59:59');
-                if (today <= raffleEndDate) {
-                 const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
-                  const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
-                  await this.sendWhatsAppMessage(recipient.phone, raffleMessage, raffleImageUrl);
-                  const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
-                  await this.sendWhatsAppMessage(recipient.phone, "", raffleUrl2);
+              if (recipient && recipient.phone) {
+                try {
+                  const today = new Date();
+                  const raffleEndDate = new Date('2025-11-13T23:59:59');
+                  if (today <= raffleEndDate) {
+                    const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
+                    const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
+                    await this.sendWhatsAppMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                    const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
+                    await this.sendWhatsAppMessage(recipient.phone, "", raffleUrl2);
+                  }
+                } catch (error) {
+                  console.error('❌ [TransactionService] Error al enviar mensaje de la rifa (pago móvil):', {
+                    transactionId: updatedTransaction.publicId,
+                    error: error instanceof Error ? error.message : 'Error desconocido',
+                  });
                 }
-              } catch (error) {
-                console.error('Error al enviar mensaje de la rifa:', error);
               }
             } else {
               console.warn('⚠️ [TransactionService] No se encontró destinatario para enviar comprobante:', {
@@ -923,7 +972,23 @@ export class TransactionService {
         try {
           // First send the image (original behavior)
           console.log('📤 [TransactionService] Enviando imagen del comprobante...');
-          await this.sendWhatsAppMessage(recipient.phone, `Transacción TRX-${data.publicId} completada`, fileUrl);
+          const completionMessage = `🎉 ¡Transacción Completada Exitosamente! 🎉
+
+              Hola ${recipient.name || 'Estimado cliente'},
+
+              Te informamos que tu transacción ha sido procesada y completada correctamente.
+
+              📋 *Detalles de tu operación:*
+              • Número de transacción: TRX-${data.publicId}
+              • Estado: ✅ Completada
+
+              Adjunto encontrarás el comprobante de tu operación.
+
+              Gracias por confiar en *Panet Remesas* 💙
+
+              Si tienes alguna consulta, no dudes en contactarnos.
+              Equipo Panet Remesas`;
+          await this.sendWhatsAppMessage(recipient.phone, completionMessage, fileUrl);
 
           // Then send the PDF (mantener método antiguo para documentos por ahora)
           console.log('📤 [TransactionService] Enviando PDF del comprobante...');
@@ -945,7 +1010,23 @@ export class TransactionService {
       if (recipient) {
         console.log('🔄 [TransactionService] Fallback: enviando solo imagen sin PDF...');
         try {
-          await this.sendWhatsAppMessage(recipient.phone, 'Transacción completada - adjunto comprobante', fileUrl);
+          const fallbackMessage = `🎉 ¡Transacción Completada Exitosamente! 🎉
+
+Hola ${recipient.name || 'Estimado cliente'},
+
+Te informamos que tu transacción ha sido procesada y completada correctamente.
+
+📋 *Detalles de tu operación:*
+• Número de transacción: TRX-${data.publicId}
+• Estado: ✅ Completada
+
+Adjunto encontrarás el comprobante de tu operación.
+
+Gracias por confiar en *Panet Remesas* 💙
+
+Si tienes alguna consulta, no dudes en contactarnos.
+Equipo Panet Remesas`;
+          await this.sendWhatsAppMessage(recipient.phone, fallbackMessage, fileUrl);
         } catch (error) {
           console.error('❌ [TransactionService] Error al enviar notificación de WhatsApp (fallback):', error);
         }
@@ -1311,21 +1392,82 @@ export class TransactionService {
                 });
 
                 // Enviar comprobante
-                const message = `🧾 Comprobante de tu transacción TRX-${transaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
-                await this.sendWhatsAppMessage(recipient.phone, message, imageUrl);
+                if (!recipient.phone) {
+                  console.error('❌ [TransactionService] ERROR: El destinatario no tiene teléfono (sendDirectPagoMovil):', {
+                    transactionId: transaction.publicId,
+                    recipientId: recipient.id,
+                    recipientName: recipient.name,
+                  });
+                } else {
+                  const completionMessage = `🎉 ¡Transacción Completada Exitosamente! 🎉
 
-                try {
-                  const today = new Date();
-                  const raffleEndDate = new Date('2025-11-13T23:59:59');
-                  if (today <= raffleEndDate) {
-                    const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
-                    const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
-                    await this.sendWhatsAppMessage(recipient.phone, raffleMessage, raffleImageUrl);
-                    const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
-                    await this.sendWhatsAppMessage(recipient.phone, "", raffleUrl2);
+Hola ${recipient.name || 'Estimado cliente'},
+
+Te informamos que tu transacción ha sido procesada y completada correctamente.
+
+📋 *Detalles de tu operación:*
+• Número de transacción: TRX-${transaction.publicId}
+• Estado: ✅ Completada
+
+Adjunto encontrarás el comprobante de tu operación.
+
+Gracias por confiar en *Panet Remesas* 💙
+
+Si tienes alguna consulta, no dudes en contactarnos.
+Equipo Panet Remesas`;
+
+                  console.log('📤 [TransactionService] Preparando envío de comprobante (sendDirectPagoMovil):', {
+                    transactionId: transaction.publicId,
+                    telefono: recipient.phone,
+                    imageUrl: imageUrl,
+                    imagenExiste: fs.existsSync(imagePath),
+                    tamañoMensaje: completionMessage.length,
+                  });
+
+                  try {
+                    const resultado = await this.sendWhatsAppMessage(recipient.phone, completionMessage, imageUrl);
+                    console.log('📊 [TransactionService] Resultado del envío de comprobante (sendDirectPagoMovil):', {
+                      transactionId: transaction.publicId,
+                      telefono: recipient.phone,
+                      exito: resultado,
+                      timestamp: new Date().toISOString(),
+                    });
+
+                    if (!resultado) {
+                      console.error('❌ [TransactionService] FALLO en el envío del comprobante (sendDirectPagoMovil):', {
+                        transactionId: transaction.publicId,
+                        telefono: recipient.phone,
+                        imageUrl: imageUrl,
+                        razon: 'El método sendWhatsAppMessage retornó false',
+                      });
+                    }
+
+                    // Enviar mensaje de la rifa hasta el 13/11/2025
+                    try {
+                      const today = new Date();
+                      const raffleEndDate = new Date('2025-11-13T23:59:59');
+                      if (today <= raffleEndDate) {
+                        const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
+                        const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
+                        await this.sendWhatsAppMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                        const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
+                        await this.sendWhatsAppMessage(recipient.phone, "", raffleUrl2);
+                      }
+                    } catch (error) {
+                      console.error('❌ [TransactionService] Error al enviar mensaje de la rifa (sendDirectPagoMovil):', {
+                        transactionId: transaction.publicId,
+                        error: error instanceof Error ? error.message : 'Error desconocido',
+                      });
+                    }
+                  } catch (sendError) {
+                    console.error('❌ [TransactionService] EXCEPCIÓN al enviar comprobante (sendDirectPagoMovil):', {
+                      transactionId: transaction.publicId,
+                      telefono: recipient.phone,
+                      error: sendError instanceof Error ? sendError.message : 'Error desconocido',
+                      stack: sendError instanceof Error ? sendError.stack : undefined,
+                    });
+                    throw sendError; // Re-lanzar para que se capture en el catch externo
                   }
-                } catch (error) {
-                  console.error('Error al enviar mensaje de la rifa:', error);
                 }
               } else {
                 console.warn('⚠️ [TransactionService] No se encontró destinatario para enviar comprobante:', {
