@@ -768,7 +768,7 @@ export class RechargeService {
                   });
                   const transactionAmount = parseFloat(trans.montoDestino.toString());
                   await this.movementsAccountJuridicService.create({ amount: transactionAmount.toString(), type: 'EGRESO', description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)` });
-
+                  console.log("AQUI ESTAMOS PROCESANDO Y ENTRANDO EN EL TRY")
                   // Generar y enviar comprobante
                   try {
                     console.log('🔄 [RechargeService] Iniciando generación de comprobante (recarga full):', {

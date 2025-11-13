@@ -522,6 +522,8 @@ export class TransactionService {
             }
           });
 
+          console.log("AQUI ESTAMOS PROCESANDO Y ENTRANDO EN EL TRY");
+
           try {
             console.log('🔄 [TransactionService] Iniciando generación de comprobante (pago móvil):', {
               transactionId: updatedTransaction.publicId,
