@@ -129,13 +129,13 @@ export class WhatsappService {
       mentionsEveryOne?: boolean;
     }
   ): Promise<boolean> {
-    try {
-      const normalizedPhone = this.normalizePhone(phone);
-      const delay = options?.delay || 123;
-      
-      let payload: any;
-      let apiUrl: string;
+    const normalizedPhone = this.normalizePhone(phone);
+    const delay = options?.delay || 123;
+    
+    let payload: any;
+    let apiUrl: string;
 
+    try {
       if (mediaUrl) {
         // Usar endpoint de media para mensajes con imagen
         apiUrl = this.apiMediaUrl;
@@ -193,22 +193,45 @@ export class WhatsappService {
         tipo: mediaUrl ? 'MEDIA' : 'TEXT',
         status: response.status,
         statusText: response.statusText,
-        data: response.data,
+        data: JSON.stringify(response.data, null, 2),
+        headers: response.headers,
       });
 
       return true;
     } catch (error) {
-      console.error('❌ [WhatsApp] ERROR al enviar mensaje:', {
+      // Capturar todos los detalles posibles del error
+      const errorDetails: any = {
         telefono: phone,
+        telefonoNormalizado: normalizedPhone,
         tipo: mediaUrl ? 'MEDIA' : 'TEXT',
+        endpoint: apiUrl,
         error: error instanceof Error ? error.message : 'Error desconocido',
         stack: error instanceof Error ? error.stack : undefined,
-        response: axios.isAxiosError(error) ? {
+      };
+
+      if (axios.isAxiosError(error)) {
+        errorDetails.response = {
           status: error.response?.status,
           statusText: error.response?.statusText,
-          data: error.response?.data,
-        } : undefined,
-      });
+          statusCode: error.response?.status,
+          data: error.response?.data ? JSON.stringify(error.response.data, null, 2) : 'Sin datos',
+          headers: error.response?.headers,
+        };
+        errorDetails.request = {
+          method: error.config?.method,
+          url: error.config?.url,
+          headers: error.config?.headers,
+          data: error.config?.data ? (typeof error.config.data === 'string' ? error.config.data : JSON.stringify(error.config.data, null, 2)) : 'Sin datos',
+        };
+        errorDetails.code = error.code;
+        errorDetails.message = error.message;
+      }
+
+      console.error('❌ [WhatsApp] ERROR DETALLADO al enviar mensaje:');
+      console.error(JSON.stringify(errorDetails, null, 2));
+      
+      // También mostrar el payload que se intentó enviar
+      console.error('📤 [WhatsApp] Payload que causó el error:', JSON.stringify(payload, null, 2));
       
       this.logger.error(
         `Error al enviar mensaje con nueva API: ${error.message || 'Error desconocido'}`,
