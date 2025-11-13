@@ -22,6 +22,38 @@ export class TransactionService {
     private movementsAccountJuridicService: MovementsAccountJuridicService
   ) { }
 
+  /**
+   * Método reutilizable para enviar mensajes de WhatsApp usando la nueva API
+   * Puede ser usado tanto en transacciones como en recargas
+   */
+  async sendWhatsAppMessage(phone: string, caption: string, mediaUrl?: string): Promise<boolean> {
+    try {
+      return await this.whatsappService.sendMessageNewApi(phone, caption, mediaUrl);
+    } catch (error) {
+      console.error('Error al enviar mensaje de WhatsApp:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Envía notificación de saldo bajo cuando se intenta hacer pago móvil
+   */
+  private async notifyLowBalance(availableBalance: number): Promise<void> {
+    try {
+      const adminPhone = '584148383419'; // Número de administrador
+      
+      if (availableBalance < 10000) {
+        const message = `⚠️ ALERTA CRÍTICA DE SALDO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 10,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nPor favor, recargar la cuenta inmediatamente.`;
+        await this.sendWhatsAppMessage(adminPhone, message);
+      } else if (availableBalance < 100000) {
+        const message = `⚠️ ALERTA DE SALDO BAJO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 100,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nSe recomienda recargar la cuenta pronto.`;
+        await this.sendWhatsAppMessage(adminPhone, message);
+      }
+    } catch (error) {
+      console.error('Error al enviar notificación de saldo bajo:', error);
+    }
+  }
+
   private transactionDetailInclude() {
     return {
       creador: {
@@ -271,7 +303,7 @@ export class TransactionService {
       if (duenos.length === 0) {
         try {
           const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
-          await this.whatsappService.sendTextMessage('584148383419', message);
+          await this.sendWhatsAppMessage('584148383419', message);
         } catch (error) {
           console.error('Error al enviar notificación de WhatsApp:', error);
         }
@@ -287,7 +319,7 @@ export class TransactionService {
 
         try {
           const message = `Tienes una operacion por despachar, por favor realizada en menos de 5 minutos. Departamento de Tecnologia! `
-          await this.whatsappService.sendTextMessage(randomUser.phone, message);
+          await this.sendWhatsAppMessage(randomUser.phone, message);
         } catch (error) {
           console.error('Error al enviar notificación de WhatsApp:', error);
         }
@@ -304,7 +336,7 @@ export class TransactionService {
 
           try {
             const message = `La transaccion N° ${transaction.publicId} esta pendiente de despacho! `
-            await this.whatsappService.sendTextMessage(randomUser.phone, message);
+            await this.sendWhatsAppMessage(randomUser.phone, message);
           } catch (error) {
             console.error('Error al enviar notificación de WhatsApp:', error);
           }
@@ -372,6 +404,9 @@ export class TransactionService {
       try {
         const balanceInfo = await this.movementsAccountJuridicService.getAccountBalance();
         const availableBalance = parseFloat(balanceInfo.availableBalance.toString());
+
+        // Enviar notificación si el saldo es bajo
+        await this.notifyLowBalance(availableBalance);
 
         if (availableBalance <= 10000) {
           await this.prisma.transaction.update({
@@ -484,7 +519,7 @@ export class TransactionService {
             const recipient = updatedTransaction.cliente || updatedTransaction.creador;
             if (recipient) {
               const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
-              await this.whatsappService.sendImageMessage(recipient.phone, message, imageUrl);
+              await this.sendWhatsAppMessage(recipient.phone, message, imageUrl);
 
               // Enviar mensaje de la rifa hasta el 13/11/2025
               try {
@@ -493,9 +528,9 @@ export class TransactionService {
                 if (today <= raffleEndDate) {
                  const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
                   const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
-                  await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                  await this.sendWhatsAppMessage(recipient.phone, raffleMessage, raffleImageUrl);
                   const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
-                  await this.whatsappService.sendImageMessage(recipient.phone, "", raffleUrl2);
+                  await this.sendWhatsAppMessage(recipient.phone, "", raffleUrl2);
                 }
               } catch (error) {
                 console.error('Error al enviar mensaje de la rifa:', error);
@@ -796,9 +831,9 @@ export class TransactionService {
       if (recipient) {
         try {
           // First send the image (original behavior)
-          await this.whatsappService.sendImageMessage(recipient.phone, `Transacción TRX-${data.publicId} completada`, fileUrl);
+          await this.sendWhatsAppMessage(recipient.phone, `Transacción TRX-${data.publicId} completada`, fileUrl);
 
-          // Then send the PDF
+          // Then send the PDF (mantener método antiguo para documentos por ahora)
           await this.whatsappService.sendDocumentMessage(recipient.phone, 'Adjunto encontrará el comprobante en formato PDF', pdfUrl, `Comprobante-TRX-${data.publicId}.pdf`);
         } catch (error) {
           console.error('Error al enviar notificación de WhatsApp:', error);
@@ -810,7 +845,7 @@ export class TransactionService {
       const recipient = data.cliente || data.creador;
       if (recipient) {
         try {
-          await this.whatsappService.sendImageMessage(recipient.phone, 'Transacción completada - adjunto comprobante', fileUrl);
+          await this.sendWhatsAppMessage(recipient.phone, 'Transacción completada - adjunto comprobante', fileUrl);
         } catch (error) {
           console.error('Error al enviar notificación de WhatsApp:', error);
         }
@@ -890,7 +925,7 @@ export class TransactionService {
       let message = "Estimado Cliente te adjuntamos el comprobante de tu transaccion la cual se encuentra en proceso!";
 
       // Usamos el método específico para enviar mensajes con imágenes
-      const result = await this.whatsappService.sendImageMessage(phone, message, fileUrl);
+      const result = await this.sendWhatsAppMessage(phone, message, fileUrl);
 
       return {
         success: true,
@@ -1159,16 +1194,15 @@ export class TransactionService {
 
               const recipient = transaction.cliente || transaction.creador;
               if (recipient) {
-                // Enviar mensaje de la rifa hasta el 13/11/2025
                 try {
                   const today = new Date();
                   const raffleEndDate = new Date('2025-11-13T23:59:59');
                   if (today <= raffleEndDate) {
                     const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
                     const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
-                    await this.whatsappService.sendImageMessage(recipient.phone, raffleMessage, raffleImageUrl);
+                    await this.sendWhatsAppMessage(recipient.phone, raffleMessage, raffleImageUrl);
                     const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
-                    await this.whatsappService.sendImageMessage(recipient.phone, "", raffleUrl2);
+                    await this.sendWhatsAppMessage(recipient.phone, "", raffleUrl2);
                   }
                 } catch (error) {
                   console.error('Error al enviar mensaje de la rifa:', error);

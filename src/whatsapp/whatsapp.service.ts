@@ -4,6 +4,9 @@ import axios from 'axios';
 @Injectable()
 export class WhatsappService {
   private readonly logger = new Logger(WhatsappService.name);
+  private readonly apiTextUrl = 'http://69.169.102.23:8080/message/sendText/panet';
+  private readonly apiMediaUrl = 'http://69.169.102.23:8080/message/sendMedia/panet';
+  private readonly apiKey = '125687';
 
   /**
    * Envía un mensaje de WhatsApp de manera segura, capturando cualquier error
@@ -78,6 +81,99 @@ export class WhatsappService {
       return await this.sendMessageSafely(url);
     } catch (error) {
       this.logger.error(`Error al preparar mensaje con documento: ${error.message || 'Error desconocido'}`, error?.stack);
+      return false;
+    }
+  }
+
+  /**
+   * Normaliza el número de teléfono para la nueva API (sin + y sin espacios)
+   * @param phone Número de teléfono
+   * @returns Número normalizado
+   */
+  private normalizePhone(phone: string): string {
+    return phone.replace(/[\s\+]/g, '');
+  }
+
+  /**
+   * Extrae el nombre del archivo de una URL
+   * @param url URL del archivo
+   * @returns Nombre del archivo
+   */
+  private extractFileName(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      const fileName = pathname.split('/').pop() || 'image.png';
+      return decodeURIComponent(fileName);
+    } catch {
+      return 'image.png';
+    }
+  }
+
+  /**
+   * Envía un mensaje de WhatsApp usando la nueva API
+   * 
+   * @param phone Número de teléfono del destinatario (con o sin +)
+   * @param text Mensaje de texto a enviar
+   * @param mediaUrl URL de la imagen o media (opcional)
+   * @param options Opciones adicionales (delay, linkPreview, mentionsEveryOne)
+   * @returns true si el mensaje se envió correctamente, false si hubo un error
+   */
+  async sendMessageNewApi(
+    phone: string,
+    text: string,
+    mediaUrl?: string,
+    options?: {
+      delay?: number;
+      linkPreview?: boolean;
+      mentionsEveryOne?: boolean;
+    }
+  ): Promise<boolean> {
+    try {
+      const normalizedPhone = this.normalizePhone(phone);
+      const delay = options?.delay || 123;
+      
+      let payload: any;
+      let apiUrl: string;
+
+      if (mediaUrl) {
+        // Usar endpoint de media para mensajes con imagen
+        apiUrl = this.apiMediaUrl;
+        payload = {
+          number: normalizedPhone,
+          mediatype: 'image',
+          mimetype: 'image/png',
+          caption: text || '',
+          media: mediaUrl,
+          fileName: this.extractFileName(mediaUrl),
+          delay: delay,
+          linkPreview: options?.linkPreview !== undefined ? options.linkPreview : true,
+          mentionsEveryOne: options?.mentionsEveryOne !== undefined ? options.mentionsEveryOne : true,
+        };
+      } else {
+        // Usar endpoint de texto para mensajes sin imagen
+        apiUrl = this.apiTextUrl;
+        payload = {
+          number: normalizedPhone,
+          text: text || '',
+          delay: delay,
+        };
+      }
+
+      const response = await axios.post(apiUrl, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': this.apiKey,
+        },
+        timeout: 10000, // 10 segundos de timeout
+      });
+
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Error al enviar mensaje con nueva API: ${error.message || 'Error desconocido'}`,
+        error?.stack
+      );
       return false;
     }
   }
