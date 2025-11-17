@@ -111,6 +111,15 @@ export class WhatsappService {
   }
 
   /**
+   * Genera un delay aleatorio entre 1 y 4 horas en incrementos de 3600 segundos
+   */
+  private getRandomDelay(): number {
+    const delays = [3600, 7200, 10800, 14400];
+    const index = Math.floor(Math.random() * delays.length);
+    return delays[index];
+  }
+
+  /**
    * Envía un mensaje de WhatsApp usando la nueva API
    * 
    * @param phone Número de teléfono del destinatario (con o sin +)
@@ -130,7 +139,7 @@ export class WhatsappService {
     }
   ): Promise<boolean> {
     const normalizedPhone = this.normalizePhone(phone);
-    const delay = options?.delay || 123;
+    const delay = this.getRandomDelay();
     
     let payload: any;
     let apiUrl: string;
