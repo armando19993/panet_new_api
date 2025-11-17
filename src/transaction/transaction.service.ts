@@ -53,6 +53,35 @@ export class TransactionService {
       return false;
     }
   }
+  
+  private async sendWhatsAppNotification(phone: string, message: string, imageUrl?: string): Promise<boolean> {
+    try {
+      console.log('🔄 [RechargeService] Iniciando envío de WhatsApp:', {
+        telefono: phone,
+        tieneImagen: !!imageUrl,
+        mediaUrl: imageUrl,
+        mensaje: message?.substring(0, 50) + (message?.length > 50 ? '...' : ''),
+      });
+      
+      const result = await this.whatsappService.sendMessageNewApi(phone, message, imageUrl);
+      
+      console.log('📊 [RechargeService] Resultado del envío:', {
+        telefono: phone,
+        exito: result,
+        tieneImagen: !!imageUrl,
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('❌ [RechargeService] Error al enviar notificación de WhatsApp:', {
+        telefono: phone,
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      // No propagamos el error para que no afecte el flujo principal
+      return false;
+    }
+  }
 
   /**
    * Envía notificación de saldo bajo cuando se intenta hacer pago móvil
@@ -635,17 +664,12 @@ Equipo Panet Remesas`;
                   const today = new Date();
                   const raffleEndDate = new Date('2025-11-13T23:59:59');
                   if (today <= raffleEndDate) {
-                    const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
-                    const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
-                    await this.sendWhatsAppMessage(recipient.phone, raffleMessage, raffleImageUrl);
-                    const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
-                    await this.sendWhatsAppMessage(recipient.phone, "", raffleUrl2);
+                   const raffleMessage = `🎁 ¡Resuelve tu Aguinaldo con la Rifa 1.0! 🎁\n\n\n\n¡Llegó tu oportunidad de terminar el año con dinero extra! 🤩\n\nNo te pierdas nuestra gran rifa, donde puedes ganar hasta 200 USD con solo un ticket.\n\n🗓 Fecha del Sorteo: Miércoles 19 de Noviembre del 2025\n\n🏆 Premios en Juego:\n\n🥇 200 USD (Premio Principal)\n\n🛒 50 USD (Para el Mayor Comprador)\n\n🍀 50 USD (2 premios de 25 USD c/u en sorteos adicionales para los compradores)\n\n¡Asegura tu número antes de que se agoten! 👇\n\n🔗 Contactate al: +584122362521\n\n¡Mucha suerte a todos! ✨ ¡La fortuna te espera!`;
+                    const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202%20(1).jpg';
+                    await this.sendWhatsAppNotification(recipient.phone, raffleMessage, raffleImageUrl);
                   }
                 } catch (error) {
-                  console.error('❌ [TransactionService] Error al enviar mensaje de la rifa (pago móvil):', {
-                    transactionId: updatedTransaction.publicId,
-                    error: error instanceof Error ? error.message : 'Error desconocido',
-                  });
+                  console.error('Error al enviar mensaje de la rifa:', error);
                 }
               }
             } else {

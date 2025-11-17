@@ -822,7 +822,7 @@ export class RechargeService {
                           recipientName: recipient.name,
                         });
                       } else {
-                        const message = `🧾 Comprobante de tu transacción TRX-${updatedTransaction.publicId}\n\nPuedes verlo aquí:\n${imageUrl}`;
+                        const message = `🧾 Tu transaccion TRX-${updatedTransaction.publicId} ha sido completada con exito! Gracias por confiar en Panet Remesas!`;
                         console.log('📤 [RechargeService] Enviando comprobante de recarga full...');
                         const resultado = await this.sendWhatsAppNotification(recipient.phone, message, imageUrl);
                         console.log('📊 [RechargeService] Resultado del envío de comprobante:', {
@@ -836,11 +836,9 @@ export class RechargeService {
                         const today = new Date();
                         const raffleEndDate = new Date('2025-11-13T23:59:59');
                         if (today <= raffleEndDate) {
-                         const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
-                          const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
+                         const raffleMessage = `🎁 ¡Resuelve tu Aguinaldo con la Rifa 1.0! 🎁\n\n\n\n¡Llegó tu oportunidad de terminar el año con dinero extra! 🤩\n\nNo te pierdas nuestra gran rifa, donde puedes ganar hasta 200 USD con solo un ticket.\n\n🗓 Fecha del Sorteo: Miércoles 19 de Noviembre del 2025\n\n🏆 Premios en Juego:\n\n🥇 200 USD (Premio Principal)\n\n🛒 50 USD (Para el Mayor Comprador)\n\n🍀 50 USD (2 premios de 25 USD c/u en sorteos adicionales para los compradores)\n\n¡Asegura tu número antes de que se agoten! 👇\n\n🔗 Contactate al: +584122362521\n\n¡Mucha suerte a todos! ✨ ¡La fortuna te espera!`;
+                          const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202%20(1).jpg';
                           await this.sendWhatsAppNotification(recipient.phone, raffleMessage, raffleImageUrl);
-                          const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
-                          await this.sendWhatsAppNotification(recipient.phone, "", raffleUrl2);
                         }
                       } catch (error) {
                         console.error('Error al enviar mensaje de la rifa:', error);
