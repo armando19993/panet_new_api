@@ -9,6 +9,9 @@ import { validate } from "class-validator";
 import { MovementsAccountJuridicService } from "src/movements-account-juridic/movements-account-juridic.service";
 import { generateTransactionImage } from "../transaction/image-generator";
 import * as fs from "fs";
+import * as path from "path";
+import * as archiver from "archiver";
+import { ExportRechargeFilterDto } from "./dto/export-recharge.dto";
 
 @Injectable()
 export class RechargeService {
@@ -1239,6 +1242,217 @@ export class RechargeService {
     }
 
     return { data: recharge, message: 'Recarga Actualizada con exito' }
+  }
+
+  async exportRechargesWithComprobantes(filter: ExportRechargeFilterDto) {
+    if (!filter?.instrumentIds?.length) {
+      throw new BadRequestException('Debes enviar al menos un instrumentId');
+    }
+
+    const { startDate, endDate } = this.resolveDateRange(filter);
+
+    const recharges = await this.prisma.recharge.findMany({
+      where: {
+        instrumentId: { in: filter.instrumentIds },
+        fecha_comprobante: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: { fecha_comprobante: 'asc' },
+      include: {
+        wallet: {
+          include: {
+            user: true,
+            country: true,
+          },
+        },
+        instrument: {
+          include: {
+            user: true,
+            bank: true,
+            country: true,
+            accountType: true,
+            Client: true,
+          },
+        },
+        user: true,
+        Client: true,
+        TransactionTemporal: true,
+      },
+    });
+
+    const zipUrl = await this.buildComprobantesZip(recharges);
+
+    return {
+      data: recharges,
+      zipUrl,
+      message: 'Recargas exportadas con éxito',
+    };
+  }
+
+  private resolveDateRange(filter: ExportRechargeFilterDto) {
+    const toDate = (value: string, endOfDay = false) => {
+      if (!value) {
+        throw new BadRequestException('Fecha inválida');
+      }
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new BadRequestException(`Fecha inválida: ${value}`);
+      }
+      if (endOfDay) {
+        date.setHours(23, 59, 59, 999);
+      } else {
+        date.setHours(0, 0, 0, 0);
+      }
+      return date;
+    };
+
+    if (filter.date) {
+      return {
+        startDate: toDate(filter.date),
+        endDate: toDate(filter.date, true),
+      };
+    }
+
+    if (filter.startDate && filter.endDate) {
+      return {
+        startDate: toDate(filter.startDate),
+        endDate: toDate(filter.endDate, true),
+      };
+    }
+
+    throw new BadRequestException('Debes enviar una fecha única o un rango (startDate y endDate)');
+  }
+
+  private async buildComprobantesZip(recharges: any[]): Promise<string | null> {
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const zipFileName = `comprobantes-${Date.now()}.zip`;
+    const zipPath = path.join(uploadsDir, zipFileName);
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    let hasEntries = false;
+
+    archive.pipe(output);
+
+    for (const recharge of recharges) {
+      if (![StatusRecharge.COMPLETADA, StatusRecharge.CANCELADA].includes(recharge.status) || !recharge.comprobante) {
+        continue;
+      }
+
+      const source = await this.resolveComprobanteSource(recharge.comprobante);
+      if (!source) {
+        continue;
+      }
+
+      hasEntries = true;
+      const fileName = this.buildComprobanteFileName(recharge, source.ext);
+      const entryName = `${recharge.status}/${fileName}`;
+      if (source.type === 'file') {
+        archive.file(source.path, { name: entryName });
+      } else {
+        archive.append(source.buffer, { name: entryName });
+      }
+    }
+
+    if (!hasEntries) {
+      archive.append('No se encontraron comprobantes para los filtros seleccionados.', {
+        name: 'SIN_COMPROBANTES.txt',
+      });
+    }
+
+    const finalizePromise = new Promise<void>((resolve, reject) => {
+      output.on('close', resolve);
+      output.on('error', reject);
+      archive.on('error', reject);
+    });
+
+    archive.finalize();
+    await finalizePromise;
+
+    const baseUrl = process.env.BASE_URL || 'https://api.paneteirl.com';
+    return `${baseUrl}/uploads/${zipFileName}`;
+  }
+
+  private buildComprobanteFileName(recharge: any, extension?: string) {
+    const safeExtension = extension && extension.length > 0 ? extension : '.jpg';
+    const identifier = recharge?.publicId ? `REC-${recharge.publicId}` : recharge.id;
+    return `${identifier}${safeExtension}`;
+  }
+
+  private extractExtensionFromPath(value: string | undefined | null) {
+    if (!value) {
+      return '';
+    }
+    try {
+      const parsedUrl = new URL(value);
+      return path.extname(parsedUrl.pathname);
+    } catch {
+      return path.extname(value);
+    }
+  }
+
+  private async resolveComprobanteSource(comprobante: string | null) {
+    if (!comprobante) {
+      return null;
+    }
+
+    const extension = this.extractExtensionFromPath(comprobante);
+
+    if (comprobante.startsWith('http')) {
+      try {
+        const response = await axios.get<ArrayBuffer>(comprobante, { responseType: 'arraybuffer' });
+        return {
+          type: 'buffer' as const,
+          buffer: Buffer.from(response.data),
+          ext: extension,
+        };
+      } catch (error) {
+        console.warn(
+          'No se pudo descargar el comprobante remoto',
+          comprobante,
+          error instanceof Error ? error.message : error,
+        );
+      }
+    }
+
+    const candidates = this.buildLocalPathCandidates(comprobante);
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        return {
+          type: 'file' as const,
+          path: candidate,
+          ext: extension || path.extname(candidate),
+        };
+      }
+    }
+
+    console.warn('No se encontró el archivo de comprobante en el servidor', comprobante);
+    return null;
+  }
+
+  private buildLocalPathCandidates(rawValue: string) {
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    const candidates = new Set<string>();
+
+    if (!rawValue.startsWith('http') && path.isAbsolute(rawValue)) {
+      candidates.add(rawValue);
+    }
+
+    const cleaned = rawValue
+      .replace(/^https?:\/\/[^/]+/, '')
+      .replace(/^\/+/, '');
+
+    if (cleaned) {
+      candidates.add(path.join(process.cwd(), cleaned));
+      candidates.add(path.join(uploadsDir, cleaned.replace(/^uploads\//, '')));
+    }
+
+    candidates.add(path.join(uploadsDir, path.basename(cleaned || rawValue)));
+
+    return Array.from(candidates);
   }
 
   remove(id: number) {

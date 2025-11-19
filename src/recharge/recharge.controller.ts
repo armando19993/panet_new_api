@@ -18,6 +18,7 @@ import {
 import { RechargeService } from "./recharge.service";
 import { CreateRechargeDto } from "./dto/create-recharge.dto";
 import { UpdateRechargeDto } from "./dto/update-recharge.dto";
+import { ExportRechargeFilterDto } from "./dto/export-recharge.dto";
 import { AuthGuard } from "src/auth/auth.guard";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
@@ -102,5 +103,13 @@ export class RechargeController {
   @Post('status/flow')
   async statusFlow(@Query('token') token: string,) {
     return this.rechargeService.responseFlow({ token })
+  }
+
+  @Post('instruments/export')
+  @UseGuards(AuthGuard)
+  exportByInstrument(
+    @Body() filter: ExportRechargeFilterDto,
+  ) {
+    return this.rechargeService.exportRechargesWithComprobantes(filter);
   }
 }
