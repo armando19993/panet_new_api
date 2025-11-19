@@ -1279,15 +1279,33 @@ export class RechargeService {
       if (!value) {
         throw new BadRequestException('Fecha inválida');
       }
-      const date = new Date(value);
+      
+      // Parsear fecha en formato YYYY-MM-DD como fecha local
+      const parts = value.split('-');
+      if (parts.length !== 3) {
+        throw new BadRequestException(`Formato de fecha inválido: ${value}. Use YYYY-MM-DD`);
+      }
+      
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // Los meses en JS son 0-indexed
+      const day = parseInt(parts[2], 10);
+      
+      if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        throw new BadRequestException(`Fecha inválida: ${value}`);
+      }
+      
+      const date = new Date(year, month, day);
+      
       if (isNaN(date.getTime())) {
         throw new BadRequestException(`Fecha inválida: ${value}`);
       }
+      
       if (endOfDay) {
         date.setHours(23, 59, 59, 999);
       } else {
         date.setHours(0, 0, 0, 0);
       }
+      
       return date;
     };
 
