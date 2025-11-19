@@ -1336,21 +1336,10 @@ export class RechargeService {
 
   private buildDateClause(startDate: Date, endDate: Date) {
     return {
-      OR: [
-        {
-          fecha_comprobante: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-        {
-          fecha_comprobante: null,
-          createdAt: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
-      ],
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
     };
   }
 
