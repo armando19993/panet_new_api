@@ -1,0 +1,15 @@
+meta {
+  name: Exportar Recargas de un Instrumento
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{SERVER}}/recharge/instruments/export
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

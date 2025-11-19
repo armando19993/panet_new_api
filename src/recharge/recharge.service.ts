@@ -1250,14 +1250,12 @@ export class RechargeService {
     }
 
     const { startDate, endDate } = this.resolveDateRange(filter);
+    const dateClause = this.buildDateClause(startDate, endDate);
 
     const recharges = await this.prisma.recharge.findMany({
       where: {
         instrumentId: { in: filter.instrumentIds },
-        fecha_comprobante: {
-          gte: startDate,
-          lte: endDate,
-        },
+        ...dateClause,
       },
       orderBy: { fecha_comprobante: 'asc' },
       include: {
@@ -1283,10 +1281,12 @@ export class RechargeService {
     });
 
     const zipUrl = await this.buildComprobantesZip(recharges);
+    const summary = this.buildStatusSummary(recharges);
 
     return {
       data: recharges,
       zipUrl,
+      summary,
       message: 'Recargas exportadas con éxito',
     };
   }
@@ -1308,21 +1308,63 @@ export class RechargeService {
       return date;
     };
 
-    if (filter.date) {
+    const hasSingleDate = !!filter.date && !filter.startDate && !filter.endDate;
+
+    if (hasSingleDate) {
       return {
         startDate: toDate(filter.date),
         endDate: toDate(filter.date, true),
       };
     }
 
-    if (filter.startDate && filter.endDate) {
-      return {
-        startDate: toDate(filter.startDate),
-        endDate: toDate(filter.endDate, true),
-      };
+    const startValue = filter.startDate ?? filter.date;
+    const endValue = filter.endDate ?? startValue;
+
+    if (!startValue || !endValue) {
+      throw new BadRequestException('Debes enviar una fecha única o un rango (startDate / endDate)');
     }
 
-    throw new BadRequestException('Debes enviar una fecha única o un rango (startDate y endDate)');
+    const startDate = toDate(startValue);
+    const endDate = toDate(endValue, true);
+
+    if (endDate.getTime() < startDate.getTime()) {
+      throw new BadRequestException('La fecha final no puede ser menor que la inicial');
+    }
+
+    return { startDate, endDate };
+  }
+
+  private buildDateClause(startDate: Date, endDate: Date) {
+    return {
+      OR: [
+        {
+          fecha_comprobante: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        {
+          fecha_comprobante: null,
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      ],
+    };
+  }
+
+  private buildStatusSummary(recharges: any[]) {
+    return recharges.reduce((acc, recharge) => {
+      const status = recharge.status || 'SIN_STATUS';
+      if (!acc[status]) {
+        acc[status] = { count: 0, totalAmount: 0 };
+      }
+      const amount = recharge.amount ? parseFloat(recharge.amount.toString()) : 0;
+      acc[status].count += 1;
+      acc[status].totalAmount = parseFloat((acc[status].totalAmount + amount).toFixed(2));
+      return acc;
+    }, {} as Record<string, { count: number; totalAmount: number }>);
   }
 
   private async buildComprobantesZip(recharges: any[]): Promise<string | null> {
