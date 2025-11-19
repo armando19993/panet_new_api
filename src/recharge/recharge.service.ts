@@ -1259,24 +1259,7 @@ export class RechargeService {
       },
       orderBy: { fecha_comprobante: 'asc' },
       include: {
-        wallet: {
-          include: {
-            user: true,
-            country: true,
-          },
-        },
-        instrument: {
-          include: {
-            user: true,
-            bank: true,
-            country: true,
-            accountType: true,
-            Client: true,
-          },
-        },
         user: true,
-        Client: true,
-        TransactionTemporal: true,
       },
     });
 
