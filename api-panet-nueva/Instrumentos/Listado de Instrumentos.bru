@@ -5,9 +5,14 @@ meta {
 }
 
 get {
-  url: {{SERVER}}/instruments-client
+  url: {{SERVER}}/instruments-client?useInstruments=PANET&userId=aa23a5a6-b37c-4e1e-bd3e-4c2eda295df1
   body: none
   auth: bearer
+}
+
+params:query {
+  useInstruments: PANET
+  userId: aa23a5a6-b37c-4e1e-bd3e-4c2eda295df1
 }
 
 auth:bearer {

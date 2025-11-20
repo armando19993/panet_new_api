@@ -6,10 +6,28 @@ meta {
 
 post {
   url: {{SERVER}}/recharge/instruments/export
-  body: none
-  auth: inherit
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+
+body:json {
+  {
+    "instrumentIds": [
+      "2d8c6409-eb49-4a07-8b3f-80e8a852fa33",
+      "0e47ee17-a7f1-4ada-95b4-978f5808ae56",
+      "61f567c1-3777-4680-82e5-43e4df400471",
+      "04ae5a3b-e1b3-4852-ab4e-39f44b35f7a0"
+    ],
+    "startDate": "2025-11-15",
+    "endDate": "2025-11-17"
+  }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

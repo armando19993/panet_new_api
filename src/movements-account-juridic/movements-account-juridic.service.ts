@@ -49,57 +49,233 @@ export class MovementsAccountJuridicService {
         return `${dd}/${mm}/${yyyy}`;
       };
 
+      // Parsear fechas correctamente como fechas locales
+      const parseDate = (value: string): Date => {
+        if (!value) {
+          throw new HttpException('Fecha inválida', HttpStatus.BAD_REQUEST);
+        }
+        
+        const parts = value.split('-');
+        if (parts.length !== 3) {
+          throw new HttpException(`Formato de fecha inválido: ${value}. Use YYYY-MM-DD`, HttpStatus.BAD_REQUEST);
+        }
+        
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        
+        if (isNaN(year) || isNaN(month) || isNaN(day)) {
+          throw new HttpException(`Fecha inválida: ${value}`, HttpStatus.BAD_REQUEST);
+        }
+        
+        return new Date(year, month, day);
+      };
+
       let fechaIni: string;
       let fechaFin: string;
+      let startDate: Date;
+      let endDate: Date;
 
       if (query?.specificDate) {
-        const d = new Date(query.specificDate);
-        fechaIni = fmt(d);
-        fechaFin = fmt(d);
+        startDate = parseDate(query.specificDate);
+        endDate = parseDate(query.specificDate);
+        fechaIni = fmt(startDate);
+        fechaFin = fmt(endDate);
       } else if (query?.startDate || query?.endDate) {
         if (query.startDate && query.endDate) {
-          fechaIni = fmt(new Date(query.startDate));
-          fechaFin = fmt(new Date(query.endDate));
+          startDate = parseDate(query.startDate);
+          endDate = parseDate(query.endDate);
+          fechaIni = fmt(startDate);
+          fechaFin = fmt(endDate);
         } else if (query.startDate) {
-          const d = new Date(query.startDate);
-          fechaIni = fmt(d);
-          fechaFin = fmt(d);
+          startDate = parseDate(query.startDate);
+          endDate = startDate;
+          fechaIni = fmt(startDate);
+          fechaFin = fmt(endDate);
         } else if (query.endDate) {
-          const d = new Date(query.endDate);
-          fechaIni = fmt(d);
-          fechaFin = fmt(d);
+          endDate = parseDate(query.endDate);
+          startDate = endDate;
+          fechaIni = fmt(startDate);
+          fechaFin = fmt(endDate);
         }
       } else {
         const today = new Date();
+        startDate = today;
+        endDate = today;
         fechaIni = fmt(today);
         fechaFin = fmt(today);
       }
 
-      const response = await axios.post(
-        'https://bdvconciliacion.banvenez.com:443/apis/bdv/consulta/movimientos',
-        {
-          cuenta: '01020645640000997168',
-          fechaIni,
-          fechaFin,
-          tipoMoneda: 'VES',
-          nroMovimiento: ''
-        },
-        {
-          headers: {
-            'x-api-key': process.env.BANVENEZ_API_KEY,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      // Obtener todos los movimientos haciendo paginación automática
+      const allMovements = await this.fetchAllMovementsWithPagination(fechaIni, fechaFin);
 
-      return response.data;
+      // Filtrar por tipo si se especifica
+      let filteredMovements = allMovements;
+      if (query?.type) {
+        filteredMovements = allMovements.filter((mov: any) => {
+          const tipo = mov.tipo?.toUpperCase() || mov.tipoMovimiento?.toUpperCase();
+          return tipo === query.type?.toUpperCase();
+        });
+      }
+
+      return {
+        data: filteredMovements,
+        total: filteredMovements.length,
+        fechaIni,
+        fechaFin,
+        type: query?.type || null
+      };
       
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(
-        'Error al consultar los movimientos bancarios',
+        `Error al consultar los movimientos bancarios: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
+  }
+
+  private async fetchAllMovementsWithPagination(fechaIni: string, fechaFin: string): Promise<any[]> {
+    // Si las fechas son iguales o el rango es pequeño, intentar paginación directa
+    if (fechaIni === fechaFin) {
+      return await this.fetchMovementsForDate(fechaIni);
+    }
+
+    // Para rangos grandes, dividir por días individuales para asegurar obtener todos los registros
+    const allMovements: any[] = [];
+    const dateRange = this.getDateRangeFromStrings(fechaIni, fechaFin);
+
+    for (const date of dateRange) {
+      const movements = await this.fetchMovementsForDate(date);
+      allMovements.push(...movements);
+      // Pequeña pausa entre días para no saturar la API
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    return this.removeDuplicateMovements(allMovements);
+  }
+
+  private async fetchMovementsForDate(fecha: string): Promise<any[]> {
+    const allMovements: any[] = [];
+    const maxAttempts = 10; // Límite razonable de intentos por día
+    let attempt = 0;
+    let lastNroMovimiento = '';
+    const seenIds = new Set<string>();
+
+    while (attempt < maxAttempts) {
+      try {
+        const response = await axios.post(
+          'https://bdvconciliacion.banvenez.com:443/apis/bdv/consulta/movimientos',
+          {
+            cuenta: '01020645640000997168',
+            fechaIni: fecha,
+            fechaFin: fecha,
+            tipoMoneda: 'VES',
+            nroMovimiento: lastNroMovimiento
+          },
+          {
+            headers: {
+              'x-api-key': process.env.BANVENEZ_API_KEY,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const movements = response.data?.movimientos || response.data?.data || response.data || [];
+        
+        if (!Array.isArray(movements) || movements.length === 0) {
+          break;
+        }
+
+        // Filtrar duplicados en esta página
+        const newMovements = movements.filter((mov: any) => {
+          const identifier = mov.nroMovimiento || mov.numeroMovimiento || mov.id || JSON.stringify(mov);
+          if (seenIds.has(identifier)) {
+            return false;
+          }
+          seenIds.add(identifier);
+          return true;
+        });
+
+        if (newMovements.length === 0) {
+          // No hay movimientos nuevos, probablemente ya obtuvimos todos
+          break;
+        }
+
+        allMovements.push(...newMovements);
+
+        // Si obtuvimos menos de 100 registros, probablemente ya obtuvimos todos
+        if (movements.length < 100) {
+          break;
+        }
+
+        // Intentar usar el último nroMovimiento como offset para la siguiente página
+        const lastMovement = movements[movements.length - 1];
+        const nextNroMovimiento = lastMovement?.nroMovimiento || lastMovement?.numeroMovimiento || lastMovement?.id;
+
+        // Si no hay nroMovimiento diferente o es el mismo que el anterior, salir
+        if (!nextNroMovimiento || nextNroMovimiento === lastNroMovimiento) {
+          break;
+        }
+
+        lastNroMovimiento = nextNroMovimiento;
+        attempt++;
+
+        // Pequeña pausa para no saturar la API
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
+      } catch (error) {
+        // Si es el primer intento y falla, lanzar el error
+        if (attempt === 0) {
+          throw error;
+        }
+        // Si falla en intentos posteriores, asumimos que ya obtuvimos todo lo posible
+        break;
+      }
+    }
+
+    return allMovements;
+  }
+
+  private getDateRangeFromStrings(fechaIni: string, fechaFin: string): string[] {
+    const fmt = (d: Date) => {
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    };
+
+    // Parsear fechas desde formato DD/MM/YYYY
+    const parseDate = (dateStr: string): Date => {
+      const [day, month, year] = dateStr.split('/').map(Number);
+      return new Date(year, month - 1, day);
+    };
+
+    const start = parseDate(fechaIni);
+    const end = parseDate(fechaFin);
+    const dates: string[] = [];
+
+    const current = new Date(start);
+    while (current <= end) {
+      dates.push(fmt(new Date(current)));
+      current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
+  }
+
+  private removeDuplicateMovements(movements: any[]): any[] {
+    const seen = new Set<string>();
+    return movements.filter((mov) => {
+      const identifier = mov.nroMovimiento || mov.numeroMovimiento || mov.id || JSON.stringify(mov);
+      if (seen.has(identifier)) {
+        return false;
+      }
+      seen.add(identifier);
+      return true;
+    });
   }
 
   async findOne(id: string) {
