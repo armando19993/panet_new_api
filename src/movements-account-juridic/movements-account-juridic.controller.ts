@@ -20,11 +20,8 @@ export class MovementsAccountJuridicController {
   /**
    * Obtiene todos los movimientos bancarios de una fecha específica o rango de fechas.
    * 
-   * El servicio realiza paginación automática para obtener TODOS los registros,
-   * no solo los primeros 100-101 que devuelve la API externa por defecto.
-   * 
    * @param query Parámetros de consulta:
-   * - specificDate: Fecha única en formato YYYY-MM-DD (ej: "2025-11-19")
+   * - date: Fecha única en formato YYYY-MM-DD (ej: "2025-11-19") - se usa la misma fecha para inicio y fin
    * - startDate: Fecha inicial en formato YYYY-MM-DD para rango
    * - endDate: Fecha final en formato YYYY-MM-DD para rango
    * - type: Filtrar por tipo de movimiento ('INGRESO' | 'EGRESO')
@@ -38,7 +35,7 @@ export class MovementsAccountJuridicController {
    * 
    * @example
    * // Consultar una fecha específica
-   * GET /movements-account-juridic?specificDate=2025-11-19
+   * GET /movements-account-juridic?date=2025-11-19
    * 
    * @example
    * // Consultar un rango de fechas
@@ -46,7 +43,7 @@ export class MovementsAccountJuridicController {
    * 
    * @example
    * // Consultar una fecha específica filtrando por tipo
-   * GET /movements-account-juridic?specificDate=2025-11-19&type=INGRESO
+   * GET /movements-account-juridic?date=2025-11-19&type=INGRESO
    * 
    * @example
    * // Consultar rango de fechas filtrando por tipo
@@ -56,7 +53,7 @@ export class MovementsAccountJuridicController {
   findAll(@Query() query: {
     startDate?: string;
     endDate?: string;
-    specificDate?: string;
+    date?: string;
     type?: 'INGRESO' | 'EGRESO';
   }) {
     return this.movementsAccountJuridicService.findAll(query);
