@@ -107,15 +107,23 @@ export class MovementsAccountJuridicService {
       }
 
       // Consulta principal a la API de Banvenez
+      const requestPayload = {
+        cuenta: '01020645640000997168',
+        fechaIni,
+        fechaFin,
+        tipoMoneda: 'VES',
+        nroMovimiento: ''
+      };
+
+      console.log('🔍 [MovementsAccountJuridic] Consultando API Banvenez:', {
+        fechaIni,
+        fechaFin,
+        payload: requestPayload
+      });
+
       const response = await axios.post(
         'https://bdvconciliacion.banvenez.com:443/apis/bdv/consulta/movimientos',
-        {
-          cuenta: '01020645640000997168',
-          fechaIni,
-          fechaFin,
-          tipoMoneda: 'VES',
-          nroMovimiento: ''
-        },
+        requestPayload,
         {
           headers: {
             'x-api-key': process.env.BANVENEZ_API_KEY,
@@ -124,15 +132,50 @@ export class MovementsAccountJuridicService {
         }
       );
 
-      const movements = response.data?.movimientos || response.data?.data || response.data || [];
-      const movementsArray = Array.isArray(movements) ? movements : [];
+      console.log('📥 [MovementsAccountJuridic] Respuesta de API:', {
+        status: response.status,
+        dataKeys: Object.keys(response.data || {}),
+        dataType: Array.isArray(response.data) ? 'array' : typeof response.data,
+        dataLength: Array.isArray(response.data) ? response.data.length : 'N/A',
+        hasMovimientos: !!response.data?.movimientos,
+        hasData: !!response.data?.data,
+        rawDataPreview: JSON.stringify(response.data).substring(0, 500)
+      });
+
+      // Intentar extraer los movimientos de diferentes estructuras posibles
+      let movements = [];
+      
+      if (Array.isArray(response.data)) {
+        movements = response.data;
+      } else if (response.data?.movimientos && Array.isArray(response.data.movimientos)) {
+        movements = response.data.movimientos;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        movements = response.data.data;
+      } else if (response.data?.resultado && Array.isArray(response.data.resultado)) {
+        movements = response.data.resultado;
+      } else if (response.data && typeof response.data === 'object') {
+        // Si la respuesta es un objeto, intentar buscar arrays dentro
+        const possibleArrays = Object.values(response.data).filter(Array.isArray);
+        if (possibleArrays.length > 0) {
+          movements = possibleArrays[0];
+        }
+      }
+
+      console.log('✅ [MovementsAccountJuridic] Movimientos extraídos:', {
+        count: movements.length,
+        firstItem: movements[0] || null
+      });
 
       return {
-        data: movementsArray,
-        total: movementsArray.length,
+        data: movements,
+        total: movements.length,
         fechaIni,
         fechaFin,
-        type: query?.type || null
+        type: query?.type || null,
+        debug: {
+          responseStructure: Object.keys(response.data || {}),
+          extractedCount: movements.length
+        }
       };
       
     } catch (error) {
