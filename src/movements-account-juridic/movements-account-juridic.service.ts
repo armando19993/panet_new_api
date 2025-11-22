@@ -127,18 +127,9 @@ export class MovementsAccountJuridicService {
       const movements = response.data?.movimientos || response.data?.data || response.data || [];
       const movementsArray = Array.isArray(movements) ? movements : [];
 
-      // Filtrar por tipo si se especifica
-      let filteredMovements = movementsArray;
-      if (query?.type) {
-        filteredMovements = movementsArray.filter((mov: any) => {
-          const tipo = mov.tipo?.toUpperCase() || mov.tipoMovimiento?.toUpperCase();
-          return tipo === query.type?.toUpperCase();
-        });
-      }
-
       return {
-        data: filteredMovements,
-        total: filteredMovements.length,
+        data: movementsArray,
+        total: movementsArray.length,
         fechaIni,
         fechaFin,
         type: query?.type || null

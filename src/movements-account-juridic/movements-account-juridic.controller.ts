@@ -24,7 +24,6 @@ export class MovementsAccountJuridicController {
    * - date: Fecha única en formato YYYY-MM-DD (ej: "2025-11-19") - se usa la misma fecha para inicio y fin
    * - startDate: Fecha inicial en formato YYYY-MM-DD para rango
    * - endDate: Fecha final en formato YYYY-MM-DD para rango
-   * - type: Filtrar por tipo de movimiento ('INGRESO' | 'EGRESO')
    * 
    * @returns Objeto con:
    * - data: Array de todos los movimientos obtenidos
@@ -43,18 +42,17 @@ export class MovementsAccountJuridicController {
    * 
    * @example
    * // Consultar una fecha específica filtrando por tipo
-   * GET /movements-account-juridic?date=2025-11-19&type=INGRESO
+   * GET /movements-account-juridic?date=2025-11-19
    * 
    * @example
    * // Consultar rango de fechas filtrando por tipo
-   * GET /movements-account-juridic?startDate=2025-11-15&endDate=2025-11-19&type=EGRESO
+   * GET /movements-account-juridic?startDate=2025-11-15&endDate=2025-11-19
    */
   @Get()
   findAll(@Query() query: {
     startDate?: string;
     endDate?: string;
     date?: string;
-    type?: 'INGRESO' | 'EGRESO';
   }) {
     return this.movementsAccountJuridicService.findAll(query);
   }
