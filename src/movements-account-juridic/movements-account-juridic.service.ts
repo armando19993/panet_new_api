@@ -145,7 +145,10 @@ export class MovementsAccountJuridicService {
       // Intentar extraer los movimientos de diferentes estructuras posibles
       let movements = [];
       
-      if (Array.isArray(response.data)) {
+      // La estructura de la API Banvenez es: { code, message, data: { totalOfMovements, movs: [...] } }
+      if (response.data?.data?.movs && Array.isArray(response.data.data.movs)) {
+        movements = response.data.data.movs;
+      } else if (Array.isArray(response.data)) {
         movements = response.data;
       } else if (response.data?.movimientos && Array.isArray(response.data.movimientos)) {
         movements = response.data.movimientos;
@@ -154,10 +157,27 @@ export class MovementsAccountJuridicService {
       } else if (response.data?.resultado && Array.isArray(response.data.resultado)) {
         movements = response.data.resultado;
       } else if (response.data && typeof response.data === 'object') {
-        // Si la respuesta es un objeto, intentar buscar arrays dentro
-        const possibleArrays = Object.values(response.data).filter(Array.isArray);
-        if (possibleArrays.length > 0) {
-          movements = possibleArrays[0];
+        // Si la respuesta es un objeto, intentar buscar arrays dentro recursivamente
+        const findArrayInObject = (obj: any): any[] | null => {
+          if (Array.isArray(obj)) {
+            return obj;
+          }
+          if (obj && typeof obj === 'object') {
+            for (const key in obj) {
+              if (Array.isArray(obj[key])) {
+                return obj[key];
+              }
+              const found = findArrayInObject(obj[key]);
+              if (found) {
+                return found;
+              }
+            }
+          }
+          return null;
+        };
+        const found = findArrayInObject(response.data);
+        if (found) {
+          movements = found;
         }
       }
 
