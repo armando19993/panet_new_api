@@ -352,9 +352,9 @@ export class TransactionService {
       if (duenos.length === 0) {
         try {
           const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
-          await this.sendWhatsAppMessage('584148383419', message);
+          await this.telegramService.sendMessage(7677852749, message);
         } catch (error) {
-          console.error('Error al enviar notificación de WhatsApp:', error);
+          console.error('Error al enviar notificación de Telegram:', error);
         }
       } else {
         const colaEspera = await this.prisma.colaEspera.create({
@@ -368,9 +368,11 @@ export class TransactionService {
 
         try {
           const message = `Tienes una operacion por despachar, por favor realizada en menos de 5 minutos. Departamento de Tecnologia! `
-          await this.sendWhatsAppMessage(randomUser.phone, message);
+          if (randomUser.telegram_chat_id) {
+            await this.telegramService.sendMessage(randomUser.telegram_chat_id, message);
+          }
         } catch (error) {
-          console.error('Error al enviar notificación de WhatsApp:', error);
+          console.error('Error al enviar notificación de Telegram:', error);
         }
 
         if (randomUser.expoPushToken) {
@@ -385,9 +387,11 @@ export class TransactionService {
 
           try {
             const message = `La transaccion N° ${transaction.publicId} esta pendiente de despacho! `
-            await this.sendWhatsAppMessage(randomUser.phone, message);
+            if (randomUser.telegram_chat_id) {
+              await this.telegramService.sendMessage(randomUser.telegram_chat_id, message);
+            }
           } catch (error) {
-            console.error('Error al enviar notificación de WhatsApp:', error);
+            console.error('Error al enviar notificación de Telegram:', error);
           }
         }
       }
