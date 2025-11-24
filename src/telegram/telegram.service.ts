@@ -23,8 +23,6 @@ export class TelegramService {
       return; // Ignoramos si no es texto (fotos, audios, etc.)
     }
 
-    console.log(message)
-
     const chatId = message.chat.id;
     const text = message.text;
 
