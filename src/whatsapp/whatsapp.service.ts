@@ -39,7 +39,7 @@ export class WhatsappService {
   async sendTextMessage(phone: string, message: string): Promise<boolean> {
     try {
       const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}`;
-      console.log(url)
+
       return await this.sendMessageSafely(url);
     } catch (error) {
       this.logger.error(`Error al preparar mensaje de texto: ${error.message || 'Error desconocido'}`, error?.stack);
@@ -58,7 +58,7 @@ export class WhatsappService {
   async sendImageMessage(phone: string, message: string, imageUrl: string): Promise<boolean> {
     try {
       const url = `https://api-whatsapp.paneteirl.store/send-message?number=${phone}&message=${encodeURIComponent(message)}&imageUrl=${imageUrl}`;
-      console.log(url)
+
       return await this.sendMessageSafely(url);
     } catch (error) {
       this.logger.error(`Error al preparar mensaje con imagen: ${error.message || 'Error desconocido'}`, error?.stack);
@@ -167,16 +167,7 @@ export class WhatsappService {
           linkPreview: options?.linkPreview !== undefined ? options.linkPreview : true,
           mentionsEveryOne: options?.mentionsEveryOne !== undefined ? options.mentionsEveryOne : true,
         };
-        console.log('📤 [WhatsApp] Intentando enviar MENSAJE CON IMAGEN:', {
-          tipo: 'MEDIA',
-          telefono: normalizedPhone,
-          telefonoOriginal: phone,
-          endpoint: apiUrl,
-          caption: text?.substring(0, 100) + (text?.length > 100 ? '...' : ''),
-          mediaUrl: mediaUrl,
-          fileName: payload.fileName,
-          delay: delay,
-        });
+
       } else {
         // Usar endpoint de texto para mensajes sin imagen
         apiUrl = this.apiTextUrl;
@@ -185,17 +176,10 @@ export class WhatsappService {
           text: text || '',
           delay: delay,
         };
-        console.log('📤 [WhatsApp] Intentando enviar MENSAJE DE TEXTO:', {
-          tipo: 'TEXT',
-          telefono: normalizedPhone,
-          telefonoOriginal: phone,
-          endpoint: apiUrl,
-          texto: text?.substring(0, 100) + (text?.length > 100 ? '...' : ''),
-          delay: delay,
-        });
+
       }
 
-      console.log('📤 [WhatsApp] Payload completo:', JSON.stringify(payload, null, 2));
+
 
       const response = await axios.post(apiUrl, payload, {
         headers: {
@@ -205,24 +189,12 @@ export class WhatsappService {
         timeout: 5000, // 5 segundos de timeout
       });
 
-      console.log('✅ [WhatsApp] Mensaje enviado EXITOSAMENTE:', {
-        telefono: normalizedPhone,
-        tipo: mediaUrl ? 'MEDIA' : 'TEXT',
-        status: response.status,
-        statusText: response.statusText,
-        data: JSON.stringify(response.data, null, 2),
-        headers: response.headers,
-      });
+
 
       return true;
     } catch (error) {
       // Si es un error de timeout, consideramos que se envió correctamente (o al menos no fallamos la operación)
       if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
-        console.warn('⚠️ [WhatsApp] Timeout al enviar mensaje (5s), pero marcando como éxito:', {
-          telefono: normalizedPhone,
-          tipo: mediaUrl ? 'MEDIA' : 'TEXT',
-          error: error.message
-        });
         return true;
       }
 
@@ -254,11 +226,9 @@ export class WhatsappService {
         errorDetails.message = error.message;
       }
 
-      console.error('❌ [WhatsApp] ERROR DETALLADO al enviar mensaje:');
-      console.error(JSON.stringify(errorDetails, null, 2));
 
       // También mostrar el payload que se intentó enviar
-      console.error('📤 [WhatsApp] Payload que causó el error:', JSON.stringify(payload, null, 2));
+
 
       this.logger.error(
         `Error al enviar mensaje con nueva API: ${error.message || 'Error desconocido'}`,
