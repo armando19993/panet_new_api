@@ -82,6 +82,7 @@ export class TelegramService {
     try {
       // Usamos firstValueFrom porque HttpService retorna Observables
       await firstValueFrom(this.httpService.post(url, payload));
+      this.logger.log(`Mensaje enviado al chat ${chatId}`);
     } catch (error) {
       this.logger.error(`Error enviando mensaje a Telegram: ${error.message}`);
     }
