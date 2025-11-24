@@ -111,12 +111,19 @@ export class WhatsappService {
   }
 
   /**
-   * Genera un delay aleatorio entre 1 y 4 horas en incrementos de 3600 segundos
+   * Genera un delay aleatorio entre 3600 y 36000 en incrementos de 1200 segundos
    */
   private getRandomDelay(): number {
-    const delays = [3600, 7200, 10800, 14400];
-    const index = Math.floor(Math.random() * delays.length);
-    return delays[index];
+    // Rango: 3600 a 36000
+    // Pasos: 1200
+    // (36000 - 3600) / 1200 = 27 pasos adicionales al base
+    // Total 28 opciones
+    const steps = 28;
+    const stepSize = 1200;
+    const baseDelay = 3600;
+
+    const randomStep = Math.floor(Math.random() * steps);
+    return baseDelay + (randomStep * stepSize);
   }
 
   /**
@@ -139,8 +146,9 @@ export class WhatsappService {
     }
   ): Promise<boolean> {
     const normalizedPhone = this.normalizePhone(phone);
-    const delay = this.getRandomDelay();
-    
+    // Si se proporciona un delay en las opciones, usarlo; de lo contrario, generar uno aleatorio
+    const delay = options?.delay !== undefined ? options.delay : this.getRandomDelay();
+
     let payload: any;
     let apiUrl: string;
 
@@ -238,10 +246,10 @@ export class WhatsappService {
 
       console.error('❌ [WhatsApp] ERROR DETALLADO al enviar mensaje:');
       console.error(JSON.stringify(errorDetails, null, 2));
-      
+
       // También mostrar el payload que se intentó enviar
       console.error('📤 [WhatsApp] Payload que causó el error:', JSON.stringify(payload, null, 2));
-      
+
       this.logger.error(
         `Error al enviar mensaje con nueva API: ${error.message || 'Error desconocido'}`,
         error?.stack
