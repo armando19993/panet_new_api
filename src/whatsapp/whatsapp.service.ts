@@ -202,7 +202,7 @@ export class WhatsappService {
           'Content-Type': 'application/json',
           'apikey': this.apiKey,
         },
-        timeout: 10000, // 10 segundos de timeout
+        timeout: 5000, // 5 segundos de timeout
       });
 
       console.log('✅ [WhatsApp] Mensaje enviado EXITOSAMENTE:', {
@@ -216,6 +216,16 @@ export class WhatsappService {
 
       return true;
     } catch (error) {
+      // Si es un error de timeout, consideramos que se envió correctamente (o al menos no fallamos la operación)
+      if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+        console.warn('⚠️ [WhatsApp] Timeout al enviar mensaje (5s), pero marcando como éxito:', {
+          telefono: normalizedPhone,
+          tipo: mediaUrl ? 'MEDIA' : 'TEXT',
+          error: error.message
+        });
+        return true;
+      }
+
       // Capturar todos los detalles posibles del error
       const errorDetails: any = {
         telefono: phone,
