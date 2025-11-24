@@ -8,12 +8,14 @@ import { MovementsAccountJuridicModule } from 'src/movements-account-juridic/mov
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { TelegramModule } from 'src/telegram/telegram.module';
 
 @Module({
   imports: [
     PrismaModule,
     WhatsappModule,
     MovementsAccountJuridicModule,
+    TelegramModule,
     MulterModule.register({
       storage: diskStorage({
         destination: "./uploads",

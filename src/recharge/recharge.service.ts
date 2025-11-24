@@ -215,8 +215,6 @@ export class RechargeService {
             }
           });
 
-          await this.sendWhatsAppNotification(data.wallet.user.phone, `El cliente, ${data.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `);
-
           return { data, message: "Recarga creada con exito!" };
         } catch (error) {
           console.error("Error al crear la recarga manual:", error.message);
@@ -428,10 +426,6 @@ export class RechargeService {
           await this.telegramService.sendMessage(Number(instrument.user.telegram_chat_id), message, fileUrl);
         }
 
-
-        const message2 = `*PANET APP:*\n\nHola, ${user.name}}, has creado la recarga:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\n *Comentario:* ${data.comentario}, la misma se encuentra en revision espera nuestra comunicacion. Cualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
-        await this.sendWhatsAppNotification(data.user.phone, message2, fileUrl);
-
         this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
         this.notification.sendPushNotification(data.user.expoPushToken, 'Nueva Recarga Pendiente', `Tienes una nueva recarga pendiente de aprobacion: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
       } catch (error) {
@@ -553,9 +547,6 @@ export class RechargeService {
         include: { TransactionTemporal: true },
       });
 
-      const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data?.comentario ? data.comentario : '*Sin Comentario*'} ha sido rechazada por el siguiente motivo *${updateRechargeDto.comentario}*\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
-
-      await this.sendWhatsAppNotification(data.user.phone, message);
       this.notification.sendPushNotification(
         data.user.expoPushToken,
         'Estado de Recarga Actualizado',
@@ -838,18 +829,6 @@ export class RechargeService {
                         });
                       }
 
-                      // Enviar mensaje de la rifa hasta el 13/11/2025
-                      try {
-                        const today = new Date();
-                        const raffleEndDate = new Date('2025-11-13T23:59:59');
-                        if (today <= raffleEndDate) {
-                          const raffleMessage = `🎁 ¡Resuelve tu Aguinaldo con la Rifa 1.0! 🎁\n\n\n\n¡Llegó tu oportunidad de terminar el año con dinero extra! 🤩\n\nNo te pierdas nuestra gran rifa, donde puedes ganar hasta 200 USD con solo un ticket.\n\n🗓 Fecha del Sorteo: Miércoles 19 de Noviembre del 2025\n\n🏆 Premios en Juego:\n\n🥇 200 USD (Premio Principal)\n\n🛒 50 USD (Para el Mayor Comprador)\n\n🍀 50 USD (2 premios de 25 USD c/u en sorteos adicionales para los compradores)\n\n¡Asegura tu número antes de que se agoten! 👇\n\n🔗 Contactate al: +584122362521\n\n¡Mucha suerte a todos! ✨ ¡La fortuna te espera!`;
-                          const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202%20(1).jpg';
-                          await this.sendWhatsAppNotification(recipient.phone, raffleMessage, raffleImageUrl);
-                        }
-                      } catch (error) {
-                        console.error('Error al enviar mensaje de la rifa:', error);
-                      }
                     } else {
                       console.warn('⚠️ [RechargeService] No se encontró destinatario para enviar comprobante:', {
                         transactionId: updatedTransaction.publicId,
@@ -954,8 +933,6 @@ export class RechargeService {
       console.log('No estamos actualizando esto correctamente');
     }
 
-    const message = `*PANET APP:*\n\nHola, ${data.user.name}, tu RECARGA:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n *Comentario:* ${data.comentario} ha sido APROBADA con exito por un monto de ${data.amount} ${data.wallet.country.currency}, ya el saldo se encuentra disponible para su uso.\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
-    await this.sendWhatsAppNotification(data.user.phone, message);
     return { data, message: 'Recarga Cancelada con exito' };
   }
 

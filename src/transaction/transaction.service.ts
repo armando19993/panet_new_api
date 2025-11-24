@@ -11,6 +11,7 @@ import { time } from 'console';
 import { generateTransactionPdf } from './pdf-generator';
 import { generateTransactionImage } from './image-generator';
 import * as fs from 'fs';
+import { TelegramService } from 'src/telegram/telegram.service';
 
 @Injectable()
 export class TransactionService {
@@ -19,7 +20,8 @@ export class TransactionService {
     private prisma: PrismaService,
     private notification: NotificationService,
     private whatsappService: WhatsappService,
-    private movementsAccountJuridicService: MovementsAccountJuridicService
+    private movementsAccountJuridicService: MovementsAccountJuridicService,
+    private telegramService: TelegramService,
   ) { }
 
   /**
@@ -53,7 +55,7 @@ export class TransactionService {
       return false;
     }
   }
-  
+
   private async sendWhatsAppNotification(phone: string, message: string, imageUrl?: string): Promise<boolean> {
     try {
       console.log('🔄 [RechargeService] Iniciando envío de WhatsApp:', {
@@ -62,15 +64,15 @@ export class TransactionService {
         mediaUrl: imageUrl,
         mensaje: message?.substring(0, 50) + (message?.length > 50 ? '...' : ''),
       });
-      
+
       const result = await this.whatsappService.sendMessageNewApi(phone, message, imageUrl);
-      
+
       console.log('📊 [RechargeService] Resultado del envío:', {
         telefono: phone,
         exito: result,
         tieneImagen: !!imageUrl,
       });
-      
+
       return result;
     } catch (error) {
       console.error('❌ [RechargeService] Error al enviar notificación de WhatsApp:', {
@@ -88,20 +90,19 @@ export class TransactionService {
    */
   private async notifyLowBalance(availableBalance: number): Promise<void> {
     try {
-      const adminPhone = '584148383419'; // Número de administrador
+      const adminChatId = 7677852749; // ID de chat de Telegram para alertas
 
       if (availableBalance < 10000) {
         const message = `⚠️ ALERTA CRÍTICA DE SALDO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 10,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nPor favor, recargar la cuenta inmediatamente.`;
-        await this.sendWhatsAppMessage(adminPhone, message);
+        await this.telegramService.sendMessage(adminChatId, message);
       } else if (availableBalance < 100000) {
         const message = `⚠️ ALERTA DE SALDO BAJO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 100,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nSe recomienda recargar la cuenta pronto.`;
-        await this.sendWhatsAppMessage(adminPhone, message);
+        await this.telegramService.sendMessage(adminChatId, message);
       }
     } catch (error) {
       console.error('Error al enviar notificación de saldo bajo:', error);
     }
   }
-
   private transactionDetailInclude() {
     return {
       creador: {
@@ -607,20 +608,20 @@ export class TransactionService {
               } else {
                 const completionMessage = `🎉 ¡Transacción Completada Exitosamente! 🎉
 
-Hola ${recipient.name || 'Estimado cliente'},
+                  Hola ${recipient.name || 'Estimado cliente'},
 
-Te informamos que tu transacción ha sido procesada y completada correctamente.
+                  Te informamos que tu transacción ha sido procesada y completada correctamente.
 
-📋 *Detalles de tu operación:*
-• Número de transacción: TRX-${updatedTransaction.publicId}
-• Estado: ✅ Completada
+                  📋 *Detalles de tu operación:*
+                  • Número de transacción: TRX-${updatedTransaction.publicId}
+                  • Estado: ✅ Completada
 
-Adjunto encontrarás el comprobante de tu operación.
+                  Adjunto encontrarás el comprobante de tu operación.
 
-Gracias por confiar en *Panet Remesas* 💙
+                  Gracias por confiar en *Panet Remesas* 💙
 
-Si tienes alguna consulta, no dudes en contactarnos.
-Equipo Panet Remesas`;
+                  Si tienes alguna consulta, no dudes en contactarnos.
+                  Equipo Panet Remesas`;
 
                 console.log('📤 [TransactionService] Preparando envío de comprobante de pago móvil:', {
                   transactionId: updatedTransaction.publicId,
@@ -658,20 +659,7 @@ Equipo Panet Remesas`;
                 }
               }
 
-              // Enviar mensaje de la rifa hasta el 13/11/2025
-              if (recipient && recipient.phone) {
-                try {
-                  const today = new Date();
-                  const raffleEndDate = new Date('2025-11-13T23:59:59');
-                  if (today <= raffleEndDate) {
-                   const raffleMessage = `🎁 ¡Resuelve tu Aguinaldo con la Rifa 1.0! 🎁\n\n\n\n¡Llegó tu oportunidad de terminar el año con dinero extra! 🤩\n\nNo te pierdas nuestra gran rifa, donde puedes ganar hasta 200 USD con solo un ticket.\n\n🗓 Fecha del Sorteo: Miércoles 19 de Noviembre del 2025\n\n🏆 Premios en Juego:\n\n🥇 200 USD (Premio Principal)\n\n🛒 50 USD (Para el Mayor Comprador)\n\n🍀 50 USD (2 premios de 25 USD c/u en sorteos adicionales para los compradores)\n\n¡Asegura tu número antes de que se agoten! 👇\n\n🔗 Contactate al: +584122362521\n\n¡Mucha suerte a todos! ✨ ¡La fortuna te espera!`;
-                    const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202%20(1).jpg';
-                    await this.sendWhatsAppNotification(recipient.phone, raffleMessage, raffleImageUrl);
-                  }
-                } catch (error) {
-                  console.error('Error al enviar mensaje de la rifa:', error);
-                }
-              }
+
             } else {
               console.warn('⚠️ [TransactionService] No se encontró destinatario para enviar comprobante:', {
                 transactionId: updatedTransaction.publicId,
@@ -1466,23 +1454,6 @@ Equipo Panet Remesas`;
                       });
                     }
 
-                    // Enviar mensaje de la rifa hasta el 13/11/2025
-                    try {
-                      const today = new Date();
-                      const raffleEndDate = new Date('2025-11-13T23:59:59');
-                      if (today <= raffleEndDate) {
-                        const raffleMessage = `✨ ¡La Suerte te Sonríe con Gana con Panet! ✨\n\nQueremos que sientas la emoción de ganar.\n\nParticipa en nuestras rifas exclusivas o juega a tus animalitos favoritos 🐯🍀 de forma sencilla, segura y muy divertida. ¡Tienes la oportunidad de ganar grandes premios todos los días!\n\n📲 Para unirte a la emoción o comprar tus jugadas, contáctanos: +51 921 276 727.\n\n💬 Estamos listos para atenderte con gusto. ¡Mucha suerte!`;
-                        const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202.jpg';
-                        await this.sendWhatsAppMessage(recipient.phone, raffleMessage, raffleImageUrl);
-                        const raffleUrl2 = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/Lista%20de%20paises%20cuadro.jpg';
-                        await this.sendWhatsAppMessage(recipient.phone, "", raffleUrl2);
-                      }
-                    } catch (error) {
-                      console.error('❌ [TransactionService] Error al enviar mensaje de la rifa (sendDirectPagoMovil):', {
-                        transactionId: transaction.publicId,
-                        error: error instanceof Error ? error.message : 'Error desconocido',
-                      });
-                    }
                   } catch (sendError) {
                     console.error('❌ [TransactionService] EXCEPCIÓN al enviar comprobante (sendDirectPagoMovil):', {
                       transactionId: transaction.publicId,
