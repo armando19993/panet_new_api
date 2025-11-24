@@ -9,6 +9,7 @@ import { NotificationService } from "src/notification/notification.service";
 import { FlowApiModule } from "src/flow-api/flow-api.module";
 import { WhatsappModule } from "src/whatsapp/whatsapp.module";
 import { MovementsAccountJuridicModule } from "src/movements-account-juridic/movements-account-juridic.module";
+import { TelegramModule } from "src/telegram/telegram.module";
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { MovementsAccountJuridicModule } from "src/movements-account-juridic/mov
     PrismaModule,
     WhatsappModule,
     MovementsAccountJuridicModule,
+    TelegramModule,
     MulterModule.register({
       storage: diskStorage({
         destination: "./uploads", // Ruta donde se guardarán los archivos
@@ -33,4 +35,4 @@ import { MovementsAccountJuridicModule } from "src/movements-account-juridic/mov
   controllers: [RechargeController],
   providers: [RechargeService, NotificationService],
 })
-export class RechargeModule {}
+export class RechargeModule { }

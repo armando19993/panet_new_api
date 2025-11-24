@@ -12,6 +12,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as archiver from "archiver";
 import { ExportRechargeFilterDto } from "./dto/export-recharge.dto";
+import { TelegramService } from "src/telegram/telegram.service";
 
 @Injectable()
 export class RechargeService {
@@ -20,7 +21,8 @@ export class RechargeService {
     private notification: NotificationService,
     private flowApiService: FlowApiService,
     private whatsappService: WhatsappService,
-    private movementsAccountJuridicService: MovementsAccountJuridicService
+    private movementsAccountJuridicService: MovementsAccountJuridicService,
+    private readonly telegramService: TelegramService
   ) { }
 
   // Método utilitario para enviar notificaciones de WhatsApp de manera segura usando la nueva API
@@ -32,15 +34,15 @@ export class RechargeService {
         mediaUrl: imageUrl,
         mensaje: message?.substring(0, 50) + (message?.length > 50 ? '...' : ''),
       });
-      
+
       const result = await this.whatsappService.sendMessageNewApi(phone, message, imageUrl);
-      
+
       console.log('📊 [RechargeService] Resultado del envío:', {
         telefono: phone,
         exito: result,
         tieneImagen: !!imageUrl,
       });
-      
+
       return result;
     } catch (error) {
       console.error('❌ [RechargeService] Error al enviar notificación de WhatsApp:', {
@@ -58,14 +60,14 @@ export class RechargeService {
    */
   private async notifyLowBalance(availableBalance: number): Promise<void> {
     try {
-      const adminPhone = '584148383419'; // Número de administrador
-      
+      const adminChatId = 7677852749; // ID de chat de Telegram para alertas
+
       if (availableBalance < 10000) {
         const message = `⚠️ ALERTA CRÍTICA DE SALDO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 10,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nPor favor, recargar la cuenta inmediatamente.`;
-        await this.sendWhatsAppNotification(adminPhone, message);
+        await this.telegramService.sendMessage(adminChatId, message);
       } else if (availableBalance < 100000) {
         const message = `⚠️ ALERTA DE SALDO BAJO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 100,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nSe recomienda recargar la cuenta pronto.`;
-        await this.sendWhatsAppNotification(adminPhone, message);
+        await this.telegramService.sendMessage(adminChatId, message);
       }
     } catch (error) {
       console.error('Error al enviar notificación de saldo bajo:', error);
@@ -138,8 +140,6 @@ export class RechargeService {
           `Recarga Creada: REC-2025-${rechargeAutomatic.publicId}`,
           `Estimado cliente tu recarga REC-2025-${rechargeAutomatic.publicId}, ha sido creada con exito, procede por favor a realizar la misma, te notificaremos cuando tu saldo este disponible.`
         )
-
-        await this.sendWhatsAppNotification('573207510120', `El cliente, ${rechargeAutomatic.wallet.user.name} ha generado una recarga por flow, hazle seguimiento! `);
 
         return { data, rechargeAutomatic, url: `${data.url}?token=${data.token}` }
       } catch (error) {
@@ -327,7 +327,9 @@ export class RechargeService {
 
     const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-    await this.sendWhatsAppNotification(instrument.user.phone, message, fileUrl);
+    if (instrument.user.telegram_chat_id) {
+      await this.telegramService.sendMessage(Number(instrument.user.telegram_chat_id), message, fileUrl);
+    }
 
     this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
     return {
@@ -421,12 +423,14 @@ export class RechargeService {
         });
 
         const message = `*PANET APP:*\n\nHola, ${instrument.user.name}, tienes una RECARGA por aprobar:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\nCualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
-        const message2 = `*PANET APP:*\n\nHola, ${user.name}}, has creado la recarga:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\n *Comentario:* ${data.comentario}, la misma se encuentra en revision espera nuestra comunicacion. Cualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
 
-        await this.sendWhatsAppNotification(instrument.user.phone, message, fileUrl);
-        console.log("se eejcuto 1")
+        if (instrument.user.telegram_chat_id) {
+          await this.telegramService.sendMessage(Number(instrument.user.telegram_chat_id), message, fileUrl);
+        }
+
+
+        const message2 = `*PANET APP:*\n\nHola, ${user.name}}, has creado la recarga:\n\n*Recarga ID:* REC-2025-${data.publicId}\n*Case Id:* ${data.id}\n\n *Comentario:* ${data.comentario}, la misma se encuentra en revision espera nuestra comunicacion. Cualquier consulta o problema con nuestros sistemas o apps móviles, escribe al número de soporte: +51 929 990 656.`;
         await this.sendWhatsAppNotification(data.user.phone, message2, fileUrl);
-        console.log("se eejcuto 2")
 
         this.notification.sendPushNotification(instrument.user.expoPushToken, 'Nueva Recarga Por Aprobar', `Tienes una nueva recarga por aprobar: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
         this.notification.sendPushNotification(data.user.expoPushToken, 'Nueva Recarga Pendiente', `Tienes una nueva recarga pendiente de aprobacion: REC-2025-${data.publicId}`, { screen: "ReciboRecarga", params: { rechargeId: data.id } })
@@ -657,7 +661,7 @@ export class RechargeService {
 
       let colaEspera = null;
       let randomUser = null;
-      if (trans.instrument.typeInstrument !== 'PAGO_MOVIL' ) {
+      if (trans.instrument.typeInstrument !== 'PAGO_MOVIL') {
         const roles = ['DESPACHADOR'];
         const duenos = await this.prisma.user.findMany({
           where: {
@@ -676,7 +680,7 @@ export class RechargeService {
 
         if (duenos.length === 0) {
           const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `;
-          await this.sendWhatsAppNotification('573207510120', message);
+          await this.telegramService.sendMessage(7677852749, message);
         } else {
           randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
           colaEspera = await this.prisma.colaEspera.create({
@@ -690,16 +694,16 @@ export class RechargeService {
         try {
           const balanceInfo = await this.movementsAccountJuridicService.getAccountBalance();
           const availableBalance = parseFloat(balanceInfo.availableBalance.toString());
-          
+
           // Enviar notificación si el saldo es bajo
           await this.notifyLowBalance(availableBalance);
-          
+
           if (availableBalance <= 10000) {
             await this.prisma.transaction.update({
               where: { id: trans.id },
               data: {
                 status: 'ERROR',
-                errorResponse: { 
+                errorResponse: {
                   message: 'Saldo insuficiente en cuenta bancaria',
                   availableBalance: balanceInfo.availableBalance,
                   requiredMinimum: 10000
@@ -839,7 +843,7 @@ export class RechargeService {
                         const today = new Date();
                         const raffleEndDate = new Date('2025-11-13T23:59:59');
                         if (today <= raffleEndDate) {
-                         const raffleMessage = `🎁 ¡Resuelve tu Aguinaldo con la Rifa 1.0! 🎁\n\n\n\n¡Llegó tu oportunidad de terminar el año con dinero extra! 🤩\n\nNo te pierdas nuestra gran rifa, donde puedes ganar hasta 200 USD con solo un ticket.\n\n🗓 Fecha del Sorteo: Miércoles 19 de Noviembre del 2025\n\n🏆 Premios en Juego:\n\n🥇 200 USD (Premio Principal)\n\n🛒 50 USD (Para el Mayor Comprador)\n\n🍀 50 USD (2 premios de 25 USD c/u en sorteos adicionales para los compradores)\n\n¡Asegura tu número antes de que se agoten! 👇\n\n🔗 Contactate al: +584122362521\n\n¡Mucha suerte a todos! ✨ ¡La fortuna te espera!`;
+                          const raffleMessage = `🎁 ¡Resuelve tu Aguinaldo con la Rifa 1.0! 🎁\n\n\n\n¡Llegó tu oportunidad de terminar el año con dinero extra! 🤩\n\nNo te pierdas nuestra gran rifa, donde puedes ganar hasta 200 USD con solo un ticket.\n\n🗓 Fecha del Sorteo: Miércoles 19 de Noviembre del 2025\n\n🏆 Premios en Juego:\n\n🥇 200 USD (Premio Principal)\n\n🛒 50 USD (Para el Mayor Comprador)\n\n🍀 50 USD (2 premios de 25 USD c/u en sorteos adicionales para los compradores)\n\n¡Asegura tu número antes de que se agoten! 👇\n\n🔗 Contactate al: +584122362521\n\n¡Mucha suerte a todos! ✨ ¡La fortuna te espera!`;
                           const raffleImageUrl = 'https://ujrwnbyfkcwuqihbaydw.supabase.co/storage/v1/object/public/images/RIFA%20PREMIO%20MAYOR%202%20(1).jpg';
                           await this.sendWhatsAppNotification(recipient.phone, raffleMessage, raffleImageUrl);
                         }
@@ -876,7 +880,7 @@ export class RechargeService {
             where: { id: trans.id },
             data: {
               status: 'ERROR',
-              errorResponse: { 
+              errorResponse: {
                 message: 'Error al consultar saldo de cuenta bancaria',
                 error: balanceError instanceof Error ? balanceError.message : 'Error desconocido'
               }
@@ -1021,7 +1025,7 @@ export class RechargeService {
           },
         });
 
-        await this.sendWhatsAppNotification('573207510120', `El cliente, ${recharge.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `);
+        await this.telegramService.sendMessage(7677852749, `El cliente, ${recharge.wallet.user.name} ha generado una recarga por floid, hazle seguimiento! `);
 
         return updatedRecharge;
       } else {
@@ -1279,33 +1283,33 @@ export class RechargeService {
       if (!value) {
         throw new BadRequestException('Fecha inválida');
       }
-      
+
       // Parsear fecha en formato YYYY-MM-DD como fecha local
       const parts = value.split('-');
       if (parts.length !== 3) {
         throw new BadRequestException(`Formato de fecha inválido: ${value}. Use YYYY-MM-DD`);
       }
-      
+
       const year = parseInt(parts[0], 10);
       const month = parseInt(parts[1], 10) - 1; // Los meses en JS son 0-indexed
       const day = parseInt(parts[2], 10);
-      
+
       if (isNaN(year) || isNaN(month) || isNaN(day)) {
         throw new BadRequestException(`Fecha inválida: ${value}`);
       }
-      
+
       const date = new Date(year, month, day);
-      
+
       if (isNaN(date.getTime())) {
         throw new BadRequestException(`Fecha inválida: ${value}`);
       }
-      
+
       if (endOfDay) {
         date.setHours(23, 59, 59, 999);
       } else {
         date.setHours(0, 0, 0, 0);
       }
-      
+
       return date;
     };
 

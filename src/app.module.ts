@@ -23,6 +23,7 @@ import { TransactionsPanetPayModule } from './transactions-panet-pay/transaction
 import { RequestPaymentsPanetPayModule } from './request-payments-panet-pay/request-payments-panet-pay.module';
 import { ReportsModule } from './reports/reports.module';
 import { MovementsAccountJuridicModule } from './movements-account-juridic/movements-account-juridic.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { MovementsAccountJuridicModule } from './movements-account-juridic/movem
     RequestPaymentsPanetPayModule,
     ReportsModule,
     MovementsAccountJuridicModule,
+    TelegramModule,
   ],
   controllers: [],
   providers: [NotificationService],
