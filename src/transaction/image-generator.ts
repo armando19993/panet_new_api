@@ -90,16 +90,14 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('CONECTA', pageWidth / 2, currentY, { align: 'center' });
+  doc.text('CONECTA CONSULTING C.A.', pageWidth / 2, currentY, { align: 'center' });
   currentY += 6;
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('RIF: J-12345678-9', pageWidth / 2, currentY, { align: 'center' });
+  doc.text('RIF: J-50748041-0', pageWidth / 2, currentY, { align: 'center' });
   currentY += 4;
-  doc.text('Calle Falsa 123, Caracas – soporte@conecta.com', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 4;
-  doc.text('+58 4XX-XXXXXXX', pageWidth / 2, currentY, { align: 'center' });
+  doc.text('+58 0414-8383419', pageWidth / 2, currentY, { align: 'center' });
   currentY += 10;
 
   doc.setFont('helvetica', 'bold');
@@ -198,7 +196,7 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
     reference: transaction.nro_referencia || 'N/A',
     validationCode,
   });
-  
+
   // Generar QR code con manejo de errores
   let qrDataUri: string;
   try {
@@ -216,7 +214,7 @@ export const generateTransactionImage = async (transaction: any, logoDataUri?: s
 
     // Intentar diferentes formas de acceder al método
     const qrToDataURL = (QRCode as any).toDataURL || (QRCode as any).default?.toDataURL;
-    
+
     if (!qrToDataURL || typeof qrToDataURL !== 'function') {
       throw new Error('QRCode.toDataURL no está disponible. Tipo: ' + typeof QRCode);
     }
