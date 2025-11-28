@@ -185,7 +185,7 @@ export class TransactionService {
     const walletBalance = parseFloat(wallet.balance.toString());
     const transactionAmount = parseFloat(createTransactionDto.amount.toString());
 
-    if (walletBalance < transactionAmount) {
+    if (walletBalance < transactionAmount && !createTransactionDto.typeTransaction) {
       throw new BadRequestException("No cuentas con saldo para realizar esta transacción");
     }
 
@@ -213,7 +213,9 @@ export class TransactionService {
     }
 
     // Restar el saldo del wallet de quien crea
-    await this.prisma.wallet.update({ where: { id: wallet.id }, data: { balance: { decrement: createTransactionDto.amount } } })
+    if (!createTransactionDto.typeTransaction) {
+      await this.prisma.wallet.update({ where: { id: wallet.id }, data: { balance: { decrement: createTransactionDto.amount } } })
+    }
 
     // Cálculos principales
     const rateAmount = parseFloat(rate.amount.toString());
@@ -441,16 +443,20 @@ export class TransactionService {
       })
     }
 
-    await this.prisma.walletTransactions.create({
-      data: {
-        amount: createTransactionDto.amount,
-        amount_old: wallet.balance,
-        amount_new: parseFloat(createTransactionDto.amount.toString()) - parseFloat(wallet.balance.toString()),
-        description: `Egreso por transaccion ${transaction.id}`,
-        type: 'RETIRO',
-        walletId: wallet.id,
-      }
-    })
+    if (!createTransactionDto.typeTransaction) {
+      await this.prisma.walletTransactions.create({
+        data: {
+          amount: createTransactionDto.amount,
+          amount_old: wallet.balance,
+          amount_new: parseFloat(createTransactionDto.amount.toString()) - parseFloat(wallet.balance.toString()),
+          description: `Egreso por transaccion ${transaction.id}`,
+          type: 'RETIRO',
+          walletId: wallet.id,
+        }
+      })
+    }
+
+
 
     if (transaction.instrument.typeInstrument === 'PAGO_MOVIL' && transaction.destino.name === 'VENEZUELA') {
       // Validar balance disponible antes de procesar el pago móvil

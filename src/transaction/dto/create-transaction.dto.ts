@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, IsUUID } from "class-validator";
+import { IsBoolean, IsIn, IsNumber, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CreateTransactionDto {
     @IsUUID()
@@ -25,4 +25,9 @@ export class CreateTransactionDto {
 
     @IsNumber()
     amount: number
+
+    @IsOptional()
+    @IsString()
+    @IsIn(['YAPE', 'PLIN'])
+    typeTransaction?: string
 }
