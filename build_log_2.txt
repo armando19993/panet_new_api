@@ -1,0 +1,7 @@
+
+> api-clientes@0.0.1 build
+> nest build
+
+
+[48;2;210;0;75m[1m[38;2;0;0;0m Error [39m[22m[49m EPERM: operation not permitted, rmdir 'C:\Users\arman\OneDrive\Documents\Proyectos\Panet\panet_new_api\dist\flow-api'
+
