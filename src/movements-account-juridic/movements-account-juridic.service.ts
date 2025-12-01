@@ -1,12 +1,16 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.servise';
+import { TelegramService } from 'src/telegram/telegram.service';
 import { CreateMovementsAccountJuridicDto } from './dto/create-movements-account-juridic.dto';
 import { UpdateMovementsAccountJuridicDto } from './dto/update-movements-account-juridic.dto';
 import axios from 'axios';
 
 @Injectable()
 export class MovementsAccountJuridicService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private readonly telegramService: TelegramService
+  ) { }
 
   async create(createMovementsAccountJuridicDto: CreateMovementsAccountJuridicDto) {
     // Get the last movement record to calculate the new amount_account
@@ -40,7 +44,7 @@ export class MovementsAccountJuridicService {
     endDate?: string;
     date?: string;
     type?: 'INGRESO' | 'EGRESO';
-  }) {
+  }, user?: any) {
     try {
       const fmt = (d: Date) => {
         const dd = String(d.getDate()).padStart(2, '0');
@@ -185,6 +189,15 @@ export class MovementsAccountJuridicService {
         count: movements.length,
         firstItem: movements[0] || null
       });
+
+      // Enviar notificación a Telegram
+      const message = `
+<b>🔔 Consulta de Movimientos Jurídicos</b>
+<b>Usuario:</b> ${user.name} (${user.user})
+<b>Total extraídos:</b> ${movements.length}
+<b>Fecha:</b> ${new Date().toLocaleString()}
+      `;
+      await this.telegramService.sendMessage(5720214404, message);
 
       return {
         data: movements,

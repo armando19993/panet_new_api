@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
 import { MovementsAccountJuridicService } from './movements-account-juridic.service';
 import { CreateMovementsAccountJuridicDto } from './dto/create-movements-account-juridic.dto';
 import { UpdateMovementsAccountJuridicDto } from './dto/update-movements-account-juridic.dto';
+import { AuthGuard } from 'src/auth/auth.guard';
 
 @Controller('movements-account-juridic')
+@UseGuards(AuthGuard)
 export class MovementsAccountJuridicController {
-  constructor(private readonly movementsAccountJuridicService: MovementsAccountJuridicService) {}
+  constructor(private readonly movementsAccountJuridicService: MovementsAccountJuridicService) { }
 
   @Post()
   create(@Body() createMovementsAccountJuridicDto: CreateMovementsAccountJuridicDto) {
@@ -53,8 +55,8 @@ export class MovementsAccountJuridicController {
     startDate?: string;
     endDate?: string;
     date?: string;
-  }) {
-    return this.movementsAccountJuridicService.findAll(query);
+  }, @Request() req) {
+    return this.movementsAccountJuridicService.findAll(query, req.user);
   }
 
   @Get(':id')
