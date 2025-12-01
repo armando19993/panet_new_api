@@ -9,24 +9,54 @@ export class RoleService {
   constructor(private prisma: PrismaService) { }
 
   async create(createRoleDto: CreateRoleDto) {
-    return 'This action adds a new role';
+    const { permissions, ...roleData } = createRoleDto;
+    const data = await this.prisma.role.create({
+      data: {
+        ...roleData,
+        permissions: {
+          connect: permissions?.map((id) => ({ id })) || [],
+        },
+      },
+      include: { permissions: true },
+    });
+    return { data, message: 'Rol creado con exito' };
   }
 
   async findAll() {
-    const data = await this.prisma.role.findMany({ include: { permissions: true } })
+    const data = await this.prisma.role.findMany({ include: { permissions: true } });
 
-    return { data, message: 'Roles Obtenidos con exito' }
+    return { data, message: 'Roles Obtenidos con exito' };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} role`;
+  async findOne(id: number) {
+    const data = await this.prisma.role.findUnique({
+      where: { publicId: id },
+      include: { permissions: true },
+    });
+    return { data, message: 'Rol obtenido con exito' };
   }
 
-  update(id: number, updateRoleDto: UpdateRoleDto) {
-    return `This action updates a #${id} role`;
+  async update(id: number, updateRoleDto: UpdateRoleDto) {
+    const { permissions, ...roleData } = updateRoleDto;
+    const data = await this.prisma.role.update({
+      where: { publicId: id },
+      data: {
+        ...roleData,
+        permissions: permissions
+          ? {
+            set: permissions.map((id) => ({ id })),
+          }
+          : undefined,
+      },
+      include: { permissions: true },
+    });
+    return { data, message: 'Rol actualizado con exito' };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} role`;
+  async remove(id: number) {
+    const data = await this.prisma.role.delete({
+      where: { publicId: id },
+    });
+    return { data, message: 'Rol eliminado con exito' };
   }
 }
