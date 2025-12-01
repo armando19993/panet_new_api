@@ -6,7 +6,7 @@ import axios from 'axios';
 
 @Injectable()
 export class MovementsAccountJuridicService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createMovementsAccountJuridicDto: CreateMovementsAccountJuridicDto) {
     // Get the last movement record to calculate the new amount_account
@@ -54,20 +54,20 @@ export class MovementsAccountJuridicService {
         if (!value) {
           throw new HttpException('Fecha inválida', HttpStatus.BAD_REQUEST);
         }
-        
+
         const parts = value.split('-');
         if (parts.length !== 3) {
           throw new HttpException(`Formato de fecha inválido: ${value}. Use YYYY-MM-DD`, HttpStatus.BAD_REQUEST);
         }
-        
+
         const year = parseInt(parts[0], 10);
         const month = parseInt(parts[1], 10) - 1;
         const day = parseInt(parts[2], 10);
-        
+
         if (isNaN(year) || isNaN(month) || isNaN(day)) {
           throw new HttpException(`Fecha inválida: ${value}`, HttpStatus.BAD_REQUEST);
         }
-        
+
         return new Date(year, month, day);
       };
 
@@ -144,7 +144,7 @@ export class MovementsAccountJuridicService {
 
       // Intentar extraer los movimientos de diferentes estructuras posibles
       let movements = [];
-      
+
       // La estructura de la API Banvenez es: { code, message, data: { totalOfMovements, movs: [...] } }
       if (response.data?.data?.movs && Array.isArray(response.data.data.movs)) {
         movements = response.data.data.movs;
@@ -186,6 +186,8 @@ export class MovementsAccountJuridicService {
         firstItem: movements[0] || null
       });
 
+      return
+
       return {
         data: movements,
         total: movements.length,
@@ -197,7 +199,7 @@ export class MovementsAccountJuridicService {
           extractedCount: movements.length
         }
       };
-      
+
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
