@@ -28,9 +28,9 @@ export class RoleService {
     return { data, message: 'Roles Obtenidos con exito' };
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const data = await this.prisma.role.findUnique({
-      where: { publicId: id },
+      where: { id: id },
       include: { permissions: true },
     });
     return { data, message: 'Rol obtenido con exito' };
