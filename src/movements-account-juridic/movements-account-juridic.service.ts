@@ -186,8 +186,6 @@ export class MovementsAccountJuridicService {
         firstItem: movements[0] || null
       });
 
-      return
-
       return {
         data: movements,
         total: movements.length,
