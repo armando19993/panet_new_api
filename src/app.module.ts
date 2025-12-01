@@ -24,27 +24,29 @@ import { RequestPaymentsPanetPayModule } from './request-payments-panet-pay/requ
 import { ReportsModule } from './reports/reports.module';
 import { MovementsAccountJuridicModule } from './movements-account-juridic/movements-account-juridic.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { ModuleModule } from "./module/module.module";
+import { PermissionsModule } from "./permissions/permissions.module";
 
 @Module({
   imports: [
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads', 
+      serveRoot: '/uploads',
     }),
-    AuthModule, 
-    UserModule, 
-    WalletModule, 
-    WalletTransactionsModule, 
-    RechargeModule, 
-    CountryModule, 
-    InstrumentsClientModule, 
-    ClientModule, 
-    RateModule, 
-    BankModule, 
-    AccountTypeModule, 
-    RoleModule, 
-    UserRoleModule, 
-    ColaEsperaModule, 
+    AuthModule,
+    UserModule,
+    WalletModule,
+    WalletTransactionsModule,
+    RechargeModule,
+    CountryModule,
+    InstrumentsClientModule,
+    ClientModule,
+    RateModule,
+    BankModule,
+    AccountTypeModule,
+    RoleModule,
+    UserRoleModule,
+    ColaEsperaModule,
     TransactionModule,
     FlowApiModule,
     WalletRequestModule,
@@ -53,8 +55,11 @@ import { TelegramModule } from './telegram/telegram.module';
     ReportsModule,
     MovementsAccountJuridicModule,
     TelegramModule,
+    RoleModule,
+    ModuleModule,
+    PermissionsModule,
   ],
   controllers: [],
   providers: [NotificationService],
 })
-export class AppModule {}
+export class AppModule { }
