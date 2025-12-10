@@ -314,6 +314,8 @@ export class TransactionService {
     let randomUser: any = null;
 
     if ((transaction.instrument.typeInstrument !== 'PAGO_MOVIL' && transaction.destino.name === 'VENEZUELA') || transaction.destino.name !== 'VENEZUELA') {
+      console.log('transaction.destino.name: ' + transaction.destino.name)
+      console.log("esta entrando aqui")
       const dispatchers = [
         { country: 'PERU', id: '11062013-713a-4621-b27b-8c74ba1e88a0' },
         { country: 'USDT', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
