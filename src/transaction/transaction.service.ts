@@ -772,7 +772,8 @@ export class TransactionService {
       },
       orderBy: {
         publicId: 'desc'
-      }
+      },
+      take: 400
     });
 
     return { data, message: 'Transacciones Obtenidas con éxito' };

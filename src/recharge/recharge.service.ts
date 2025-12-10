@@ -867,6 +867,83 @@ export class RechargeService {
           });
         }
       }
+
+      if ((trans.instrument.typeInstrument !== 'PAGO_MOVIL' && trans.destino.name === 'VENEZUELA') || trans.destino.name !== 'VENEZUELA') {
+        console.log('transaction.destino.name: ' + trans.destino.name)
+        console.log("esta entrando aqui")
+        const dispatchers = [
+          { country: 'PERU', id: '11062013-713a-4621-b27b-8c74ba1e88a0' },
+          { country: 'USDT', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+          { country: 'COLOMBIA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+          { country: 'ESTADOS UNIDOS', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+          { country: 'REPUBLICA DOMINICANA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+          { country: 'EUROPA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+          { country: 'ARGENTINA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+          { country: 'CHILE', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+          { country: 'ECUADOR', id: 'aa23a5a6-b37c-4e1e-bd3e-4c2eda295df1' },
+          { country: 'BRASIL', id: '81dee654-8ffd-4ea0-880f-f3c7effe1145' },
+          { country: 'VENEZUELA', id: '11062013-713a-4621-b27b-8c74ba1e88a0' },
+          { country: 'MEXICO', id: 'dbad2b11-d4eb-4ba2-bf64-6722912d6693' },
+          { country: 'HONDURAS', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+          { country: 'URUGUAY', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+          { country: 'PANAMA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        ];
+
+        const dispatcherConfig = dispatchers.find(d => d.country === trans.destino.name);
+
+        if (dispatcherConfig && dispatcherConfig.id) {
+          randomUser = await this.prisma.user.findUnique({
+            where: { id: dispatcherConfig.id },
+          });
+        }
+
+        if (!randomUser) {
+          try {
+            const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
+            await this.telegramService.sendMessage(7677852749, message);
+          } catch (error) {
+            console.error('Error al enviar notificación de Telegram:', error);
+          }
+        } else {
+          const colaEspera = await this.prisma.colaEspera.create({
+            data: {
+              type: 'TRANSACCION',
+              userId: randomUser.id,
+              transactionId: trans.id,
+              status: 'INICIADA'
+            }
+          })
+
+          try {
+            const message = `Tienes una operacion por despachar, por favor realizada en menos de 5 minutos. Departamento de Tecnologia! `
+            if (randomUser.telegram_chat_id) {
+              await this.telegramService.sendMessage(randomUser.telegram_chat_id, message);
+            }
+          } catch (error) {
+            console.error('Error al enviar notificación de Telegram:', error);
+          }
+
+          if (randomUser.expoPushToken) {
+            try {
+              this.notification.sendPushNotification(randomUser.expoPushToken, "Nueva Transaccion por Despachar", "Entra a tu aplicacion PANET ADMIN en el perfil DUEÑO DE CUENTA para aprobar la misma", {
+                screen: "DespachoPage",
+                params: { transactionId: trans.id }
+              });
+            } catch (error) {
+              console.error('Error al enviar notificación push:', error);
+            }
+
+            try {
+              const message = `La transaccion N° ${trans.publicId} esta pendiente de despacho! `
+              if (randomUser.telegram_chat_id) {
+                await this.telegramService.sendMessage(randomUser.telegram_chat_id, message);
+              }
+            } catch (error) {
+              console.error('Error al enviar notificación de Telegram:', error);
+            }
+          }
+        }
+      }
     }
 
     let saldo = data.amount_total;
