@@ -313,45 +313,34 @@ export class TransactionService {
 
     let randomUser: any = null;
 
-    if (transaction.instrument.typeInstrument !== 'PAGO_MOVIL' && transaction.destino.name === 'VENEZUELA') {
-      const roles = ['DESPACHADOR']
-      const duenos = await this.prisma.user.findMany({
-        where: {
-          roles: {
-            some: {
-              role: {
-                name: {
-                  in: roles,
-                },
-              },
-            },
-          },
-          status_despachador: 'ACTIVO',
-          wallets: {
-            some: {
-              countryId: destino.id,
-              type: 'RECEPCION',
-              status: 'ACTIVO'
-            },
-          },
-        },
-        include: {
-          wallets: true,
-          clientes: true,
-          referrals: true,
-          referrer: true,
-          roles: {
-            include: {
-              role: true,
-            },
-          },
-        },
-      });
+    if ((transaction.instrument.typeInstrument !== 'PAGO_MOVIL' && transaction.destino.name === 'VENEZUELA') || transaction.destino.name !== 'VENEZUELA') {
+      const dispatchers = [
+        { country: 'PERU', id: '11062013-713a-4621-b27b-8c74ba1e88a0' },
+        { country: 'USDT', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        { country: 'COLOMBIA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        { country: 'ESTADOS UNIDOS', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        { country: 'REPUBLICA DOMINICANA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        { country: 'EUROPA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        { country: 'ARGENTINA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        { country: 'CHILE', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        { country: 'ECUADOR', id: 'aa23a5a6-b37c-4e1e-bd3e-4c2eda295df1' },
+        { country: 'BRASIL', id: '81dee654-8ffd-4ea0-880f-f3c7effe1145' },
+        { country: 'VENEZUELA', id: '11062013-713a-4621-b27b-8c74ba1e88a0' },
+        { country: 'MEXICO', id: 'dbad2b11-d4eb-4ba2-bf64-6722912d6693' },
+        { country: 'HONDURAS', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        { country: 'URUGUAY', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+        { country: 'PANAMA', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
+      ];
 
-      //buscar usuarios dueños de cuenta
-      randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
+      const dispatcherConfig = dispatchers.find(d => d.country === transaction.destino.name);
 
-      if (duenos.length === 0) {
+      if (dispatcherConfig && dispatcherConfig.id) {
+        randomUser = await this.prisma.user.findUnique({
+          where: { id: dispatcherConfig.id },
+        });
+      }
+
+      if (!randomUser) {
         try {
           const message = `La transaccion N° ${transaction.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `
           await this.telegramService.sendMessage(7677852749, message);
@@ -455,8 +444,6 @@ export class TransactionService {
         }
       })
     }
-
-
 
     if (transaction.instrument.typeInstrument === 'PAGO_MOVIL' && transaction.destino.name === 'VENEZUELA') {
       // Validar balance disponible antes de procesar el pago móvil
