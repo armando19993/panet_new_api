@@ -807,15 +807,30 @@ export class TransactionService {
     return { data, message: 'Listado de Transacciones' };
   }
 
-  async findByReferenceToday(reference: string) {
+  async findByReferenceToday(reference: string, dateString?: string) {
     if (!reference) {
       throw new BadRequestException('El número de referencia es requerido.');
     }
 
-    const startOfDay = new Date();
+    let queryDate = new Date();
+
+    if (dateString) {
+      const parts = dateString.split('-');
+      if (parts.length === 3) {
+        queryDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      } else {
+        queryDate = new Date(dateString);
+      }
+    }
+
+    if (isNaN(queryDate.getTime())) {
+      throw new BadRequestException('Fecha inválida.');
+    }
+
+    const startOfDay = new Date(queryDate);
     startOfDay.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date();
+    const endOfDay = new Date(queryDate);
     endOfDay.setHours(23, 59, 59, 999);
 
     const data = await this.prisma.transaction.findFirst({

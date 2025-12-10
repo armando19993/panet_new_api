@@ -9,13 +9,13 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @Controller('transaction')
 @UseGuards(AuthGuard)
 export class TransactionController {
-  constructor(private readonly transactionService: TransactionService) {}
+  constructor(private readonly transactionService: TransactionService) { }
 
   @Get('payments/methods')
   paymentsMethods(@Query('countryCode') countryCode?: string) {
-      return this.transactionService.paymentsMethods(countryCode);
+    return this.transactionService.paymentsMethods(countryCode);
   }
-  
+
   @Post()
   create(@Body() createTransactionDto: CreateTransactionDto) {
     return this.transactionService.create(createTransactionDto);
@@ -27,8 +27,8 @@ export class TransactionController {
   }
 
   @Get('reference/today/:reference')
-  findByReferenceToday(@Param('reference') reference: string) {
-    return this.transactionService.findByReferenceToday(reference);
+  findByReferenceToday(@Param('reference') reference: string, @Query('date') date?: string) {
+    return this.transactionService.findByReferenceToday(reference, date);
   }
 
   @Get(':id')
@@ -48,17 +48,17 @@ export class TransactionController {
 
   @Post('notificar')
   @UseInterceptors(FileInterceptor('image'))
-  notificar(@Body() data, @UploadedFile() file: Express.Multer.File){
+  notificar(@Body() data, @UploadedFile() file: Express.Multer.File) {
     return this.transactionService.notificar(data, file)
   }
 
   @Post('procesar-transaction')
   @UseInterceptors(FileInterceptor('comprobante'))
-  procesar(@Body() data,  @UploadedFile() file: Express.Multer.File, @Request() req){
+  procesar(@Body() data, @UploadedFile() file: Express.Multer.File, @Request() req) {
     return this.transactionService.procesar(data, file, req.user)
   }
   @Post('transferir')
-  transferir(@Body() data){
+  transferir(@Body() data) {
     return this.transactionService.transferir(data)
   }
 
