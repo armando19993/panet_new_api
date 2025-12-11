@@ -652,33 +652,6 @@ export class RechargeService {
 
       let colaEspera = null;
       let randomUser = null;
-      if (trans.instrument.typeInstrument !== 'PAGO_MOVIL') {
-        const roles = ['DESPACHADOR'];
-        const duenos = await this.prisma.user.findMany({
-          where: {
-            roles: { some: { role: { name: { in: roles } } } },
-            status_despachador: 'ACTIVO',
-            wallets: { some: { countryId: trans.wallet.country.id, type: 'RECEPCION', status: 'ACTIVO' } },
-          },
-          include: {
-            wallets: true,
-            clientes: true,
-            referrals: true,
-            referrer: true,
-            roles: { include: { role: true } },
-          },
-        });
-
-        if (duenos.length === 0) {
-          const message = `La transaccion N° ${trans.publicId} no pudo ser asignada para despacho procede a asignarla manualmente! `;
-          await this.telegramService.sendMessage(7677852749, message);
-        } else {
-          randomUser = duenos.length > 0 ? duenos[Math.floor(Math.random() * duenos.length)] : null;
-          colaEspera = await this.prisma.colaEspera.create({
-            data: { type: 'TRANSACCION', userId: randomUser.id, transactionId: trans.id, status: 'INICIADA' },
-          });
-        }
-      }
 
       if (trans.instrument.typeInstrument === 'PAGO_MOVIL' && trans.destino.name === 'VENEZUELA') {
         // Validar balance disponible antes de procesar el pago móvil
