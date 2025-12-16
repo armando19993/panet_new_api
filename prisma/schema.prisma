@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Role {
@@ -60,6 +59,7 @@ model User {
   status_panet_pay         Boolean                @default(true)
   bloqueo_panet_pay        DateTime?              @db.Date()
   telegram_chat_id         String?
+  name_yape                String?                @default("")
   wallets                  Wallet[]               @relation("UserWallets")
   percent_pay              Decimal                @default(0.00) @db.Decimal(10, 2)
   clientes                 Client[]
