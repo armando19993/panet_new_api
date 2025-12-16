@@ -1198,6 +1198,15 @@ Equipo Panet Remesas`;
             description: 'Realiza una transferencia directamente desde tu banco, al nuestro a través de Floid Payment.',
             fee: 2.5,
             time: 'Inmediato'
+          },
+          {
+            id: 1001,
+            pasarela: 'PanetPay',
+            name: 'Yape',
+            image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
+            description: 'Realiza un yape rapido y directo, con validacion automatica!',
+            fee: 0,
+            time: 'Inmediato'
           }
         ],
         alertas: [
