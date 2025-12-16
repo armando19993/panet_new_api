@@ -1,3 +1,5 @@
+// src/prisma/prisma.servise.ts - CÓDIGO CORREGIDO
+
 import { Injectable, OnModuleInit } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 
@@ -5,7 +7,14 @@ import { PrismaClient } from "@prisma/client";
 export class PrismaService extends PrismaClient implements OnModuleInit {
     constructor() {
         super({
-            datasourceUrl: process.env.DATABASE_URL,
+            // SOLUCIÓN: Usar la estructura 'datasources'
+            datasources: {
+                db: {
+                    url: process.env.DATABASE_URL,
+                },
+            },
+            // Opcionalmente, puedes añadir logs, etc. aquí:
+            // log: ['query'],
         });
     }
 
