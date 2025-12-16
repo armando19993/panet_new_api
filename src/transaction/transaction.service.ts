@@ -455,7 +455,7 @@ export class TransactionService {
         const availableBalance = parseFloat(balanceInfo.availableBalance.toString());
 
         // Enviar notificación si el saldo es bajo
-        await this.notifyLowBalance(availableBalance);
+        //await this.notifyLowBalance(availableBalance);
 
         if (availableBalance <= 10000) {
           await this.prisma.transaction.update({
