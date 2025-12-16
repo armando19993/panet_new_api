@@ -1180,16 +1180,16 @@ Equipo Panet Remesas`;
             fee: 5.5,
             time: 'Inmediato'
           },
-          {
-            id: 152,
-            pasarela: 'Flow',
-            name: 'Yape',
-            image: 'https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-original-577x577/s3/032021/yape.png?sbmszL8CD.TqS8SZ5YaqDfOHxLgBAJid&itok=FFFRSqls',
-            description: 'Realiza un yape rapido y directo!',
-            min: 60,
-            fee: 4.5,
-            time: 'Inmediato'
-          },
+          // {
+          //   id: 152,
+          //   pasarela: 'Flow',
+          //   name: 'Yape',
+          //   image: 'https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-original-577x577/s3/032021/yape.png?sbmszL8CD.TqS8SZ5YaqDfOHxLgBAJid&itok=FFFRSqls',
+          //   description: 'Realiza un yape rapido y directo!',
+          //   min: 60,
+          //   fee: 4.5,
+          //   time: 'Inmediato'
+          // },
           {
             id: 153,
             pasarela: 'Floid',
@@ -1203,7 +1203,7 @@ Equipo Panet Remesas`;
             id: 1001,
             pasarela: 'PanetPay',
             name: 'Yape',
-            image: 'https://static.floid.app/banks_logo/boton-bancos-pe.png',
+            image: 'https://d1yjjnpx0p53s8.cloudfront.net/styles/logo-original-577x577/s3/032021/yape.png?sbmszL8CD.TqS8SZ5YaqDfOHxLgBAJid&itok=FFFRSqls',
             description: 'Realiza un yape rapido y directo, con validacion automatica!',
             fee: 0,
             time: 'Inmediato'
