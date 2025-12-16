@@ -88,21 +88,22 @@ export class TransactionService {
   /**
    * Envía notificación de saldo bajo cuando se intenta hacer pago móvil
    */
-  private async notifyLowBalance(availableBalance: number): Promise<void> {
-    try {
-      const adminChatId = 7677852749; // ID de chat de Telegram para alertas
+  // private async notifyLowBalance(availableBalance: number): Promise<void> {
+  //   try {
+  //     const adminChatId = 7677852749; // ID de chat de Telegram para alertas
 
-      if (availableBalance < 10000) {
-        const message = `⚠️ ALERTA CRÍTICA DE SALDO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 10,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nPor favor, recargar la cuenta inmediatamente.`;
-        await this.telegramService.sendMessage(adminChatId, message);
-      } else if (availableBalance < 100000) {
-        const message = `⚠️ ALERTA DE SALDO BAJO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 100,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nSe recomienda recargar la cuenta pronto.`;
-        await this.telegramService.sendMessage(adminChatId, message);
-      }
-    } catch (error) {
-      console.error('Error al enviar notificación de saldo bajo:', error);
-    }
-  }
+  //     if (availableBalance < 10000) {
+  //       const message = `⚠️ ALERTA CRÍTICA DE SALDO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 10,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nPor favor, recargar la cuenta inmediatamente.`;
+  //       await this.telegramService.sendMessage(adminChatId, message);
+  //     } else if (availableBalance < 100000) {
+  //       const message = `⚠️ ALERTA DE SALDO BAJO ⚠️\n\nEl saldo disponible en la cuenta bancaria es menor a 100,000 VES.\n\nSaldo actual: ${availableBalance.toLocaleString('es-VE')} VES\n\nSe recomienda recargar la cuenta pronto.`;
+  //       await this.telegramService.sendMessage(adminChatId, message);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error al enviar notificación de saldo bajo:', error);
+  //   }
+  // }
+
   private transactionDetailInclude() {
     return {
       creador: {
