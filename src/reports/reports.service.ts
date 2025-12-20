@@ -1,16 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.servise';
 import { MovementsAccountJuridicService } from 'src/movements-account-juridic/movements-account-juridic.service';
+import { TelegramService } from 'src/telegram/telegram.service';
 
 @Injectable()
 export class ReportsService {
 
     constructor(
         private readonly prisma: PrismaService,
-        private readonly movementsAccountJuridicService: MovementsAccountJuridicService
+        private readonly movementsAccountJuridicService: MovementsAccountJuridicService,
+        private readonly telegramService: TelegramService
     ) { }
 
-    async home() {
+    async home(user?: any) {
         try {
             // Obtener todos los países
             const countriesResponse = await this.prisma.country.findMany();
@@ -117,6 +119,17 @@ export class ReportsService {
             const totalUSDTAllCountries = countryReports.reduce((sum, country) => {
                 return sum + country.totalAmountUSDT;
             }, 0);
+
+            // Enviar notificación a Telegram
+            if (user) {
+                const message = `
+<b>🔔 Consulta de Reportes - Home</b>
+<b>Usuario:</b> ${user.name} (${user.user})
+<b>Total países:</b> ${countryReports.length}
+<b>Fecha:</b> ${new Date().toLocaleString()}
+                `;
+                await this.telegramService.sendMessage(5720214404, message);
+            }
 
             return {
                 module: 'Reports',

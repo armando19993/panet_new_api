@@ -7,9 +7,10 @@ import { WalletModule } from 'src/wallet/wallet.module';
 import { RechargeModule } from 'src/recharge/recharge.module';
 
 import { MovementsAccountJuridicModule } from 'src/movements-account-juridic/movements-account-juridic.module';
+import { TelegramModule } from 'src/telegram/telegram.module';
 
 @Module({
-  imports: [PrismaModule, CountryModule, WalletModule, RechargeModule, MovementsAccountJuridicModule],
+  imports: [PrismaModule, CountryModule, WalletModule, RechargeModule, MovementsAccountJuridicModule, TelegramModule],
   controllers: [ReportsController],
   providers: [ReportsService],
 })

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Param, Query } from '@nestjs/common';
+import { Controller, Get, UseGuards, Param, Query, Request } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 
@@ -7,8 +7,8 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }
 
   @Get('home')
-  home() {
-    return this.reportsService.home();
+  home(@Request() req) {
+    return this.reportsService.home(req.user);
   }
 
   @Get('country/:countryId/reception-wallets')
