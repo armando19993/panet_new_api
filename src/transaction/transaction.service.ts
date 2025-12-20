@@ -219,48 +219,48 @@ export class TransactionService {
     }
 
     // Cálculos principales
-    const rateAmount = parseFloat(rate.amount.toString());
-    const saldoCalculo = transactionAmount
+    const rateAmount = parseFloat(parseFloat(rate.amount.toString()).toFixed(2));
+    const saldoCalculo = parseFloat(transactionAmount.toFixed(2));
 
     let montoDestino = 0
 
     if (rate.origin.name !== "VENEZUELA" && rate.origin.name !== "COLOMBIA") {
-      montoDestino = saldoCalculo * rateAmount;
+      montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
     } else {
-      montoDestino = saldoCalculo * rateAmount;
+      montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
     }
 
     if (rate.origin.name === "VENEZUELA" && rate.destination.name === "COLOMBIA") {
-      montoDestino = saldoCalculo * rateAmount;
+      montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
     }
     if (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") {
-      montoDestino = saldoCalculo / rateAmount;
+      montoDestino = parseFloat((saldoCalculo / rateAmount).toFixed(2));
     }
 
     if (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA") {
-      montoDestino = saldoCalculo / rateAmount;
+      montoDestino = parseFloat((saldoCalculo / rateAmount).toFixed(2));
     }
 
     // Aplicar regla de redondeo específica para montoDestino
-    const roundedValue = Math.round(montoDestino * 1000) / 1000; // Obtener 3 decimales primero
+    /*const roundedValue = Math.round(montoDestino * 1000) / 1000; // Obtener 3 decimales primero
     const lastDigit = Math.round((roundedValue * 1000) % 10); // Obtener último dígito
     montoDestino = lastDigit >= 5
       ? Math.ceil(roundedValue * 100) / 100
-      : Math.floor(roundedValue * 100) / 100;
+      : Math.floor(roundedValue * 100) / 100;*/
 
     console.log('montoDestino: ' + montoDestino)
 
     const tipoCalculo = rate.type_profit;
     const porcentajeCalculo = origen[tipoCalculo];
-    const porcentajeDelMonto = parseFloat(((transactionAmount * porcentajeCalculo) / 100).toFixed(3));
+    const porcentajeDelMonto = parseFloat(((transactionAmount * porcentajeCalculo) / 100).toFixed(2));
 
     const porcentajeIntermediario = parseFloat(creador.profitPercent.toString());
     let gananciaIntermediario = 0
     if (porcentajeIntermediario > 0) {
-      gananciaIntermediario = parseFloat(((transactionAmount * porcentajeIntermediario) / 100).toFixed(3));
+      gananciaIntermediario = parseFloat(((transactionAmount * porcentajeIntermediario) / 100).toFixed(2));
     }
 
-    const gananciaPanet = parseFloat((porcentajeDelMonto - gananciaIntermediario).toFixed(3));
+    const gananciaPanet = parseFloat((porcentajeDelMonto - gananciaIntermediario).toFixed(2));
 
 
     // Crear la transacción
@@ -677,23 +677,7 @@ export class TransactionService {
           }
 
 
-          // Crear registros de movimientos para EGRESO
-          const transactionAmount = parseFloat(transaction.montoDestino.toString());
 
-          // Crear registro principal de EGRESO
-          await this.movementsAccountJuridicService.create({
-            amount: transactionAmount.toString(),
-            type: 'EGRESO',
-            description: `Egreso por transacción TRX-2025-${transaction.publicId}`
-          });
-
-          // Crear registro adicional del 0.3% como EGRESO
-          const feeAmount = transactionAmount * 0.003;
-          await this.movementsAccountJuridicService.create({
-            amount: feeAmount.toString(),
-            type: 'EGRESO',
-            description: `Comisión 0.3% por transacción TRX-2025-${transaction.publicId}`
-          });
         }
         else {
           await this.prisma.transaction.update({
@@ -1531,21 +1515,6 @@ Equipo Panet Remesas`;
         } catch (error) {
           console.error('Error generando imagen del comprobante:', error);
         }
-
-        // 🔹 Registrar movimientos
-        const transactionAmount = parseFloat(dto.amount.toString());
-        await this.movementsAccountJuridicService.create({
-          amount: transactionAmount.toString(),
-          type: 'EGRESO',
-          description: `Egreso por Pago Móvil Directo. Ref: ${response.data.referencia}`
-        });
-
-        const feeAmount = transactionAmount * 0.003;
-        await this.movementsAccountJuridicService.create({
-          amount: feeAmount.toString(),
-          type: 'EGRESO',
-          description: `Comisión 0.3% por Pago Móvil Directo. Ref: ${response.data.referencia}`
-        });
 
         return {
           success: true,

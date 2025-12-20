@@ -578,28 +578,28 @@ export class RechargeService {
         where: { originId: info.origenId, destinationId: info.destinoId },
         include: { origin: true, destination: true },
       });
-      const rateAmount = parseFloat(rate.amount.toString());
-      const porcentajePasarela = parseFloat(((parseFloat(info.montoOrigen.toString()) * 2) / 100).toFixed(3));
-      const saldoCalculo = parseFloat(info.montoOrigen.toString());
+      const rateAmount = parseFloat(parseFloat(rate.amount.toString()).toFixed(2));
+      const porcentajePasarela = parseFloat(((parseFloat(info.montoOrigen.toString()) * 2) / 100).toFixed(2));
+      const saldoCalculo = parseFloat(parseFloat(info.montoOrigen.toString()).toFixed(2));
 
       const tipoCalculo = rate.type_profit;
       const porcentajeCalculo = origen[tipoCalculo];
-      const porcentajeDelMonto = parseFloat(((parseFloat(info.montoOrigen.toString()) * porcentajeCalculo) / 100).toFixed(3));
+      const porcentajeDelMonto = parseFloat(((parseFloat(info.montoOrigen.toString()) * porcentajeCalculo) / 100).toFixed(2));
 
       let montoDestino = 0;
       if (rate.origin.name !== 'VENEZUELA' && rate.origin.name !== 'COLOMBIA') {
-        montoDestino = saldoCalculo * rateAmount;
+        montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
       } else {
-        montoDestino = saldoCalculo * rateAmount;
+        montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
       }
       if (rate.origin.name === 'VENEZUELA' && rate.destination.name === 'COLOMBIA') {
-        montoDestino = saldoCalculo * rateAmount;
+        montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
       }
       if (rate.origin.name === 'VENEZUELA' && rate.destination.name !== 'COLOMBIA') {
-        montoDestino = saldoCalculo / rateAmount;
+        montoDestino = parseFloat((saldoCalculo / rateAmount).toFixed(2));
       }
       if (rate.origin.name === 'COLOMBIA' && rate.destination.name === 'VENEZUELA') {
-        montoDestino = saldoCalculo / rateAmount;
+        montoDestino = parseFloat((saldoCalculo / rateAmount).toFixed(2));
       }
 
       const trans = await this.prisma.transaction.create({
@@ -633,8 +633,8 @@ export class RechargeService {
       });
 
       // Restar montoOrigen del wallet de recarga al crear la transacción temporal
-      const montoOrigenEgreso = parseFloat(info.montoOrigen.toString());
-      const balanceAnteriorRecarga = parseFloat(data.wallet.balance.toString());
+      const montoOrigenEgreso = parseFloat(parseFloat(info.montoOrigen.toString()).toFixed(2));
+      const balanceAnteriorRecarga = parseFloat(parseFloat(data.wallet.balance.toString()).toFixed(2));
       await this.prisma.wallet.update({
         where: { id: data.wallet.id },
         data: { balance: { decrement: montoOrigenEgreso } }
@@ -643,7 +643,7 @@ export class RechargeService {
         data: {
           amount: montoOrigenEgreso,
           amount_old: balanceAnteriorRecarga,
-          amount_new: balanceAnteriorRecarga - montoOrigenEgreso,
+          amount_new: parseFloat((balanceAnteriorRecarga - montoOrigenEgreso).toFixed(2)),
           wallet: { connect: { id: data.wallet.id } },
           description: `Egreso por creación de transacción TRX-2025-${trans.publicId} (recarga)`,
           type: 'RETIRO',
@@ -737,8 +737,7 @@ export class RechargeService {
                       }
                     }
                   });
-                  const transactionAmount = parseFloat(trans.montoDestino.toString());
-                  await this.movementsAccountJuridicService.create({ amount: transactionAmount.toString(), type: 'EGRESO', description: `Egreso por transacción TRX-2025-${trans.publicId} (recarga)` });
+                  const transactionAmount = parseFloat(parseFloat(trans.montoDestino.toString()).toFixed(2));
                   console.log("AQUI ESTAMOS PROCESANDO Y ENTRANDO EN EL TRY")
                   // Generar y enviar comprobante
                   try {
@@ -919,17 +918,17 @@ export class RechargeService {
       }
     }
 
-    let saldo = data.amount_total;
+    let saldo = parseFloat(parseFloat(data.amount_total.toString()).toFixed(2));
     if (data.pasarela === 'Manual') {
-      saldo = data.amount;
+      saldo = parseFloat(parseFloat(data.amount.toString()).toFixed(2));
     }
 
     await this.prisma.wallet.update({ where: { id: data.wallet.id }, data: { balance: { increment: saldo } } });
     await this.prisma.walletTransactions.create({
       data: {
         amount: saldo,
-        amount_new: parseFloat(data.wallet.balance.toString()) + parseFloat(saldo.toString()),
-        amount_old: data.wallet.balance,
+        amount_new: parseFloat((parseFloat(data.wallet.balance.toString()) + parseFloat(saldo.toString())).toFixed(2)),
+        amount_old: parseFloat(parseFloat(data.wallet.balance.toString()).toFixed(2)),
         wallet: { connect: { id: data.wallet.id } },
         description: 'Recarga de Saldo REC-2025-' + data.publicId,
         type: 'DEPOSITO',
@@ -937,8 +936,8 @@ export class RechargeService {
     });
 
     const profitPercentage = parseFloat(data.instrument.profit.toString());
-    const profitAmount = (parseFloat(data.amount.toString()) * profitPercentage) / 100;
-    const saldoPanet = parseFloat(data.amount.toString()) - profitAmount;
+    const profitAmount = parseFloat(((parseFloat(data.amount.toString()) * profitPercentage) / 100).toFixed(2));
+    const saldoPanet = parseFloat((parseFloat(data.amount.toString()) - profitAmount).toFixed(2));
 
     let walletRecepcion = await this.prisma.wallet.findFirst({ where: { userId: data.instrument.user.id, countryId: data.instrument.countryId, type: 'RECEPCION' } });
     if (!walletRecepcion) {
@@ -949,8 +948,8 @@ export class RechargeService {
     await this.prisma.walletTransactions.create({
       data: {
         amount: saldoPanet,
-        amount_new: parseFloat(walletRecepcion.balance.toString()) + saldoPanet,
-        amount_old: walletRecepcion.balance,
+        amount_new: parseFloat((parseFloat(walletRecepcion.balance.toString()) + saldoPanet).toFixed(2)),
+        amount_old: parseFloat(parseFloat(walletRecepcion.balance.toString()).toFixed(2)),
         wallet: { connect: { id: walletRecepcion.id } },
         description: 'Recarga de Saldo REC-2025-' + data.publicId,
         type: 'DEPOSITO',
@@ -967,8 +966,8 @@ export class RechargeService {
       await this.prisma.walletTransactions.create({
         data: {
           amount: profitAmount,
-          amount_new: parseFloat(walletGananciaDueno.balance.toString()) + profitAmount,
-          amount_old: walletGananciaDueno.balance,
+          amount_new: parseFloat((parseFloat(walletGananciaDueno.balance.toString()) + profitAmount).toFixed(2)),
+          amount_old: parseFloat(parseFloat(walletGananciaDueno.balance.toString()).toFixed(2)),
           wallet: { connect: { id: walletGananciaDueno.id } },
           description: 'Ganancia por recarga de Saldo REC-2025-' + data.publicId,
           type: 'DEPOSITO',
