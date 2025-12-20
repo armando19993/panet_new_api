@@ -777,7 +777,37 @@ export class TransactionService {
       take: 400
     });
 
-    return { data, message: 'Transacciones Obtenidas con éxito' };
+    // Filtros de seguridad para los contadores (ignora filtros de búsqueda, respeta rol)
+    const securityFilters: any = {};
+    if (!hasSuperAdminRole) {
+      securityFilters.creadorId = user.id;
+    }
+
+    // Obtener contadores por estado
+    const statusGroups = await this.prisma.transaction.groupBy({
+      by: ['status'],
+      where: securityFilters,
+      _count: {
+        status: true
+      }
+    });
+
+    // Formatear contadores
+    const statusCounts = {
+      CREADA: 0,
+      OBSERVADA: 0,
+      ANULADA: 0,
+      COMPLETADA: 0,
+      ERROR: 0
+    };
+
+    statusGroups.forEach(group => {
+      if (statusCounts.hasOwnProperty(group.status)) {
+        statusCounts[group.status] = group._count.status;
+      }
+    });
+
+    return { data, statusCounts, message: 'Transacciones Obtenidas con éxito' };
   }
 
   async findOne(identifier) {
