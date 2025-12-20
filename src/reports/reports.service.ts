@@ -19,6 +19,21 @@ export class ReportsService {
             // Obtener el saldo de la cuenta juridica
             const accountBalance = await this.movementsAccountJuridicService.getAccountBalance();
 
+            // Calcular el saldo en USDT usando la tasa de Venezuela
+            const venezuela = countries.find(c => c.name === 'VENEZUELA');
+            let accountBalanceUSDT = 0;
+            let transactionRateWholesale = 0;
+
+            if (venezuela) {
+                const ratePurchase = parseFloat(venezuela.rate_purchase?.toString() || '1');
+                const rateSales = parseFloat(venezuela.rate_sales?.toString() || '1');
+                transactionRateWholesale = (ratePurchase + rateSales) / 2;
+
+                if (transactionRateWholesale > 0) {
+                    accountBalanceUSDT = accountBalance.availableBalance / transactionRateWholesale;
+                }
+            }
+
             // Calcular la fecha de hace 15 días
             const startOfDay = new Date();
             startOfDay.setHours(0, 0, 0, 0);
@@ -110,7 +125,11 @@ export class ReportsService {
                     summary: {
                         totalCountries: countryReports.length,
                         totalUSDTAllCountries: totalUSDTAllCountries,
-                        accountBalance: accountBalance
+                        accountBalance: {
+                            ...accountBalance,
+                            availableBalanceUSDT: accountBalanceUSDT,
+                            rateUsed: transactionRateWholesale
+                        }
                     }
                 },
                 message: 'Reporte de países con montos totales obtenido con éxito'
