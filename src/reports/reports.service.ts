@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.servise';
+import { MovementsAccountJuridicService } from 'src/movements-account-juridic/movements-account-juridic.service';
 
 @Injectable()
 export class ReportsService {
 
     constructor(
-        private readonly prisma: PrismaService
+        private readonly prisma: PrismaService,
+        private readonly movementsAccountJuridicService: MovementsAccountJuridicService
     ) { }
 
     async home() {
@@ -13,6 +15,9 @@ export class ReportsService {
             // Obtener todos los países
             const countriesResponse = await this.prisma.country.findMany();
             const countries = countriesResponse;
+
+            // Obtener el saldo de la cuenta juridica
+            const accountBalance = await this.movementsAccountJuridicService.getAccountBalance();
 
             // Calcular la fecha de hace 15 días
             const startOfDay = new Date();
@@ -104,7 +109,8 @@ export class ReportsService {
                     countries: countryReports,
                     summary: {
                         totalCountries: countryReports.length,
-                        totalUSDTAllCountries: totalUSDTAllCountries
+                        totalUSDTAllCountries: totalUSDTAllCountries,
+                        accountBalance: accountBalance
                     }
                 },
                 message: 'Reporte de países con montos totales obtenido con éxito'

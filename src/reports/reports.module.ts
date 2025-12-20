@@ -6,9 +6,11 @@ import { CountryModule } from 'src/country/country.module';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { RechargeModule } from 'src/recharge/recharge.module';
 
+import { MovementsAccountJuridicModule } from 'src/movements-account-juridic/movements-account-juridic.module';
+
 @Module({
-  imports: [PrismaModule, CountryModule, WalletModule, RechargeModule],
+  imports: [PrismaModule, CountryModule, WalletModule, RechargeModule, MovementsAccountJuridicModule],
   controllers: [ReportsController],
   providers: [ReportsService],
 })
-export class ReportsModule {}
+export class ReportsModule { }
