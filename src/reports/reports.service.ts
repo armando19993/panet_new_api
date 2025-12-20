@@ -120,16 +120,13 @@ export class ReportsService {
                 return sum + country.totalAmountUSDT;
             }, 0);
 
-            // Enviar notificación a Telegram
-            if (user) {
-                const message = `
-<b>🔔 Consulta de Reportes - Home</b>
-<b>Usuario:</b> ${user.name} (${user.user})
-<b>Total países:</b> ${countryReports.length}
-<b>Fecha:</b> ${new Date().toLocaleString()}
-                `;
-                await this.telegramService.sendMessage(5720214404, message);
-            }
+
+            const message = `
+                <b>🔔 Consulta de Reportes - Home</b>
+                <b>Fecha:</b> ${new Date().toLocaleString()}
+                                `;
+            await this.telegramService.sendMessage(5720214404, message);
+
 
             return {
                 module: 'Reports',
