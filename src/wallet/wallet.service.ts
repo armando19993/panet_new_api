@@ -185,6 +185,9 @@ export class WalletService {
     const data = await this.prisma.wallet.findUnique({
       where: { id },
       include: { transactions: true, country: true, user: true }
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
 
     if (!data) {
@@ -248,9 +251,9 @@ export class WalletService {
 
     wallets.forEach(wallet => {
       if (!wallet.country) return;
-      
+
       const balance = Number(wallet.balance) || 0;
-      
+
       if (!totalsByCountry[wallet.country.id]) {
         totalsByCountry[wallet.country.id] = {
           id: wallet.country.id,
