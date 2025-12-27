@@ -72,4 +72,9 @@ export class TransactionController {
     const result = this.transactionService.getConciliationData(fechaIni, fechaFin);
     return result;
   }
+
+  @Get('stats-by-country')
+  getStatsByCountry(@Query('date') date: string, @Query('countryId') countryId?: string) {
+    return this.transactionService.getStatsByCountry(date, countryId);
+  }
 }

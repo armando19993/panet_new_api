@@ -1597,5 +1597,133 @@ Equipo Panet Remesas`;
     }
   }
 
+  async getStatsByCountry(date: string, countryId?: string) {
+    const parseDate = (value: string): { start: Date; end: Date } => {
+      const parts = value.split('-');
+      if (parts.length !== 3) {
+        throw new BadRequestException(`Formato de fecha inválido: ${value}. Use DD-MM-YYYY`);
+      }
 
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+
+      if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        throw new BadRequestException(`Fecha inválida: ${value}`);
+      }
+
+      const startOfDay = new Date(year, month, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
+
+      return { start: startOfDay, end: endOfDay };
+    };
+
+    const { start, end } = parseDate(date);
+
+    const where: any = {
+      createdAt: {
+        gte: start,
+        lte: end,
+      },
+    };
+
+    if (countryId) {
+      where.origenId = countryId;
+    }
+
+    const transactions = await this.prisma.transaction.findMany({
+      where,
+      include: {
+        origen: true,
+        destino: true,
+      },
+    });
+
+    if (countryId) {
+      const breakdownByDestination = new Map<string, { country: string; countryId: string; count: number; totalAmountOrigen: number; totalAmountDestino: number }>();
+
+      transactions.forEach((transaction) => {
+        const destinoKey = transaction.destino.id;
+
+        if (!breakdownByDestination.has(destinoKey)) {
+          breakdownByDestination.set(destinoKey, {
+            country: transaction.destino.name,
+            countryId: transaction.destino.id,
+            count: 0,
+            totalAmountOrigen: 0,
+            totalAmountDestino: 0,
+          });
+        }
+
+        const stats = breakdownByDestination.get(destinoKey);
+        stats.count += 1;
+        stats.totalAmountOrigen += parseFloat(transaction.montoOrigen.toString());
+        stats.totalAmountDestino += parseFloat(transaction.montoDestino.toString());
+      });
+
+      const breakdown = Array.from(breakdownByDestination.values()).map((stat) => ({
+        destinationCountry: stat.country,
+        destinationCountryId: stat.countryId,
+        operationsCount: stat.count,
+        totalAmountOrigen: parseFloat(stat.totalAmountOrigen.toFixed(2)),
+        totalAmountDestino: parseFloat(stat.totalAmountDestino.toFixed(2)),
+      }));
+
+      const totalAmountOrigen = breakdown.reduce((sum, item) => sum + item.totalAmountOrigen, 0);
+      const totalAmountDestino = breakdown.reduce((sum, item) => sum + item.totalAmountDestino, 0);
+
+      return {
+        date,
+        originCountry: transactions.length > 0 ? transactions[0].origen.name : null,
+        originCountryId: countryId,
+        totalTransactions: transactions.length,
+        totalAmountOrigen: parseFloat(totalAmountOrigen.toFixed(2)),
+        totalAmountDestino: parseFloat(totalAmountDestino.toFixed(2)),
+        breakdownByDestination: breakdown,
+      };
+    }
+
+    const statsByCountry = new Map<string, { country: string; count: number; totalAmount: number }>();
+
+    transactions.forEach((transaction) => {
+      const origenKey = transaction.origen.id;
+      const destinoKey = transaction.destino.id;
+
+      if (!statsByCountry.has(origenKey)) {
+        statsByCountry.set(origenKey, {
+          country: transaction.origen.name,
+          count: 0,
+          totalAmount: 0,
+        });
+      }
+
+      if (!statsByCountry.has(destinoKey)) {
+        statsByCountry.set(destinoKey, {
+          country: transaction.destino.name,
+          count: 0,
+          totalAmount: 0,
+        });
+      }
+
+      const origenStats = statsByCountry.get(origenKey);
+      origenStats.count += 1;
+      origenStats.totalAmount += parseFloat(transaction.montoOrigen.toString());
+
+      const destinoStats = statsByCountry.get(destinoKey);
+      destinoStats.count += 1;
+      destinoStats.totalAmount += parseFloat(transaction.montoDestino.toString());
+    });
+
+    const result = Array.from(statsByCountry.values()).map((stat) => ({
+      country: stat.country,
+      operationsCount: stat.count,
+      totalAmount: parseFloat(stat.totalAmount.toFixed(2)),
+    }));
+
+    return {
+      date,
+      totalTransactions: transactions.length,
+      statsByCountry: result,
+    };
+  }
 }
