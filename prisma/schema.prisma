@@ -367,7 +367,7 @@ model Transaction {
   recharge              Recharge?          @relation("RechargeTransaction", fields: [rechargeId], references: [id])
   montoOrigen           Decimal            @default(0.00) @db.Decimal(10, 3)
   montoDestino          Decimal            @default(0.00) @db.Decimal(10, 3)
-  montoTasa             Decimal            @default(0.00) @db.Decimal(10, 3)
+  montoTasa             Decimal            @default(0.00) @db.Decimal(10, 5)
   monedaOrigen          String
   monedaDestino         String
   montoComisionPasarela Decimal            @default(0.00) @db.Decimal(10, 3)

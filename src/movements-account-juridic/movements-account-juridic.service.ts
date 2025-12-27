@@ -103,14 +103,14 @@ export class MovementsAccountJuridicService {
         fechaIni = fmt(date);
         fechaFin = fmt(date);
       }
-      // Si no se envía ninguna fecha, usar la fecha de hoy
+
+      
       else {
         const today = new Date();
         fechaIni = fmt(today);
         fechaFin = fmt(today);
       }
 
-      // Consulta principal a la API de Banvenez
       const requestPayload = {
         cuenta: '01020645640000997168',
         fechaIni,
@@ -191,11 +191,15 @@ export class MovementsAccountJuridicService {
       });
 
       // Enviar notificación a Telegram
+      const searchType = fechaIni === fechaFin ? 'Fecha específica' : 'Rango de fechas';
       const message = `
 <b>🔔 Consulta de Movimientos Jurídicos</b>
 <b>Usuario:</b> ${user.name} (${user.user})
 <b>Total extraídos:</b> ${movements.length}
-<b>Fecha:</b> ${new Date().toLocaleString()}
+<b>Tipo de búsqueda:</b> ${searchType}
+<b>Fecha inicio:</b> ${fechaIni}
+<b>Fecha fin:</b> ${fechaFin}
+<b>Fecha consulta:</b> ${new Date().toLocaleString()}
       `;
       await this.telegramService.sendMessage(5720214404, message);
 
