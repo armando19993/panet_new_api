@@ -589,6 +589,7 @@ export class RechargeService {
       let montoDestino = 0;
       if (rate.origin.name !== 'VENEZUELA' && rate.origin.name !== 'COLOMBIA') {
         montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
+        console.log("este es el monto que me da: ", montoDestino)
       } else {
         montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
       }
