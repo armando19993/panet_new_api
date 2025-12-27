@@ -1726,4 +1726,60 @@ Equipo Panet Remesas`;
       statsByCountry: result,
     };
   }
+
+  
+  async duplicateTransaction(publicId: number, newInstrumentId: string, user: any) {
+    const originalTransaction = await this.prisma.transaction.findFirst({
+      where: { publicId },
+      include: {
+        creador: true,
+        wallet: true,
+        cliente: true,
+        instrument: true,
+        origen: true,
+        destino: true,
+      },
+    });
+
+    if (!originalTransaction) {
+      throw new BadRequestException(`No se encontró la transacción con publicId ${publicId}`);
+    }
+
+    const rate = await this.prisma.rate.findFirst({
+      where: {
+        originId: originalTransaction.origenId,
+        destinationId: originalTransaction.destinoId,
+      },
+      include: {
+        origin: true,
+        destination: true,
+      },
+    });
+
+    if (!rate) {
+      throw new BadRequestException('No se encontró una tasa válida para esta operación');
+    }
+
+    const createTransactionDto: any = {
+      creadorId: user.id,
+      walletId: originalTransaction.walletId,
+      rateId: rate.id,
+      clienteId: originalTransaction.clienteId,
+      instrumentId: newInstrumentId,
+      origenId: originalTransaction.origenId,
+      destinoId: originalTransaction.destinoId,
+      amount: parseFloat(originalTransaction.montoOrigen.toString()),
+      typeTransaction: undefined,
+    };
+
+    const newTransaction = await this.create(createTransactionDto);
+
+    return {
+      success: true,
+      message: 'Transacción duplicada exitosamente',
+      originalTransactionId: originalTransaction.publicId,
+      newTransaction: newTransaction,
+    };
+  }
+
 }

@@ -77,4 +77,13 @@ export class TransactionController {
   getStatsByCountry(@Query('date') date: string, @Query('countryId') countryId?: string) {
     return this.transactionService.getStatsByCountry(date, countryId);
   }
+
+  @Post('duplicate')
+  duplicateTransaction(
+    @Body('publicId') publicId: number,
+    @Body('instrumentId') instrumentId: string,
+    @Request() req
+  ) {
+    return this.transactionService.duplicateTransaction(publicId, instrumentId, req.user);
+  }
 }
