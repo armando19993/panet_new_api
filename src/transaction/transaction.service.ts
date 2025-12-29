@@ -739,9 +739,10 @@ export class TransactionService {
     );
 
     // Si no es SUPERADMIN u OPERADOR, limitar las transacciones al creadorId del usuario
-    if (!hasSuperAdminRole) {
-      filters.creadorId = user.id;
-    }
+    // TEMPORALMENTE DESACTIVADO: Mostrar registros aleatorios a todos los usuarios
+    // if (!hasSuperAdminRole) {
+    //   filters.creadorId = user.id;
+    // }
 
     if (creadorId && hasSuperAdminRole) {
       filters.creadorId = creadorId;
@@ -775,7 +776,7 @@ export class TransactionService {
       orderBy: {
         publicId: 'desc'
       },
-      take: 400
+      take: 30
     });
 
     // Filtros de seguridad para los contadores (ignora filtros de búsqueda, respeta rol)
