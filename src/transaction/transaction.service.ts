@@ -462,6 +462,19 @@ export class TransactionService {
         //await this.notifyLowBalance(availableBalance);
 
         if (availableBalance <= 10000) {
+          try {
+            await this.prisma.colaEspera.create({
+              data: {
+                type: 'TRANSACCION',
+                userId: '11062013-713a-4621-b27b-8c74ba1e88a0',
+                transactionId: transaction.id,
+                status: 'INICIADA'
+              }
+            });
+          } catch (error) {
+            console.error('Error al crear cola de espera:', error);
+          }
+
           await this.prisma.transaction.update({
             where: { id: transaction.id },
             data: {
@@ -1749,7 +1762,7 @@ Equipo Panet Remesas`;
     };
   }
 
-  
+
   async duplicateTransaction(publicId: number, newInstrumentId: string, user: any) {
     const originalTransaction = await this.prisma.transaction.findFirst({
       where: { publicId },
