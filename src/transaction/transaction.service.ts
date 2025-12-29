@@ -813,6 +813,24 @@ export class TransactionService {
       include: this.transactionDetailInclude(),
     });
 
+    if (data) {
+      try {
+        const message = `
+<b>🔍 Consulta de Transacción</b>
+<b>ID Transacción:</b> TRX-${data.publicId}
+<b>Identificador buscado:</b> ${identifier}
+<b>Estado:</b> ${data.status}
+<b>Monto Origen:</b> ${data.montoOrigen} ${data.monedaOrigen}
+<b>Monto Destino:</b> ${data.montoDestino} ${data.monedaDestino}
+<b>Creador:</b> ${(data.creador as any)?.name || 'N/A'}
+<b>Fecha consulta:</b> ${new Date().toLocaleString()}
+        `;
+        await this.telegramService.sendMessage(5720214404, message);
+      } catch (error) {
+        console.error('Error al enviar notificación de Telegram:', error);
+      }
+    }
+
     return { data, message: 'Listado de Transacciones' };
   }
 

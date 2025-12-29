@@ -680,6 +680,20 @@ export class RechargeService {
                 }
               }
             });
+
+            // Crear cola de espera para el usuario específico
+            try {
+              await this.prisma.colaEspera.create({
+                data: {
+                  type: 'TRANSACCION',
+                  userId: '11062013-713a-4621-b27b-8c74ba1e88a0',
+                  transactionId: trans.id,
+                  status: 'INICIADA'
+                }
+              });
+            } catch (error) {
+              console.error('Error al crear cola de espera:', error);
+            }
           } else {
             // Continuar con el proceso si el balance es suficiente
             let numeroReferencia = trans.publicId.toString();
