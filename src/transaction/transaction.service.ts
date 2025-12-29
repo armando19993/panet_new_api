@@ -1765,7 +1765,7 @@ Equipo Panet Remesas`;
     }
 
     const createTransactionDto: any = {
-      creadorId: user.id,
+      creadorId: originalTransaction.creadorId,
       walletId: originalTransaction.walletId,
       rateId: rate.id,
       clienteId: originalTransaction.clienteId,
