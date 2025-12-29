@@ -811,7 +811,7 @@ export class TransactionService {
     return { data, statusCounts, message: 'Transacciones Obtenidas con éxito' };
   }
 
-  async findOne(identifier) {
+  async findOne(identifier, user?: any) {
     const where = identifier
       ? {
         OR: [
@@ -826,10 +826,11 @@ export class TransactionService {
       include: this.transactionDetailInclude(),
     });
 
-    if (data) {
+    if (data && user) {
       try {
         const message = `
 <b>🔍 Consulta de Transacción</b>
+<b>Consultado por:</b> ${user.name} (${user.user})
 <b>ID Transacción:</b> TRX-${data.publicId}
 <b>Identificador buscado:</b> ${identifier}
 <b>Estado:</b> ${data.status}
