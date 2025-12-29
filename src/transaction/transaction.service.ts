@@ -170,7 +170,7 @@ export class TransactionService {
     } as any;
   }
 
-  async create(createTransactionDto: CreateTransactionDto) {
+  async create(createTransactionDto: CreateTransactionDto, skipValidations: boolean = false) {
     // Buscar las relaciones necesarias
     const creador = await this.prisma.user.findFirstOrThrow({ where: { id: createTransactionDto.creadorId } });
     const wallet = await this.prisma.wallet.findFirstOrThrow({ where: { id: createTransactionDto.walletId }, include: { country: true, user: true } });
@@ -186,35 +186,37 @@ export class TransactionService {
     const walletBalance = parseFloat(wallet.balance.toString());
     const transactionAmount = parseFloat(createTransactionDto.amount.toString());
 
-    if (walletBalance < transactionAmount && !createTransactionDto.typeTransaction) {
+    if (!skipValidations && walletBalance < transactionAmount && !createTransactionDto.typeTransaction) {
       throw new BadRequestException("No cuentas con saldo para realizar esta transacción");
     }
 
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000); // Hace 10 minutos
+    if (!skipValidations) {
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000); // Hace 10 minutos
 
-    const lastTransaction = await this.prisma.transaction.findFirst({
-      where: {
-        creadorId: createTransactionDto.creadorId,
-        walletId: createTransactionDto.walletId,
-        montoOrigen: transactionAmount,
-        origenId: createTransactionDto.origenId,
-        destinoId: createTransactionDto.destinoId,
-        instrumentId: createTransactionDto.instrumentId,
-        createdAt: {
-          gte: tenMinutesAgo,
+      const lastTransaction = await this.prisma.transaction.findFirst({
+        where: {
+          creadorId: createTransactionDto.creadorId,
+          walletId: createTransactionDto.walletId,
+          montoOrigen: transactionAmount,
+          origenId: createTransactionDto.origenId,
+          destinoId: createTransactionDto.destinoId,
+          instrumentId: createTransactionDto.instrumentId,
+          createdAt: {
+            gte: tenMinutesAgo,
+          },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
-    if (lastTransaction) {
-      throw new BadRequestException("Operacion Duplicada: Debes esperar un minimo de 10 minutos para realizar otra operacion con los mismos datos!");
+      if (lastTransaction) {
+        throw new BadRequestException("Operacion Duplicada: Debes esperar un minimo de 10 minutos para realizar otra operacion con los mismos datos!");
+      }
     }
 
     // Restar el saldo del wallet de quien crea
-    if (!createTransactionDto.typeTransaction) {
+    if (!createTransactionDto.typeTransaction && !skipValidations) {
       await this.prisma.wallet.update({ where: { id: wallet.id }, data: { balance: { decrement: createTransactionDto.amount } } })
     }
 
@@ -423,19 +425,21 @@ export class TransactionService {
         }
       })
 
-      await this.prisma.walletTransactions.create({
-        data: {
-          amount: gananciaIntermediario,
-          amount_old: 0,
-          amount_new: sumGI.balance,
-          description: 'Ingreso por ganancias de operacion',
-          type: 'DEPOSITO',
-          walletId: sumGI.id,
-        }
-      })
+      if (!skipValidations) {
+        await this.prisma.walletTransactions.create({
+          data: {
+            amount: gananciaIntermediario,
+            amount_old: 0,
+            amount_new: sumGI.balance,
+            description: 'Ingreso por ganancias de operacion',
+            type: 'DEPOSITO',
+            walletId: sumGI.id,
+          }
+        })
+      }
     }
 
-    if (!createTransactionDto.typeTransaction) {
+    if (!createTransactionDto.typeTransaction && !skipValidations) {
       await this.prisma.walletTransactions.create({
         data: {
           amount: createTransactionDto.amount,
@@ -1772,7 +1776,7 @@ Equipo Panet Remesas`;
       typeTransaction: undefined,
     };
 
-    const newTransaction = await this.create(createTransactionDto);
+    const newTransaction = await this.create(createTransactionDto, true);
 
     return {
       success: true,
