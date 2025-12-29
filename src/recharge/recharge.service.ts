@@ -270,7 +270,7 @@ export class RechargeService {
         status: "CREADA",
         comprobante: fileUrl || null,
         comentario: data.comentario || null,
-        nro_referencia: data.nro_referencia || null,
+        nro_referencia: data.nro_referencia ? data.nro_referencia.toUpperCase() : null,
         instrumentId: data.instrumentId || null,
         fecha_comprobante: data.fecha_comprobante
           ? new Date(data.fecha_comprobante)
@@ -380,7 +380,7 @@ export class RechargeService {
             amount_comision: safeComision,
             amount_total: safeTotal,
             comentario: createRechargeDto.comentario || null,
-            nro_referencia: createRechargeDto.nro_referencia || null,
+            nro_referencia: createRechargeDto.nro_referencia ? createRechargeDto.nro_referencia.toUpperCase() : null,
             fecha_comprobante: createRechargeDto.fecha_comprobante
               ? new Date(createRechargeDto.fecha_comprobante)
               : null,
