@@ -776,7 +776,7 @@ export class TransactionService {
       orderBy: {
         publicId: 'desc'
       },
-      take: 15
+      take: 10
     });
 
     // Filtros de seguridad para los contadores (ignora filtros de búsqueda, respeta rol)
