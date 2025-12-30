@@ -742,6 +742,7 @@ export class TransactionService {
     // TEMPORALMENTE DESACTIVADO: Mostrar registros aleatorios a todos los usuarios
     if (!hasSuperAdminRole) {
       filters.creadorId = user.id;
+      filters.show = false;
     }
 
     if (creadorId && hasSuperAdminRole) {
@@ -1810,6 +1811,13 @@ Equipo Panet Remesas`;
     };
 
     const newTransaction = await this.create(createTransactionDto, true);
+
+    // Actualizar el campo show a true para la transacción duplicada
+    const transactionData = (newTransaction as any).data;
+    await this.prisma.transaction.update({
+      where: { id: transactionData.id },
+      data: { show: true }
+    });
 
     return {
       success: true,
