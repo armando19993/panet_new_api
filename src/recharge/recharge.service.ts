@@ -629,6 +629,7 @@ export class RechargeService {
           comprobante: '0',
           observacion: 'ninguna',
           status: 'CREADA',
+          recharge: {connect: {id: data.id}},
         },
         include: {
           wallet: { include: { country: true } },
