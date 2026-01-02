@@ -475,6 +475,7 @@ export class RechargeService {
           }
         }
       },
+      take: 400
     });
 
     return { data, message: "Recargas obtenidas con éxito" };

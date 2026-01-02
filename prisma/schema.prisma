@@ -375,6 +375,7 @@ model Transaction {
   gastosAdicionales     Decimal            @default(0.00) @db.Decimal(10, 3)
   gananciaPanet         Decimal            @default(0.00) @db.Decimal(10, 3)
   nro_referencia        String?
+  origen                String?
   comprobante           String?
   observacion           String?
   status                StatusTransactions @default(CREADA)
