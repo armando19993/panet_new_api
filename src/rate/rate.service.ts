@@ -189,7 +189,7 @@ export class RateService {
           if (destination.name === "VENEZUELA") {
             const ratePurchaseOrigin = parseFloat(origin.rate_purchase?.toString() || "0");
             const rateSalesDestination = parseFloat(destination.rate_sales?.toString() || "0");
-            const profitDestination = parseFloat(destination.profit?.toString() || "0");
+            const profitDestination = parseFloat(destination.ven_profit?.toString() || "0");
 
             if (isNaN(ratePurchaseOrigin) || isNaN(rateSalesDestination) || isNaN(profitDestination)) {
               console.warn(
