@@ -1131,12 +1131,26 @@ Equipo Panet Remesas`;
   }
 
   async update(id: string, updateTransactionDto) {
+    // 1. Actualizamos la transacción a 'ANULADA'
     const data = await this.prisma.transaction.update({
       where: { id },
       data: { status: 'ANULADA' }
-    })
+    });
 
-    return { data, message: 'Transaccion Anulada con exito' }
+    // 2. Actualizamos el registro de la cola de espera a 'CERRADA'
+    // Usamos updateMany porque es más seguro si no tienes el ID exacto de la cola, 
+    // filtrando por el transactionId
+    await this.prisma.colaEspera.updateMany({
+      where: {
+        transactionId: id,
+        status: 'INICIADA' // Opcional: solo cerrar las que sigan abiertas
+      },
+      data: {
+        status: 'CERRADA'
+      }
+    });
+
+    return { data, message: 'Transacción Anulada y cola cerrada con éxito' };
   }
 
   remove(id: string) {
