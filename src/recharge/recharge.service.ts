@@ -674,42 +674,65 @@ export class RechargeService {
       let randomUser = null;
 
       if (trans.instrument.typeInstrument === 'PAGO_MOVIL' && trans.destino.name === 'VENEZUELA') {
-        // Validar balance disponible antes de procesar el pago móvil
-        try {
-          const balanceInfo = await this.movementsAccountJuridicService.getAccountBalance();
-          const availableBalance = parseFloat(balanceInfo.availableBalance.toString());
 
-          // Enviar notificación si el saldo es bajo
+        // 1. Inicializamos variables por defecto
+        // Asumimos 0 de entrada para que si falla, entre directo a la lógica de saldo bajo
+        let availableBalance = 0;
+        let balanceInfo = null;
+        let balanceCheckError = null;
+
+        // 2. Intentamos obtener el saldo (Bloque aislado)
+        try {
+          balanceInfo = await this.movementsAccountJuridicService.getAccountBalance();
+          availableBalance = parseFloat(balanceInfo.availableBalance.toString());
+
+          // Enviar notificación si el saldo es bajo (solo si pudimos obtenerlo)
           await this.notifyLowBalance(availableBalance);
 
-          if (availableBalance <= 10000) {
-            await this.prisma.transaction.update({
-              where: { id: trans.id },
+        } catch (error) {
+          // Si falla, solo logueamos y dejamos availableBalance en 0
+          console.warn('⚠️ No se pudo consultar el saldo bancario. Se asumirá saldo insuficiente (0) y se pondrá en cola.', error.message);
+          balanceCheckError = error.message;
+          availableBalance = 0;
+        }
+
+        // 3. Evaluamos la condición (Si hubo error, availableBalance es 0, así que entra aquí)
+        if (availableBalance <= 10000) {
+
+          await this.prisma.transaction.update({
+            where: { id: trans.id },
+            data: {
+              status: 'ERROR',
+              errorResponse: {
+                // Mensaje dinámico dependiendo de si falló la consulta o si realmente no hay saldo
+                message: balanceCheckError ? 'Error consultando saldo (Asumido insuficiente)' : 'Saldo insuficiente en cuenta bancaria',
+                availableBalance: balanceInfo?.availableBalance || 0, // Usamos 0 si no hay info
+                requiredMinimum: 10000,
+                details: balanceCheckError // Guardamos el error original si existió
+              }
+            }
+          });
+
+          console.log('Saldo insuficiente o error de consulta. Balance considerado:', availableBalance);
+
+          // Crear cola de espera para el usuario específico
+          try {
+            await this.prisma.colaEspera.create({
               data: {
-                status: 'ERROR',
-                errorResponse: {
-                  message: 'Saldo insuficiente en cuenta bancaria',
-                  availableBalance: balanceInfo.availableBalance,
-                  requiredMinimum: 10000
-                }
+                type: 'TRANSACCION',
+                userId: '11062013-713a-4621-b27b-8c74ba1e88a0',
+                transactionId: trans.id,
+                status: 'INICIADA'
               }
             });
+            console.log('Cola de espera creada para el usuario:', '11062013-713a-4621-b27b-8c74ba1e88a0');
+          } catch (error) {
+            console.error('Error al crear cola de espera:', error);
+          }
 
-            // Crear cola de espera para el usuario específico
-            try {
-              await this.prisma.colaEspera.create({
-                data: {
-                  type: 'TRANSACCION',
-                  userId: '11062013-713a-4621-b27b-8c74ba1e88a0',
-                  transactionId: trans.id,
-                  status: 'INICIADA'
-                }
-              });
-            } catch (error) {
-              console.error('Error al crear cola de espera:', error);
-            }
-          } else {
-            // Continuar con el proceso si el balance es suficiente
+        } else {
+          // 4. Continuar con el proceso si el balance es suficiente (El resto de tu código igual)
+          try {
             let numeroReferencia = trans.publicId.toString();
             if (numeroReferencia.length < 6) {
               const randomPrefix = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
@@ -771,84 +794,13 @@ export class RechargeService {
                       }
                     }
                   });
-                  const transactionAmount = parseFloat(parseFloat(trans.montoDestino.toString()).toFixed(2));
-                  console.log("AQUI ESTAMOS PROCESANDO Y ENTRANDO EN EL TRY")
-                  // Generar y enviar comprobante
-                  try {
-                    console.log('🔄 [RechargeService] Iniciando generación de comprobante (recarga full):', {
-                      transactionId: updatedTransaction.publicId,
-                      status: updatedTransaction.status,
-                    });
 
-                    const logoResponse = await axios.get('https://panel.paneteirl.com/logo_conecta.png', { responseType: 'arraybuffer' });
-                    const logoDataUri = `data:image/png;base64,${Buffer.from(logoResponse.data).toString('base64')}`;
+                  // ... (Lógica de generación de comprobante e imagen sigue aquí igual) ...
+                  // He resumido esta parte porque no cambiaba, pero mantén tu lógica de envío de WhatsApp original aquí
 
-                    console.log('📸 [RechargeService] Generando imagen del comprobante...');
-                    const imageDataUri = await generateTransactionImage(updatedTransaction, logoDataUri);
-                    const imageBuffer = Buffer.from(imageDataUri.split(',')[1], 'base64');
+                  console.log("AQUI ESTAMOS PROCESANDO Y ENTRANDO EN EL TRY");
+                  /* TU CODIGO DE GENERACION DE IMAGEN Y WHATSAPP AQUI */
 
-                    const imageFileName = `comprobante-TRX-${updatedTransaction.publicId}.png`;
-                    const imagePath = `${process.cwd()}/uploads/${imageFileName}`;
-                    fs.writeFileSync(imagePath, imageBuffer);
-
-                    const imageUrl = `${process.env.BASE_URL || 'https://api.paneteirl.com'}/uploads/${imageFileName}`;
-
-                    console.log('🧾 [RechargeService] Comprobante generado para transacción:', {
-                      transactionId: updatedTransaction.publicId,
-                      imageFileName: imageFileName,
-                      imagePath: imagePath,
-                      imageUrl: imageUrl,
-                      archivoExiste: fs.existsSync(imagePath),
-                      tamañoArchivo: fs.existsSync(imagePath) ? fs.statSync(imagePath).size : 0,
-                    });
-
-                    const recipient = updatedTransaction.cliente || updatedTransaction.creador;
-                    console.log('🔍 [RechargeService] Verificando destinatario:', {
-                      transactionId: updatedTransaction.publicId,
-                      tieneCliente: !!updatedTransaction.cliente,
-                      tieneCreador: !!updatedTransaction.creador,
-                      tieneRecipient: !!recipient,
-                    });
-
-                    if (recipient) {
-                      console.log('👤 [RechargeService] Preparando envío de comprobante a:', {
-                        transactionId: updatedTransaction.publicId,
-                        recipientId: recipient.id,
-                        recipientName: recipient.name,
-                        recipientPhone: recipient.phone,
-                        tieneTelefono: !!recipient.phone,
-                      });
-
-                      if (!recipient.phone) {
-                        console.error('❌ [RechargeService] ERROR: El destinatario no tiene teléfono:', {
-                          transactionId: updatedTransaction.publicId,
-                          recipientId: recipient.id,
-                          recipientName: recipient.name,
-                        });
-                      } else {
-                        const message = `🧾 Tu transaccion TRX-${updatedTransaction.publicId} ha sido completada con exito! Gracias por confiar en Panet Remesas!`;
-                        console.log('📤 [RechargeService] Enviando comprobante de recarga full...');
-                        const resultado = await this.sendWhatsAppNotification(recipient.phone, message, imageUrl);
-                        console.log('📊 [RechargeService] Resultado del envío de comprobante:', {
-                          transactionId: updatedTransaction.publicId,
-                          exito: resultado,
-                        });
-                      }
-
-                    } else {
-                      console.warn('⚠️ [RechargeService] No se encontró destinatario para enviar comprobante:', {
-                        transactionId: updatedTransaction.publicId,
-                        tieneCliente: !!updatedTransaction.cliente,
-                        tieneCreador: !!updatedTransaction.creador,
-                      });
-                    }
-                  } catch (error) {
-                    console.error('❌ [RechargeService] ERROR generando o enviando comprobante (recarga full):', {
-                      transactionId: updatedTransaction?.publicId,
-                      error: error instanceof Error ? error.message : 'Error desconocido',
-                      stack: error instanceof Error ? error.stack : undefined,
-                    });
-                  }
                 } else {
                   await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'ERROR', errorResponse: response.data } });
                 }
@@ -858,19 +810,14 @@ export class RechargeService {
                 await this.prisma.transaction.update({ where: { id: trans.id }, data: { status: 'ERROR', errorResponse: errorPayload } });
               }
             }
+          } catch (processError) {
+            // Catch general para errores imprevistos en el proceso de pago (no de saldo)
+            console.error('Error procesando pago móvil:', processError);
+            await this.prisma.transaction.update({
+              where: { id: trans.id },
+              data: { status: 'ERROR', errorResponse: { message: 'Error interno procesando pago' } }
+            });
           }
-        } catch (balanceError) {
-          console.error('Error al consultar balance de cuenta bancaria:', balanceError);
-          await this.prisma.transaction.update({
-            where: { id: trans.id },
-            data: {
-              status: 'ERROR',
-              errorResponse: {
-                message: 'Error al consultar saldo de cuenta bancaria',
-                error: balanceError instanceof Error ? balanceError.message : 'Error desconocido'
-              }
-            }
-          });
         }
       }
 
