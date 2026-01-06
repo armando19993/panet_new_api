@@ -14,20 +14,15 @@ export class ReportsService {
 
     async home(user?: any) {
         try {
-            // Obtener todos los países
             const countriesResponse = await this.prisma.country.findMany();
             const countries = countriesResponse;
 
-            // 1. Definimos un valor base seguro por si falla el servicio
             let accountBalance = { availableBalance: 0 };
 
-            // 2. Envolvemos SOLO esta llamada en un try/catch interno
             try {
                 accountBalance = await this.movementsAccountJuridicService.getAccountBalance();
             } catch (error) {
-                // Aquí capturamos el error silenciosamente (o lo logueamos) para que no rompa el flujo
                 console.warn('⚠️ No se pudo obtener el saldo de la cuenta jurídica. Se usará 0.', error.message);
-                // El flujo continúa con accountBalance = { availableBalance: 0 }
             }
 
             // Calcular el saldo en USDT usando la tasa de Venezuela
