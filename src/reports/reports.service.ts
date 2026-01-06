@@ -18,8 +18,17 @@ export class ReportsService {
             const countriesResponse = await this.prisma.country.findMany();
             const countries = countriesResponse;
 
-            // Obtener el saldo de la cuenta juridica
-            const accountBalance = await this.movementsAccountJuridicService.getAccountBalance();
+            // 1. Definimos un valor base seguro por si falla el servicio
+            let accountBalance = { availableBalance: 0 };
+
+            // 2. Envolvemos SOLO esta llamada en un try/catch interno
+            try {
+                accountBalance = await this.movementsAccountJuridicService.getAccountBalance();
+            } catch (error) {
+                // Aquí capturamos el error silenciosamente (o lo logueamos) para que no rompa el flujo
+                console.warn('⚠️ No se pudo obtener el saldo de la cuenta jurídica. Se usará 0.', error.message);
+                // El flujo continúa con accountBalance = { availableBalance: 0 }
+            }
 
             // Calcular el saldo en USDT usando la tasa de Venezuela
             const venezuela = countries.find(c => c.name === 'VENEZUELA');
