@@ -226,31 +226,21 @@ export class TransactionService {
     const rateAmount = parseFloat(parseFloat(rate.amount.toString()).toFixed(2));
     const saldoCalculo = parseFloat(transactionAmount.toFixed(2));
 
-    let montoDestino = 0
+    let montoCalculado;
 
-    if (rate.origin.name !== "VENEZUELA" && rate.origin.name !== "COLOMBIA") {
-      montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
+    // Lógica de operación
+    if (
+      (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") ||
+      (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA")
+    ) {
+      montoCalculado = saldoCalculo / rateAmount;
     } else {
-      montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
+      montoCalculado = saldoCalculo * rateAmount;
     }
 
-    if (rate.origin.name === "VENEZUELA" && rate.destination.name === "COLOMBIA") {
-      montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
-    }
-    if (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") {
-      montoDestino = parseFloat((saldoCalculo / rateAmount).toFixed(2));
-    }
-
-    if (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA") {
-      montoDestino = parseFloat((saldoCalculo / rateAmount).toFixed(2));
-    }
-
-    // Aplicar regla de redondeo específica para montoDestino
-    /*const roundedValue = Math.round(montoDestino * 1000) / 1000; // Obtener 3 decimales primero
-    const lastDigit = Math.round((roundedValue * 1000) % 10); // Obtener último dígito
-    montoDestino = lastDigit >= 5
-      ? Math.ceil(roundedValue * 100) / 100
-      : Math.floor(roundedValue * 100) / 100;*/
+    // TRUNCAR A 2 DECIMALES
+    // Multiplicamos por 100 para mover la coma, truncamos y dividimos por 100
+    const montoDestino = Math.trunc(montoCalculado * 100) / 100;
 
     console.log('montoDestino: ' + montoDestino)
 
