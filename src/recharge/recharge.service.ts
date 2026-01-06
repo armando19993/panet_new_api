@@ -579,9 +579,22 @@ export class RechargeService {
         where: { originId: info.origenId, destinationId: info.destinoId },
         include: { origin: true, destination: true },
       });
-      const rateAmount = parseFloat(parseFloat(rate.amount.toString()).toFixed(2));
-      const porcentajePasarela = parseFloat(((parseFloat(info.montoOrigen.toString()) * 2) / 100).toFixed(2));
-      const saldoCalculo = parseFloat(parseFloat(info.montoOrigen.toString()).toFixed(2));
+
+      const truncate = (num, decimales = 2) => {
+        const factor = Math.pow(10, decimales);
+        return Math.trunc(num * factor) / factor;
+      };
+
+
+      // 1. Para la tasa (usamos 3 o más decimales si lo necesitas, o 2 según pidas)
+      const rateAmount = truncate(parseFloat(rate.amount.toString()), 2);
+
+      // 2. Para el porcentaje de pasarela (2%)
+      const montoOrigenRaw = parseFloat(info.montoOrigen.toString());
+      const porcentajePasarela = truncate((montoOrigenRaw * 2) / 100, 2);
+
+      // 3. Para el saldo de cálculo
+      const saldoCalculo = truncate(montoOrigenRaw, 2);
 
       const tipoCalculo = rate.type_profit;
       const porcentajeCalculo = origen[tipoCalculo];
@@ -589,21 +602,21 @@ export class RechargeService {
 
       let montoCalculado;
 
-    // Lógica de operación
-    if (
-      (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") ||
-      (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA")
-    ) {
-      montoCalculado = saldoCalculo / rateAmount;
-    } else {
-      montoCalculado = saldoCalculo * rateAmount;
-    }
+      // Lógica de operación
+      if (
+        (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") ||
+        (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA")
+      ) {
+        montoCalculado = saldoCalculo / rateAmount;
+      } else {
+        montoCalculado = saldoCalculo * rateAmount;
+      }
 
-    // TRUNCAR A 2 DECIMALES
-    // Multiplicamos por 100 para mover la coma, truncamos y dividimos por 100
-    const montoDestino = Math.trunc(montoCalculado * 100) / 100;
+      // TRUNCAR A 2 DECIMALES
+      // Multiplicamos por 100 para mover la coma, truncamos y dividimos por 100
+      const montoDestino = Math.trunc(montoCalculado * 100) / 100;
 
-    console.log('montoDestino: ' + montoDestino)
+      console.log('montoDestino: ' + montoDestino)
 
       const trans = await this.prisma.transaction.create({
         data: {
@@ -626,7 +639,7 @@ export class RechargeService {
           comprobante: '0',
           observacion: 'ninguna',
           status: 'CREADA',
-          recharge: {connect: {id: data.id}},
+          recharge: { connect: { id: data.id } },
         },
         include: {
           wallet: { include: { country: true } },
@@ -861,7 +874,7 @@ export class RechargeService {
       if ((trans.instrument.typeInstrument !== 'PAGO_MOVIL' && trans.destino.name === 'VENEZUELA') || trans.destino.name !== 'VENEZUELA') {
         console.log('transaction.destino.name: ' + trans.destino.name)
         console.log("esta entrando aqui")
-        
+
         const dispatchers = [
           { country: 'PERU', id: '11062013-713a-4621-b27b-8c74ba1e88a0' },
           { country: 'USDT', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
