@@ -324,7 +324,7 @@ model Rate {
   destinationId String
   destination   Country  @relation("Destination", fields: [destinationId], references: [id])
   type_profit   String?
-  amount        Decimal  @default(0.00) @db.Decimal(10, 8)
+  amount        Decimal  @default(0.00) @db.Decimal(20, 8)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   countryId     String?
