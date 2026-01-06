@@ -269,7 +269,6 @@ export class TransactionService {
 
     const gananciaPanet = parseFloat((porcentajeDelMonto - gananciaIntermediario).toFixed(2));
 
-
     // Crear la transacción
     const transaction = await this.prisma.transaction.create({
       data: {
