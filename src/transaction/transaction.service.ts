@@ -223,8 +223,8 @@ export class TransactionService {
     }
 
     // Cálculos principales
-    const rateAmount = parseFloat(parseFloat(rate.amount.toString()).toFixed(2));
-    const saldoCalculo = parseFloat(transactionAmount.toFixed(2));
+    const rateAmount = parseFloat(rate.amount.toString());
+    const saldoCalculo = parseFloat(transactionAmount.toString());
 
     let montoCalculado;
 

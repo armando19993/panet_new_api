@@ -865,6 +865,7 @@ export class RechargeService {
       if ((trans.instrument.typeInstrument !== 'PAGO_MOVIL' && trans.destino.name === 'VENEZUELA') || trans.destino.name !== 'VENEZUELA') {
         console.log('transaction.destino.name: ' + trans.destino.name)
         console.log("esta entrando aqui")
+        
         const dispatchers = [
           { country: 'PERU', id: '11062013-713a-4621-b27b-8c74ba1e88a0' },
           { country: 'USDT', id: '75779a5d-1c01-4b18-9c43-3606b2913086' },
