@@ -587,27 +587,23 @@ export class RechargeService {
       const porcentajeCalculo = origen[tipoCalculo];
       const porcentajeDelMonto = parseFloat(((parseFloat(info.montoOrigen.toString()) * porcentajeCalculo) / 100).toFixed(2));
 
-      let montoDestino = 0;
-      if (rate.origin.name !== 'VENEZUELA' && rate.origin.name !== 'COLOMBIA') {
-        montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
-        console.log(
-          "rateAmount", rateAmount,
-          "saldoCalculo", saldoCalculo,
-          "montoDestino", montoDestino
-        )
-        console.log("este es el monto que me da: ", montoDestino)
-      } else {
-        montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
-      }
-      if (rate.origin.name === 'VENEZUELA' && rate.destination.name === 'COLOMBIA') {
-        montoDestino = parseFloat((saldoCalculo * rateAmount).toFixed(2));
-      }
-      if (rate.origin.name === 'VENEZUELA' && rate.destination.name !== 'COLOMBIA') {
-        montoDestino = parseFloat((saldoCalculo / rateAmount).toFixed(2));
-      }
-      if (rate.origin.name === 'COLOMBIA' && rate.destination.name === 'VENEZUELA') {
-        montoDestino = parseFloat((saldoCalculo / rateAmount).toFixed(2));
-      }
+      let montoCalculado;
+
+    // Lógica de operación
+    if (
+      (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") ||
+      (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA")
+    ) {
+      montoCalculado = saldoCalculo / rateAmount;
+    } else {
+      montoCalculado = saldoCalculo * rateAmount;
+    }
+
+    // TRUNCAR A 2 DECIMALES
+    // Multiplicamos por 100 para mover la coma, truncamos y dividimos por 100
+    const montoDestino = Math.trunc(montoCalculado * 100) / 100;
+
+    console.log('montoDestino: ' + montoDestino)
 
       const trans = await this.prisma.transaction.create({
         data: {
