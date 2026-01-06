@@ -222,31 +222,44 @@ export class TransactionService {
       await this.prisma.wallet.update({ where: { id: wallet.id }, data: { balance: { decrement: createTransactionDto.amount } } })
     }
 
-    // Cálculos principales
-    const rateAmount = parseFloat(rate.amount.toString());
-    const saldoCalculo = parseFloat(transactionAmount.toString());
+    const truncate = (num, decimales = 2) => {
+      const factor = Math.pow(10, decimales);
+      // Aseguramos que num sea un número antes de procesar
+      const n = Number(num);
+      return Math.trunc(n * factor) / factor;
+    };
+
+    // 1. Convertimos todo a números puros de JavaScript para evitar errores de objeto Decimal
+    const rateAmount = Number(rate.amount);
+    const montoOrigen = Number(createTransactionDto.amount);
+
+    // 2. Cálculos de porcentajes usando la función truncate (sin redondear)
+    const porcentajePasarela = truncate((montoOrigen * 2) / 100, 2);
+
+    const tipoCalculo = rate.type_profit;
+    const porcentajeCalculo = Number(origen[tipoCalculo]);
+    const porcentajeDelMonto = truncate((montoOrigen * porcentajeCalculo) / 100, 2);
+
+    // 3. Definimos el saldo base para el cálculo final
+    const saldoCalculo = montoOrigen;
 
     let montoCalculado;
 
-    // Lógica de operación
+    // 4. Lógica de operación corregida
     if (
       (rate.origin.name === "VENEZUELA" && rate.destination.name !== "COLOMBIA") ||
       (rate.origin.name === "COLOMBIA" && rate.destination.name === "VENEZUELA")
     ) {
+      // División: saldoCalculo / rateAmount
       montoCalculado = saldoCalculo / rateAmount;
     } else {
+      // Multiplicación: saldoCalculo * rateAmount
       montoCalculado = saldoCalculo * rateAmount;
     }
 
-    // TRUNCAR A 2 DECIMALES
-    // Multiplicamos por 100 para mover la coma, truncamos y dividimos por 100
-    const montoDestino = Math.trunc(montoCalculado * 100) / 100;
+    // 5. Aplicar el truncamiento final al monto destino (máximo 2 o 3 decimales según pediste)
+    const montoDestino = truncate(montoCalculado, 2);
 
-    console.log('montoDestino: ' + montoDestino)
-
-    const tipoCalculo = rate.type_profit;
-    const porcentajeCalculo = origen[tipoCalculo];
-    const porcentajeDelMonto = parseFloat(((transactionAmount * porcentajeCalculo) / 100).toFixed(2));
 
     const porcentajeIntermediario = parseFloat(creador.profitPercent.toString());
     let gananciaIntermediario = 0
