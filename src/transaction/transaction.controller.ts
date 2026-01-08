@@ -16,6 +16,11 @@ export class TransactionController {
     return this.transactionService.paymentsMethods(countryCode);
   }
 
+  @Get('stats-by-country')
+  getStatsByCountry(@Query('date') date: string, @Query('countryId') countryId?: string) {
+    return this.transactionService.getStatsByCountry(date, countryId);
+  }
+
   @Post()
   create(@Body() createTransactionDto: CreateTransactionDto) {
     return this.transactionService.create(createTransactionDto);
@@ -71,11 +76,6 @@ export class TransactionController {
   getConciliationData(@Query('fechaIni') fechaIni: string, @Query('fechaFin') fechaFin: string) {
     const result = this.transactionService.getConciliationData(fechaIni, fechaFin);
     return result;
-  }
-
-  @Get('stats-by-country')
-  getStatsByCountry(@Query('date') date: string, @Query('countryId') countryId?: string) {
-    return this.transactionService.getStatsByCountry(date, countryId);
   }
 
   @Post('duplicate')
