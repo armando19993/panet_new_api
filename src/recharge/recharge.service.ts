@@ -1286,6 +1286,20 @@ export class RechargeService {
     };
   }
 
+  async findReference(reference: string, date: string) {
+    const recharge = await this.prisma.recharge.findFirst({
+      where: {
+        nro_referencia: reference,
+        fecha_comprobante: new Date(date),
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    return { data: recharge, message: 'Recarga encontrada con éxito' };
+  }
+
   private resolveDateRange(filter: ExportRechargeFilterDto) {
     const toDate = (value: string, endOfDay = false) => {
       if (!value) {

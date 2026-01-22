@@ -39,6 +39,11 @@ export class RechargeController {
   findByUser(@Request() req) {
     return this.rechargeService.findByUser(req.user);
   }
+  
+  @Get('find-reference/:reference')
+  findReference(@Param('reference') reference: string, @Param('date') date: string) {
+    return this.rechargeService.findReference(reference, date);
+  }
 
   @Get()
   @UseGuards(AuthGuard)
