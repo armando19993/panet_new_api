@@ -40,7 +40,7 @@ export class RechargeController {
     return this.rechargeService.findByUser(req.user);
   }
   
-  @Get('find-reference/:reference')
+  @Get('find-reference/:reference/:date')
   findReference(@Param('reference') reference: string, @Param('date') date: string) {
     return this.rechargeService.findReference(reference, date);
   }
