@@ -445,9 +445,9 @@ export class RechargeService {
 
     const filter: Record<string, any> = {};
 
-    if (userId) {
-      filter.userId = userId;
-    }
+    // if (userId) {
+    //   filter.userId = userId;
+    // }
 
     if (status) {
       filter.status = status;
