@@ -483,7 +483,7 @@ export class RechargeService {
 
   async findByUser(user) {
     const data = await this.prisma.recharge.findMany({
-      where: { userId: user.id },
+      //where: { userId: user.id },
       include: {
         user: true,
         wallet: {
