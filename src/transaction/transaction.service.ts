@@ -996,19 +996,19 @@ export class TransactionService {
         }
       }
 
-      try {
-        this.notification.sendPushNotification(
-          data.creador.expoPushToken,
-          `Transaccion TRX-2025-${data.publicId} Completada`,
-          'Su transaccion se ha completado correctamente',
-          {
-            screen: "ReciboEnvio",
-            params: { transaction: data.id }
-          }
-        );
-      } catch (error) {
-        console.error('Error al enviar notificación push:', error);
-      }
+      // try {
+      //   this.notification.sendPushNotification(
+      //     data.creador.expoPushToken,
+      //     `Transaccion TRX-2025-${data.publicId} Completada`,
+      //     'Su transaccion se ha completado correctamente',
+      //     {
+      //       screen: "ReciboEnvio",
+      //       params: { transaction: data.id }
+      //     }
+      //   );
+      // } catch (error) {
+      //   console.error('Error al enviar notificación push:', error);
+      // }
     } else {
       const dataRollback = await this.prisma.transaction.update({
         where: { id: dataAprobar.transactionId },
