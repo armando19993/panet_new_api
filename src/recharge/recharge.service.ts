@@ -445,9 +445,9 @@ export class RechargeService {
 
     const filter: Record<string, any> = {};
 
-    // if (userId) {
-    //   filter.userId = userId;
-    // }
+    if (userId) {
+      filter.userId = userId;
+    }
 
     if (status) {
       filter.status = status;
@@ -483,7 +483,7 @@ export class RechargeService {
 
   async findByUser(user) {
     const data = await this.prisma.recharge.findMany({
-      //where: { userId: user.id },
+      where: { userId: user.id },
       include: {
         user: true,
         wallet: {
