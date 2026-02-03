@@ -1654,142 +1654,121 @@ Equipo Panet Remesas`;
   }
 
   async getStatsByCountry(date: string, countryId?: string, dateEnd?: string) {
-    const parseDate = (value: string): { start: Date; end: Date } => {
-      const parts = value.split('-');
-      if (parts.length !== 3) {
-        throw new BadRequestException(`Formato de fecha inválido: ${value}. Use DD-MM-YYYY`);
-      }
-
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const year = parseInt(parts[2], 10);
-
-      if (isNaN(year) || isNaN(month) || isNaN(day)) {
-        throw new BadRequestException(`Fecha inválida: ${value}`);
-      }
-
-      const startOfDay = new Date(year, month, day, 0, 0, 0, 0);
-      const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
-
-      return { start: startOfDay, end: endOfDay };
-    };
-
-    const startDate = parseDate(date);
-    const endDate = dateEnd ? parseDate(dateEnd) : startDate;
-
-    if (startDate.start.getTime() > endDate.end.getTime()) {
-      throw new BadRequestException('Rango de fechas inválido: la fecha inicial no puede ser mayor a la fecha final');
+  const parseDate = (value: string): { start: Date; end: Date } => {
+    const parts = value.split('-');
+    if (parts.length !== 3) {
+      throw new BadRequestException(`Formato de fecha inválido: ${value}. Use DD-MM-YYYY`);
     }
 
-    const start = startDate.start;
-    const end = endDate.end;
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
 
-    const where: any = {
-      createdAt: {
-        gte: start,
-        lte: end,
-      },
-    };
-
-    if (countryId) {
-      where.origenId = countryId;
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      throw new BadRequestException(`Fecha inválida: ${value}`);
     }
 
-    const transactions = await this.prisma.transaction.findMany({
-      where,
-      include: {
-        origen: true,
-        destino: true,
-      },
-    });
+    const startOfDay = new Date(year, month, day, 0, 0, 0, 0);
+    const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
 
-    if (countryId) {
-      const breakdownByDestination = new Map<string, { country: string; countryId: string; count: number; totalAmountOrigen: number; totalAmountDestino: number }>();
+    return { start: startOfDay, end: endOfDay };
+  };
 
-      transactions.forEach((transaction) => {
-        const destinoKey = transaction.destino.id;
+  const startDate = parseDate(date);
+  const endDate = dateEnd ? parseDate(dateEnd) : startDate;
 
-        if (!breakdownByDestination.has(destinoKey)) {
-          breakdownByDestination.set(destinoKey, {
-            country: transaction.destino.name,
-            countryId: transaction.destino.id,
-            count: 0,
-            totalAmountOrigen: 0,
-            totalAmountDestino: 0,
-          });
-        }
+  if (startDate.start.getTime() > endDate.end.getTime()) {
+    throw new BadRequestException('Rango de fechas inválido: la fecha inicial no puede ser mayor a la fecha final');
+  }
 
-        const stats = breakdownByDestination.get(destinoKey);
-        stats.count += 1;
-        stats.totalAmountOrigen += parseFloat(transaction.montoOrigen.toString());
-        stats.totalAmountDestino += parseFloat(transaction.montoDestino.toString());
-      });
+  const where: any = {
+    createdAt: {
+      gte: startDate.start,
+      lte: endDate.end,
+    },
+  };
 
-      const breakdown = Array.from(breakdownByDestination.values()).map((stat) => ({
-        destinationCountry: stat.country,
-        destinationCountryId: stat.countryId,
-        operationsCount: stat.count,
-        totalAmountOrigen: parseFloat(stat.totalAmountOrigen.toFixed(2)),
-        totalAmountDestino: parseFloat(stat.totalAmountDestino.toFixed(2)),
-      }));
+  // Si hay país, filtramos estrictamente por origen para ver las "salidas"
+  if (countryId) {
+    where.origenId = countryId;
+  }
 
-      const totalAmountOrigen = breakdown.reduce((sum, item) => sum + item.totalAmountOrigen, 0);
-      const totalAmountDestino = breakdown.reduce((sum, item) => sum + item.totalAmountDestino, 0);
+  const transactions = await this.prisma.transaction.findMany({
+    where,
+    include: {
+      origen: true,
+      destino: true,
+    },
+  });
 
-      return {
-        date,
-        originCountry: transactions.length > 0 ? transactions[0].origen.name : null,
-        originCountryId: countryId,
-        totalTransactions: transactions.length,
-        totalAmountOrigen: parseFloat(totalAmountOrigen.toFixed(2)),
-        totalAmountDestino: parseFloat(totalAmountDestino.toFixed(2)),
-        breakdownByDestination: breakdown,
-      };
-    }
+  // --- ESCENARIO A: Filtro por País Específico (Salidas) ---
+  if (countryId) {
+    const breakdownByDestination = new Map<string, any>();
 
-    const statsByCountry = new Map<string, { country: string; count: number; totalAmount: number }>();
-
-    transactions.forEach((transaction) => {
-      const origenKey = transaction.origen.id;
-      const destinoKey = transaction.destino.id;
-
-      if (!statsByCountry.has(origenKey)) {
-        statsByCountry.set(origenKey, {
-          country: transaction.origen.name,
-          count: 0,
-          totalAmount: 0,
+    transactions.forEach((t) => {
+      const destKey = t.destino.id;
+      if (!breakdownByDestination.has(destKey)) {
+        breakdownByDestination.set(destKey, {
+          destinationCountry: t.destino.name,
+          destinationCountryId: t.destino.id,
+          currencyOrigen: t.monedaOrigen, // Referencia de moneda
+          currencyDestino: t.monedaDestino,
+          operationsCount: 0,
+          totalAmountOrigen: 0,
+          totalAmountDestino: 0,
         });
       }
 
-      if (!statsByCountry.has(destinoKey)) {
-        statsByCountry.set(destinoKey, {
-          country: transaction.destino.name,
-          count: 0,
-          totalAmount: 0,
-        });
-      }
-
-      const origenStats = statsByCountry.get(origenKey);
-      origenStats.count += 1;
-      origenStats.totalAmount += parseFloat(transaction.montoOrigen.toString());
-
-      const destinoStats = statsByCountry.get(destinoKey);
-      destinoStats.count += 1;
-      destinoStats.totalAmount += parseFloat(transaction.montoDestino.toString());
+      const stats = breakdownByDestination.get(destKey);
+      stats.operationsCount += 1;
+      stats.totalAmountOrigen += Number(t.montoOrigen);
+      stats.totalAmountDestino += Number(t.montoDestino);
     });
 
-    const result = Array.from(statsByCountry.values()).map((stat) => ({
-      country: stat.country,
-      operationsCount: stat.count,
-      totalAmount: parseFloat(stat.totalAmount.toFixed(2)),
-    }));
+    const breakdown = Array.from(breakdownByDestination.values());
+    const totalOrigen = breakdown.reduce((sum, item) => sum + item.totalAmountOrigen, 0);
+    const totalDestino = breakdown.reduce((sum, item) => sum + item.totalAmountDestino, 0);
 
     return {
-      date,
+      dateRange: { start: date, end: dateEnd || date },
+      originCountry: transactions.length > 0 ? transactions[0].origen.name : 'N/A',
+      originCountryId: countryId,
       totalTransactions: transactions.length,
-      statsByCountry: result,
+      totalAmountOrigen: parseFloat(totalOrigen.toFixed(2)),
+      totalAmountDestino: parseFloat(totalDestino.toFixed(2)),
+      breakdownByDestination: breakdown,
     };
   }
+
+  // --- ESCENARIO B: Reporte Global (Agrupado por Origen) ---
+  const statsByOrigin = new Map<string, any>();
+
+  transactions.forEach((t) => {
+    const originKey = t.origen.id;
+    if (!statsByOrigin.has(originKey)) {
+      statsByOrigin.set(originKey, {
+        country: t.origen.name,
+        countryId: t.origen.id,
+        currency: t.monedaOrigen,
+        operationsCount: 0,
+        totalAmount: 0,
+      });
+    }
+
+    const stats = statsByOrigin.get(originKey);
+    stats.operationsCount += 1;
+    stats.totalAmount += Number(t.montoOrigen);
+  });
+
+  return {
+    dateRange: { start: date, end: dateEnd || date },
+    totalTransactions: transactions.length,
+    statsByOriginCountry: Array.from(statsByOrigin.values()).map(s => ({
+      ...s,
+      totalAmount: parseFloat(s.totalAmount.toFixed(2))
+    })),
+  };
+}
 
   async duplicateTransaction(publicId: number, newInstrumentId: string, user: any) {
     const originalTransaction = await this.prisma.transaction.findFirst({
