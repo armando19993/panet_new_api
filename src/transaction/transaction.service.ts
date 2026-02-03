@@ -1653,7 +1653,7 @@ Equipo Panet Remesas`;
     }
   }
 
-  async getStatsByCountry(date: string, countryId?: string) {
+  async getStatsByCountry(date: string, countryId?: string, dateEnd?: string) {
     const parseDate = (value: string): { start: Date; end: Date } => {
       const parts = value.split('-');
       if (parts.length !== 3) {
@@ -1674,7 +1674,15 @@ Equipo Panet Remesas`;
       return { start: startOfDay, end: endOfDay };
     };
 
-    const { start, end } = parseDate(date);
+    const startDate = parseDate(date);
+    const endDate = dateEnd ? parseDate(dateEnd) : startDate;
+
+    if (startDate.start.getTime() > endDate.end.getTime()) {
+      throw new BadRequestException('Rango de fechas inválido: la fecha inicial no puede ser mayor a la fecha final');
+    }
+
+    const start = startDate.start;
+    const end = endDate.end;
 
     const where: any = {
       createdAt: {

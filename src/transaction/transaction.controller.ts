@@ -17,8 +17,8 @@ export class TransactionController {
   }
 
   @Get('stats-by-country')
-  getStatsByCountry(@Query('date') date: string, @Query('countryId') countryId?: string) {
-    return this.transactionService.getStatsByCountry(date, countryId);
+  getStatsByCountry(@Query('date') date: string, @Query('dateEnd') dateEnd?: string, @Query('countryId') countryId?: string) {
+    return this.transactionService.getStatsByCountry(date, countryId, dateEnd);
   }
 
   @Post()
