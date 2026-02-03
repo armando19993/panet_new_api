@@ -1686,6 +1686,7 @@ Equipo Panet Remesas`;
       gte: startDate.start,
       lte: endDate.end,
     },
+    status: 'COMPLETADA',
   };
 
   // Si hay país, filtramos estrictamente por origen para ver las "salidas"
