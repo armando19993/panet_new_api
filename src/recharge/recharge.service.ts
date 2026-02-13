@@ -1091,7 +1091,7 @@ export class RechargeService {
         },
       });
 
-      if (data.TransactionTemporal) {
+      if (data.TransactionTemporal && data.TransactionTemporal.length > 0) {
         await this.prisma.transactionTemporal.update({
           where: {
             id: data.TransactionTemporal[0].id
@@ -1179,8 +1179,7 @@ export class RechargeService {
           }
         })
       }
-    } else {
-      console.log(data.TransactionTemporal)
+    } else if (data.TransactionTemporal && data.TransactionTemporal.length > 0) {
       await this.prisma.transactionTemporal.update({
         where: {
           id: data.TransactionTemporal[0].id
