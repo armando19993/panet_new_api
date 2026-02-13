@@ -112,6 +112,7 @@ export class TransactionService {
             include: {
               origen: true,
               destino: true,
+              recharges: true,
               instrument: {
                 include: {
                   bank: true
@@ -132,6 +133,7 @@ export class TransactionService {
           }
         }
       },
+      recharges: true,
       origen: true,
       destino: true,
       despachador: true,
