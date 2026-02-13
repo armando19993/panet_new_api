@@ -134,7 +134,6 @@ export class TransactionService {
         }
       },
       origen: true,
-      recharge: true,
       destino: true,
       despachador: true,
       wallet: {
