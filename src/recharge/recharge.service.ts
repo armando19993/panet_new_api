@@ -1067,7 +1067,7 @@ export class RechargeService {
 
   async update(id, updateRecharge) {
     const data = await this.prisma.recharge.update({
-      where: { id }, 
+      where: { id },
       data: {
         status: updateRecharge.status,
         comentario: updateRecharge.comentario,
@@ -1090,6 +1090,37 @@ export class RechargeService {
           balance: newAmount,
         },
       });
+
+      await this.prisma.walletTransactions.create({
+        data: {
+          amount: data.amount,
+          amount_old: data.wallet.balance,
+          amount_new: newAmount,
+          wallet: { connect: { id: data.walletId } },
+          description: `Deposito por Recarga: REC-${data.publicId}`,
+          type: 'DEPOSITO',
+        },
+      });
+
+      if (updateRecharge.type === 'YAPE') {
+        const newBalance = parseFloat(data.wallet.balance.toString()) - parseFloat(data.amount.toString());
+
+        await this.prisma.wallet.update({
+          where: { id: data.walletId },
+          data: { balance: newBalance },
+        });
+
+        await this.prisma.walletTransactions.create({
+          data: {
+            amount: data.amount,
+            amount_old: data.wallet.balance,
+            amount_new: newBalance,
+            wallet: { connect: { id: data.walletId } },
+            description: `Salida por YAPE: REC-${data.publicId}`,
+            type: 'RETIRO',
+          },
+        });
+      }
 
       if (data.TransactionTemporal && data.TransactionTemporal.length > 0) {
         await this.prisma.transactionTemporal.update({
