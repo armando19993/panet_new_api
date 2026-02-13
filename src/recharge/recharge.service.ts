@@ -1103,7 +1103,7 @@ export class RechargeService {
       });
 
       if (updateRecharge.type === 'YAPE') {
-        const newBalance = parseFloat(data.wallet.balance.toString()) - parseFloat(data.amount.toString());
+        const newBalance = newAmount - parseFloat(data.amount.toString());
 
         await this.prisma.wallet.update({
           where: { id: data.walletId },
