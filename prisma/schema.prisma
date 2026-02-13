@@ -313,7 +313,8 @@ model Recharge {
   Client              Client?               @relation("ClientRecharges", fields: [clientId], references: [id])
   clientId            String?
   TransactionTemporal TransactionTemporal[]
-  Transaction         Transaction[]         @relation("RechargeTransaction")
+  transactionId       String?
+  transaction         Transaction?       @relation("RechargeTransaction", fields: [transactionId], references: [id])
 }
 
 model Rate {
@@ -363,8 +364,7 @@ model Transaction {
   origen                Country            @relation("OrigenTransaction", fields: [origenId], references: [id])
   destinoId             String
   destino               Country            @relation("DestinoTransaction", fields: [destinoId], references: [id])
-  rechargeId            String?
-  recharge              Recharge?          @relation("RechargeTransaction", fields: [rechargeId], references: [id])
+  recharges             Recharge[]         @relation("RechargeTransaction")
   montoOrigen           Decimal            @default(0.00) @db.Decimal(10, 3)
   montoDestino          Decimal            @default(0.00) @db.Decimal(10, 3)
   montoTasa             Decimal            @default(0.00) @db.Decimal(10, 5)

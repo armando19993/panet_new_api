@@ -3,10 +3,14 @@ import { CreateClientDto } from "./dto/create-client.dto";
 import { UpdateClientDto } from "./dto/update-client.dto";
 import { PrismaService } from "src/prisma/prisma.servise";
 import axios from "axios";
+import { TelegramService } from "src/telegram/telegram.service";
 
 @Injectable()
 export class ClientService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private telegramService: TelegramService,
+  ) {}
 
   async create(createClientDto: CreateClientDto) {
     const data = await this.prisma.client.create({ data: createClientDto });
