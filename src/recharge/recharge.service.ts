@@ -1067,9 +1067,11 @@ export class RechargeService {
 
   async update(id, updateRecharge) {
     const data = await this.prisma.recharge.update({
-      where: { id }, data: {
+      where: { id }, 
+      data: {
         status: updateRecharge.status,
-        comentario: updateRecharge.comentario
+        comentario: updateRecharge.comentario,
+        transactionId: updateRecharge.transactionId
       },
       include: { wallet: true, TransactionTemporal: true }
     })
