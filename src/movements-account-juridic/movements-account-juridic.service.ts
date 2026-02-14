@@ -190,19 +190,6 @@ export class MovementsAccountJuridicService {
         firstItem: movements[0] || null
       });
 
-      // Enviar notificación a Telegram
-      const searchType = fechaIni === fechaFin ? 'Fecha específica' : 'Rango de fechas';
-      const message = `
-<b>🔔 Consulta de Movimientos Jurídicos</b>
-<b>Usuario:</b> ${user.name} (${user.user})
-<b>Total extraídos:</b> ${movements.length}
-<b>Tipo de búsqueda:</b> ${searchType}
-<b>Fecha inicio:</b> ${fechaIni}
-<b>Fecha fin:</b> ${fechaFin}
-<b>Fecha consulta:</b> ${new Date().toLocaleString()}
-      `;
-      await this.telegramService.sendMessage(5720214404, message);
-
       return {
         data: movements,
         total: movements.length,

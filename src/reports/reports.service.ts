@@ -124,14 +124,6 @@ export class ReportsService {
                 return sum + country.totalAmountUSDT;
             }, 0);
 
-
-            const message = `
-                <b>🔔 Consulta de Reportes - Home</b>
-                <b>Fecha:</b> ${new Date().toLocaleString()}
-                                `;
-            await this.telegramService.sendMessage(5720214404, message);
-
-
             return {
                 module: 'Reports',
                 data: {
